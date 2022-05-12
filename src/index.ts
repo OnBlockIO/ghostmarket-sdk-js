@@ -1,4 +1,4 @@
-import { GhostMarketAPI } from './api'
+import { GhostMarket } from './ghostmarket'
 import { Network } from './types'
 
-export { GhostMarketAPI, Network }
+export { GhostMarket, Network }

@@ -10,16 +10,29 @@ import {
 } from './constants'
 import {
   AssetsQuery,
+  Assets,
   CollectionsQuery,
+  Collections,
   EventsQuery,
+  Events,
   GhostMarketAPIConfig,
+  MarketplaceStatistics,
   Network,
+  ListNFT,
   OpenMintingsQuery,
+  OpenMintings,
+  OpenOrders,
   OrderQuery,
   SeriesQuery,
+  SeriesResponse as Series,
   StatisticsQuery,
   TokenMetadata,
+  TokenRefreshMetadata,
+  TokenURI,
+  UserExists,
   UsersQuery,
+  Users,
+  ListNFTResult,
 } from './types'
 
 export class GhostMarketAPI {
@@ -90,10 +103,8 @@ export class GhostMarketAPI {
     auction_state = 'all',
     auction_started = 'all',
     light_mode = 0,
-  ): Promise<Record<string, unknown>> {
-    console.info('Inside getAssets!')
-
-    const result = await this.get(`${API_PATH}/assets/`, {
+  ): Promise<Assets> {
+    const assetsData = await this._get(`${API_PATH}/assets/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -106,8 +117,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return assetsData as Assets
   }
 
   /** Get NFT collection available on the GhostMarket marketplace, throwing if none is found.
@@ -120,9 +130,8 @@ export class GhostMarketAPI {
     order_direction = 'asc',
     with_total = 1,
     limit = 50,
-  ): Promise<Record<string, unknown>> {
-    console.info('Inside getCollections!')
-    const result = await this.get(`${API_PATH}/collections/`, {
+  ): Promise<Collections> {
+    const collectionsData = await this._get(`${API_PATH}/collections/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -131,8 +140,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return collectionsData as Collections
   }
 
   /** Get NFT serices available on the GhostMarket marketplace, throwing if none is found.
@@ -150,9 +158,8 @@ export class GhostMarketAPI {
     with_metadata = 0,
     with_series = 0,
     with_total = 0,
-  ): Promise<Record<string, unknown>> {
-    console.info('Inside getEvents!')
-    const result = await this.get(`${API_PATH}/events/`, {
+  ): Promise<Events> {
+    const eventsData = await this._get(`${API_PATH}/events/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -166,96 +173,82 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return eventsData as Events
   }
 
   /** Get NFT Metadata, throwing if none is found.
    * @param query Query to use for getting NFT metadata.
    */
-  public async getMetadata(query: TokenMetadata = {}): Promise<Record<string, unknown>> {
-    console.info('Inside getMetadata!')
-    const result = await this.get(`${API_PATH}/metadata/`, {
+  public async getMetadata(query: TokenMetadata = {}): Promise<TokenMetadata> {
+    const tokenMetadata = await this._get(`${API_PATH}/metadata/`, {
       ...query,
     })
-
-    const json = result as Record<string, unknown>
-    return json
+    return tokenMetadata as TokenMetadata
   }
 
   /** Get Open Mintings availabe on the GhostMarket marketplace, throwing if none is found.
    * @param query Query to use for getting NFT metadata.
    */
-  public async getOpenMintings(query: OpenMintingsQuery = {}): Promise<Record<string, unknown>> {
-    console.info('Inside getOpenMintings!')
-    const result = await this.get(`${API_PATH}/getopenmintings/`, {
+  public async getOpenMintings(query: OpenMintingsQuery = {}): Promise<OpenMintings> {
+    const openMintingsData = await this._get(`${API_PATH}/getopenmintings/`, {
       ...query,
     })
-
-    const json = result as Record<string, unknown>
-    return json
+    return openMintingsData as OpenMintings
   }
 
   /** Get Open Orders on the GhostMarket marketplace, throwing if none is found.
    * @param query Query to use for getting NFT metadata.
    */
-  public async getOpenOrders(query: OrderQuery = {}): Promise<Record<string, unknown>> {
-    console.info('Inside getOpenOrders!')
+  public async getOpenOrders(query: OrderQuery = {}): Promise<OpenOrders> {
     const _query = { ...query, with_deleted: Number(query.with_deleted) }
-    const result = await this.get(`${API_PATH}/getopenorders/`, {
+    const openOrdersData = await this._get(`${API_PATH}/getopenorders/`, {
       ..._query,
     })
-
-    const json = result as Record<string, unknown>
-    return json
+    return openOrdersData as OpenOrders
   }
 
   /** Get order from the orderbook, throwing if none is found.
    * @param query Query to use for getting orders. A subset of parameters
-   *  on the `OrderJSON` type is supported
+   *  on the `Order` type is supported
    */
-  public async getOrder(query: OrderQuery = {}, page = 1): Promise<Record<string, unknown>> {
-    console.info('Inside getOrders!')
+  public async getOrder(query: OrderQuery = {}, page = 1): Promise<OpenOrders> {
+    // with_deleted is (cast to a number 0 or 1) from Boolean True or false
     const _query = { ...query, with_deleted: Number(query.with_deleted) }
 
-    const result = await this.get(`${API_PATH}/openorders/`, {
+    const orderData = await this._get(`${API_PATH}/openorders/`, {
       limit: this.pageSize,
       offset: (page - 1) * this.pageSize,
       ..._query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return orderData as OpenOrders
   }
 
   /** Get orders from the orderbook, throwing if none is found.
    * @param query Query to use for getting orders. A subset of parameters
-   *  on the `OrderJSON` type is supported
+   *  on the `Order` type is supported
    */
-  public async getOrders(query: OrderQuery = {}, page = 1): Promise<Record<string, unknown>> {
-    console.info('Inside getOrders!')
+  public async getOrders(query: OrderQuery = {}, page = 1): Promise<OpenOrders> {
     const _query = { ...query, with_deleted: Number(query.with_deleted) }
-    const result = await this.get(`${API_PATH}/openorders/`, {
+
+    const ordersData = await this._get(`${API_PATH}/openorders/`, {
       limit: this.pageSize,
       offset: (page - 1) * this.pageSize,
       ..._query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return ordersData as OpenOrders
   }
 
   /** Refresh Token Metadata on GhostMarket marketplace, throwing if none is found.
    * @param query Query to use for refreshing the metadata of a specific token.
    */
-  public async getRefreshMetadata(query: TokenMetadata = {}): Promise<Record<string, unknown>> {
-    console.info('Inside getRefreshMetadata!')
-    const result = await this.get(`${API_PATH}/refreshmetadata/`, {
+  public async getRefreshMetadata(query: TokenMetadata = {}): Promise<TokenRefreshMetadata> {
+    const tokenRefreshMetadata = await this._get(`${API_PATH}/refreshmetadata/`, {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return tokenRefreshMetadata as TokenRefreshMetadata
   }
 
   /** Get NFT serices available on the GhostMarket marketplace, throwing if none is found.
@@ -267,9 +260,8 @@ export class GhostMarketAPI {
     order_by = 'id',
     order_direction = 'asc',
     limit = 50,
-  ): Promise<Record<string, unknown>> {
-    console.info('Inside getSeries!')
-    const result = await this.get(`${API_PATH}/series/`, {
+  ): Promise<Series> {
+    const seriesData = await this._get(`${API_PATH}/series/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -277,8 +269,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return seriesData as Series
   }
 
   /** Get statistics about the GhostMarket marketplace, throwing if none is found.
@@ -303,9 +294,8 @@ export class GhostMarketAPI {
     with_marketplace_weekly_stats = 1,
     with_marketplace_monthly_stats = 1,
     with_marketplace_total_stats = 1,
-  ): Promise<Record<string, unknown>> {
-    console.info('Inside getStatistics!')
-    const result = await this.get(`${API_PATH}/marketPlaceStatistics/`, {
+  ): Promise<MarketplaceStatistics> {
+    const statisticsData = await this._get(`${API_PATH}/marketPlaceStatistics/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -326,34 +316,29 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return statisticsData as MarketplaceStatistics
   }
 
   /** Get NFT Token URI, throwing if none is found.
    * @param query Query to use for getting Token URI.
    */
-  public async getTokenURI(query: TokenMetadata = {}): Promise<Record<string, unknown>> {
-    console.info('Inside getTokenURI!')
-    const result = await this.get(`${API_PATH}/tokenuri/`, {
+  public async getTokenURI(query: TokenMetadata = {}): Promise<TokenURI> {
+    const tokenUriData = await this._get(`${API_PATH}/tokenuri/`, {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return tokenUriData as TokenURI
   }
 
   /** Check if user exists on GhostMarket, returns True or False.
    * @param username Check if this username already exists on GhostMarket.
    */
-  public async getUserExists(username: string): Promise<Record<string, unknown>> {
-    console.info('Inside getCheckUserExists!')
-    const result = await this.get(`${API_PATH}/userexists/`, {
+  public async getUserExists(username: string): Promise<UserExists> {
+    const userExistsResult = await this._get(`${API_PATH}/userexists/`, {
       username: username,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return userExistsResult as UserExists
   }
 
   /** Get users from the GhostMarket userbase API, throwing if none is found.
@@ -367,9 +352,8 @@ export class GhostMarketAPI {
     with_sales_statistics = 0,
     with_total = 0,
     limit = 50,
-  ): Promise<Record<string, unknown>> {
-    console.info('Inside getUsers!')
-    const result = await this.get(`${API_PATH}/users/`, {
+  ): Promise<Users> {
+    const usersData = await this._get(`${API_PATH}/users/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -379,18 +363,50 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    const json = result as Record<string, unknown>
-    return json
+    return usersData as Users
+  }
+
+  /**
+   * createOpenOrder List an NFT on the marketplace
+   * @param  {NFTListing} nftListing NFT details
+   */
+  public async createOpenOrder(nftListing: ListNFT) {
+    const result = await this._post<ListNFT>(`${API_PATH}/createopenorder`, nftListing)
+    return result as ListNFTResult
+  }
+
+  /**
+   * POST JSON data to API
+   * @param  {string} apiEndpoint Full URL to endpoint under API
+   * @param  {T} body Data object to send to API. stringified using `JSON.stringify` method
+   */
+  private async _post<T>(apiEndpoint: string, body: T) {
+    const options = {
+      method: 'POST',
+      body: JSON.stringify(body),
+      headers: {
+        // eslint-disable-next-line prettier/prettier
+        'accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    }
+
+    try {
+      const data = await this._fetch(apiEndpoint, options)
+      return data
+    } catch (error) {
+      console.error(`GhostMarketAPI: Failed to fetch from ${apiEndpoint}`)
+    }
   }
 
   /**
    * Get JSON data from API, sending auth token in headers
-   * @param apiPath Path to URL endpoint under API
+   * @param apiEndpoint Path to URL endpoint under API
    * @param query Data to send. Will be stringified using QueryString
    */
-  public async get<T>(apiPath: string, query: object = {}): Promise<T> {
+  public async _get<T>(apiEndpoint: string, query: T): Promise<unknown> {
     const qs = QueryString.stringify(query)
-    const url = `${apiPath}?${qs}`
+    const url = `${apiEndpoint}?${qs}`
 
     const data = await this._fetch(url)
     return data
@@ -424,11 +440,11 @@ export class GhostMarketAPI {
   }
 
   private async _handleApiResponse(response: Response) {
-    if (response.ok) {
-      this.logger(`Got success: ${response.status}`)
-      return await response.json()
-    }
+    if (response.ok) return await response.json()
+    else return this._handleErrorResponse(response)
+  }
 
+  private async _handleErrorResponse(response: Response) {
     let result
     let errorMessage
     try {

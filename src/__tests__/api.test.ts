@@ -1,11 +1,11 @@
-import { GhostMarketAPI } from './api'
-import { Network } from './types'
+import { GhostMarketAPI } from '../api'
+import { GhostMarketAPIConfig, Network } from '../types'
 import * as matchers from 'jest-extended'
 expect.extend(matchers)
 
 describe('GhostMarketAPI', () => {
   const apiBaseUrl = 'https://api3.ghostmarket.io:7061'
-  const ghostMarketAPIConfig = {
+  const ghostMarketAPIConfig: GhostMarketAPIConfig = {
     networkName: Network.Rinkeby,
     apiKey: '',
     apiBaseUrl,
@@ -18,7 +18,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Assets', () => {
-    it('should getAssets', async () => {
+    it('should get Assets', async () => {
       const assetsQuery = {
         order_by: 'mint_date',
         order_direction: 'asc',
@@ -56,7 +56,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Collections', () => {
-    it('should getCollections', async () => {
+    it('should get Collections', async () => {
       const colletcionsQuery = {
         order_by: 'id', // [id, name, nft_count, nft_active_count, nft_infused_count, listed_nft_count, total_volume, monthly_volume, weekly_volume]
         order_direction: 'asc',
@@ -84,7 +84,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Events', () => {
-    it('should getEvents', async () => {
+    it('should get Events', async () => {
       const eventsQuery = {
         order_by: 'data', // [data, token_id, price]
         order_direction: 'asc', // [asc, desc]
@@ -159,7 +159,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Token Metadata', () => {
-    it('should getMetadata for a token', async () => {
+    it('should get Metadata for a token', async () => {
       const tokenQueryData = {
         token_id: '825243442',
         contract: '0x76a8f8a7a901b29a33013b469949f4b08db15756',
@@ -173,7 +173,7 @@ describe('GhostMarketAPI', () => {
       expect(tokenMetadata).toHaveProperty('description')
     })
 
-    it('should getToken refresh metadata', async () => {
+    it('should get Token refreshMetadata', async () => {
       const tokenQueryData = {
         token_id: '825243442',
         contract: '0x76a8f8a7a901b29a33013b469949f4b08db15756',
@@ -192,10 +192,10 @@ describe('GhostMarketAPI', () => {
         chain: 'BSC', // Chain short name,e.g 'N3', 'BSC'
       }
 
-      const tokenUriData = await ghostmarketAPI.getTokenURI(tokenQueryData)
+      const tokenURIData = await ghostmarketAPI.getTokenURI(tokenQueryData)
 
-      expect(tokenUriData).toHaveProperty('token_uri')
-      expect(tokenUriData.token_uri).toBeString()
+      expect(tokenURIData).toHaveProperty('token_uri')
+      expect(tokenURIData.token_uri).toBeString()
     })
 
     it('Should return an object with "error" property for token with no tokenURI', async () => {
@@ -205,15 +205,15 @@ describe('GhostMarketAPI', () => {
         chain: 'N3',
       }
 
-      const tokenUriData = await ghostmarketAPI.getTokenURI(tokenQueryData)
+      const tokenURIData = await ghostmarketAPI.getTokenURI(tokenQueryData)
 
-      expect(tokenUriData).toHaveProperty('error')
-      expect(tokenUriData.error).toBe('NFT with token id 3618701890081213769 has no URI.')
+      expect(tokenURIData).toHaveProperty('error')
+      expect(tokenURIData.error).toBe('NFT with token id 3618701890081213769 has no URI.')
     })
   })
 
   describe('Mintings', () => {
-    it('should getOpenMintings', async () => {
+    it('should get Open Mintings', async () => {
       const mockOpenMintingsQuery = { offset: 0, limit: 5 }
 
       const openMintingsData = await ghostmarketAPI.getOpenMintings(mockOpenMintingsQuery)
@@ -267,7 +267,7 @@ describe('GhostMarketAPI', () => {
       const { open_orders: orders } = await ghostmarketAPI.getOrders(ordersQuery)
       expect(orders).toBeArray()
       expect(orders).toBeArrayOfSize(4)
-    })
+    }, 6000)
 
     it('should an get order in the order book', async () => {
       const openOrdersQuery = {
@@ -290,7 +290,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Series', () => {
-    it('should getSeries', async () => {
+    it('should get Series', async () => {
       const serriesData = await ghostmarketAPI.getSeries({ limit: 15 })
 
       expect(serriesData).toHaveProperty('series')
@@ -322,8 +322,8 @@ describe('GhostMarketAPI', () => {
       expect(users).toBeArrayOfSize(20)
     }, 6000)
 
-    it('should return false is user of provided username does not exist', async () => {
-      const dummyUsername = '0xtest'
+    it('should return false if user of provided username does not exist', async () => {
+      const dummyUsername = '0xnaftali'
       const { success } = await ghostmarketAPI.getUserExists(dummyUsername)
       expect(success).toBe(false)
     }, 6000)
@@ -332,6 +332,32 @@ describe('GhostMarketAPI', () => {
       const username = 'wakeupneo'
       const { success } = await ghostmarketAPI.getUserExists(username)
       expect(success).toBe(true)
+    }, 6000)
+  })
+
+  describe('NFTs', () => {
+    it('should list an NFT on the marketplace', async () => {
+      const ListNFT = {
+        chain: 'ETH',
+        token_contract: '', // contract address
+        token_id: '1',
+        token_amount: 0,
+        quote_contract: '',
+        quote_price: '20',
+        maker_address: '',
+        is_buy_offer: true,
+        start_date: 0,
+        end_date: 0,
+        signature: '',
+        order_key_hash: '',
+        salt: '0x0',
+        origin_fees: 0,
+        origin_address: '0x1Df4D4FA3d513De5d6a4E95a5DCcC8CBB02569B3',
+      }
+
+      const res = await ghostmarketAPI.createOpenOrder(ListNFT)
+      console.info(res)
+      expect(res).toBeDefined()
     }, 6000)
   })
 })
