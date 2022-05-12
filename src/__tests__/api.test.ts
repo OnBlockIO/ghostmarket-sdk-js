@@ -213,7 +213,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Mintings', () => {
-    it('should get Open Mintings', async () => {
+    it('should get open Mintings', async () => {
       const mockOpenMintingsQuery = { offset: 0, limit: 5 }
 
       const openMintingsData = await ghostmarketAPI.getOpenMintings(mockOpenMintingsQuery)
@@ -226,7 +226,7 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('Orders', () => {
-    it('should return get open Orders in the order book', async () => {
+    it('should return open Orders in the order book', async () => {
       const openOrdersData = await ghostmarketAPI.getOpenOrders({ limit: 15, with_deleted: false })
 
       expect(openOrdersData).toHaveProperty('open_orders')
@@ -236,7 +236,7 @@ describe('GhostMarketAPI', () => {
       expect(openOrders).toBeArrayOfSize(15)
     }, 6000)
 
-    it('should return null when no open Orders in are in the order book for a provided query', async () => {
+    it('should return null when no open Orders are in the order book for a provided query', async () => {
       const openOrdersQuery = {
         chain: 'N3',
         contract: '0x76a8f8a7a901b29a33013b469949f4b08db15756',
@@ -254,7 +254,7 @@ describe('GhostMarketAPI', () => {
       expect(openOrders).toBeNull()
     }, 6000)
 
-    it('should get Orders in the order book', async () => {
+    it('should get Orders from the order book', async () => {
       const ordersQuery = {
         chain: 'N3',
         contract: '0x76a8f8a7a901b29a33013b469949f4b08db15756',
@@ -269,7 +269,7 @@ describe('GhostMarketAPI', () => {
       expect(orders).toBeArrayOfSize(4)
     }, 6000)
 
-    it('should an get order in the order book', async () => {
+    it('should get an Order from the order book', async () => {
       const openOrdersQuery = {
         chain: 'N3',
         contract: '0x76a8f8a7a901b29a33013b469949f4b08db15756',
@@ -322,13 +322,13 @@ describe('GhostMarketAPI', () => {
       expect(users).toBeArrayOfSize(20)
     }, 6000)
 
-    it('should return false if user of provided username does not exist', async () => {
-      const dummyUsername = '0xnaftali'
+    it('should return false if username does not exist', async () => {
+      const dummyUsername = '0xtest'
       const { success } = await ghostmarketAPI.getUserExists(dummyUsername)
       expect(success).toBe(false)
     }, 6000)
 
-    it('should return true if user of provided username exists', async () => {
+    it('should return true if username exists', async () => {
       const username = 'wakeupneo'
       const { success } = await ghostmarketAPI.getUserExists(username)
       expect(success).toBe(true)
