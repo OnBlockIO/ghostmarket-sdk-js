@@ -336,8 +336,34 @@ describe('GhostMarketAPI', () => {
   })
 
   describe('NFTs', () => {
-    it('should list an NFT on the marketplace', async () => {
-      const ListNFT = {
+    it('should list an NFT on the market place', async () => {
+      const listNFTDetails = {
+        chain: 'bsc',
+        token_contract: '0x2d956093d27621ec0c4628b77eaeac6c734da02c',
+        token_id: '5139',
+        token_amount: 1,
+        quote_contract: 'BNB',
+        is_buy_offer: false,
+        quote_price: '35000000000000000',
+        maker_address: '0x07714a8bf073510996d948d8aa39f8e32627fe62',
+        start_date: 1652393520,
+        end_date: 1654985520,
+        signature:
+          '0x497976b8cd8f1ca846b6c27ac54cf2db522d0c053fd979f33afa01eab1eaaf952783a5e4c97c9687bf16001e4862db3cc5083cb55e09bed8c7437222104e9c4f1b',
+        order_key_hash: '0xda69989fe32a32f0dbad87d14b75e94f1358ef587d675a3f9d80222fcc39b908',
+        salt: '0xe54f90061c6731f1',
+        origin_fees: 0,
+        origin_address: '',
+      }
+
+      const result = await ghostmarketAPI.createOpenOrder(listNFTDetails)
+      expect(result).toHaveProperty('success')
+      const { success } = result
+      expect(success).toBe(true)
+    })
+
+    it('should return an object with `error` property for any invalid list NFT', async () => {
+      const listNFTDetails = {
         chain: 'ETH',
         token_contract: '', // contract address
         token_id: '1',
@@ -355,9 +381,9 @@ describe('GhostMarketAPI', () => {
         origin_address: '0x1Df4D4FA3d513De5d6a4E95a5DCcC8CBB02569B3',
       }
 
-      const res = await ghostmarketAPI.createOpenOrder(ListNFT)
-      console.info(res)
-      expect(res).toBeDefined()
+      const result = await ghostmarketAPI.createOpenOrder(listNFTDetails)
+      expect(result).toBeDefined()
+      expect(result).toHaveProperty('error')
     }, 6000)
   })
 })

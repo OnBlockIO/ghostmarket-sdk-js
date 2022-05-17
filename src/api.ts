@@ -391,12 +391,8 @@ export class GhostMarketAPI {
       },
     }
 
-    try {
-      const data = await this._fetch(apiEndpoint, options)
-      return data
-    } catch (error) {
-      console.error(`GhostMarketAPI: Failed to fetch from ${apiEndpoint}`)
-    }
+    const data = await this._fetch(apiEndpoint, options)
+    return data
   }
 
   /**
@@ -404,7 +400,7 @@ export class GhostMarketAPI {
    * @param apiEndpoint Path to URL endpoint under API
    * @param query Data to send. Will be stringified using QueryString
    */
-  public async _get<T>(apiEndpoint: string, query: T): Promise<unknown> {
+  private async _get<T>(apiEndpoint: string, query: T): Promise<unknown> {
     const qs = QueryString.stringify(query)
     const url = `${apiEndpoint}?${qs}`
 
@@ -435,7 +431,7 @@ export class GhostMarketAPI {
       const res = await fetch(finalUrl, finalOpts)
       return await this._handleApiResponse(res)
     } catch (error) {
-      console.error(`GhostMarketAPI: Failed to fetch from ${finalUrl}`)
+      console.error(`GhostMarketAPI: Failed to fetch from ${finalUrl}`, error)
     }
   }
 

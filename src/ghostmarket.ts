@@ -51,11 +51,11 @@ export class GhostMarket {
   }
 
   /**
-   * @param  {Left} left
-   * @param  {Signature} signatureLeft
-   * @param  {Right} right
-   * @param  {Signature} signatureRight
-   * @param  {TxObject} txObject
+   * @param  {Left} left maker order
+   * @param  {Signature} signatureLeft EIP712 signature of maker
+   * @param  {Right} right taker order
+   * @param  {Signature} signatureRight EIP712 signature of taker
+   * @param  {TxObject} txObject Gas and transaction to send for executing matchOrder method
    */
   public async matchOrders(
     left: Left,

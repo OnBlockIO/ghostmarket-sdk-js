@@ -956,7 +956,7 @@ export interface ListNFT {
   quote_contract: string
   quote_price: string
   maker_address: string
-  is_buy_offer: boolean
+  is_buy_offer?: boolean
   start_date: number
   end_date: number
   signature: string
