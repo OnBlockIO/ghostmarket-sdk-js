@@ -9,7 +9,7 @@ import {
   EXCHANGEV2_PROXY_ADDRESS_POLYGON,
   EXCHANGEV2_PROXY_ADDRESS_RINKEBY,
 } from './constants'
-import { GhostMarketAPIConfig, Left, Network, Right, Signature, TxObject } from './types'
+import { GhostMarketAPIConfig, Network, OrderLeft, OrderRight, Signature, TxObject } from './types'
 
 export class GhostMarket {
   // Instance of Web3 to use.
@@ -23,7 +23,7 @@ export class GhostMarket {
 
   /**
    * Your instance of the GhostMarketplace.
-   * Access API calls and Smart Contract method calls.
+   * Make API calls and Ghost Market Smart Contract method calls.
    * @param  {Web3['currentProvider']} provider To use for creating a Web3 instance. Can be also be `window.ethereum` for browser injected web3 providers.
    * @param  {GhostMarketAPIConfig} apiConfig with options for accessing GhostMarket APIs.
    * @param  {(arg:string)=>void} logger? // Optional logger function for logging debug messages.
@@ -51,16 +51,16 @@ export class GhostMarket {
   }
 
   /**
-   * @param  {Left} left maker order
-   * @param  {Signature} signatureLeft EIP712 signature of maker
-   * @param  {Right} right taker order
-   * @param  {Signature} signatureRight EIP712 signature of taker
-   * @param  {TxObject} txObject Gas and transaction to send for executing matchOrder method
+   * @param {OrderLeft} orderLeft
+   * @param {Signature} signatureLeft
+   * @param {OrderRight} orderRight
+   * @param {Signature} signatureRight
+   * @param {TxObject} txObject
    */
   public async matchOrders(
-    left: Left,
+    orderLeft: OrderLeft,
     signatureLeft: Signature,
-    right: Right,
+    orderRight: OrderRight,
     signatureRight: Signature,
     txObject: TxObject,
   ) {
@@ -72,11 +72,30 @@ export class GhostMarket {
     )
 
     try {
-      const tx = await ExchangeV2CoreContractInstance.methods
-        .matchOrders(left, signatureLeft, right, signatureRight)
+      const txResult = await ExchangeV2CoreContractInstance.methods
+        .matchOrders(orderLeft, signatureLeft, orderRight, signatureRight)
         .send(txObject)
-        .call()
-      return tx
+      return txResult
+    } catch (e) {
+      console.error(`Failed to execute method for ${exchangeV2ProxyAddress} with:`, e)
+    }
+  }
+
+  /** Reverts an order
+   * @param  {OrderLeft | OrderRight} order Order to be reverted/canceled.
+   * @param  {TxObject} txObject Transaction object to send when calling `cancel`.
+   */
+  public async cancelOrder(order: OrderLeft | OrderLeft, txObject: TxObject) {
+    if (this._isReadonlyProvider) return
+    const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._networkname)
+    const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
+      ExchangeV2CoreABI,
+      exchangeV2ProxyAddress,
+    )
+
+    try {
+      const txResult = await ExchangeV2CoreContractInstance.methods.cancel(order).send(txObject)
+      return txResult
     } catch (e) {
       console.error(`Failed to execute method for ${exchangeV2ProxyAddress} with:`, e)
     }

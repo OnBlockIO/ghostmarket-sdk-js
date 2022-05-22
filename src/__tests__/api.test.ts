@@ -344,7 +344,7 @@ describe('GhostMarketAPI', () => {
         token_amount: 1,
         quote_contract: 'BNB',
         is_buy_offer: false,
-        quote_price: '35000000000000000',
+        quote_price: '5000000000000000',
         maker_address: '0x07714a8bf073510996d948d8aa39f8e32627fe62',
         start_date: 1652393520,
         end_date: 1654985520,

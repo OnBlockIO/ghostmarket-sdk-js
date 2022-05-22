@@ -913,17 +913,17 @@ export type ContractABI = Array<AbiItem>
 
 /**
  * Left
- * @param maker
- * @param makeAsset
- * @param taker
+ * @param maker Address of the order maker
+ * @param makeAsset Asset to be matched
+ * @param taker Address of the asset taker
  * @param takeAsset
- * @param salt
- * @param start
- * @param end
+ * @param salt Unique salt that uniquely identifies an order
+ * @param start A unix timestamp when matching of order can start
+ * @param end A unix timestamp which matching of order
  * @param dataType
  * @param data
  */
-export interface Left {
+export interface OrderLeft {
   maker: string
   makeAsset: object
   taker: string
@@ -935,13 +935,22 @@ export interface Left {
   data: string
 }
 
-export type Right = Left
+export type OrderRight = OrderLeft
+/**
+ * An EIP712 signature for verifying orders.
+ */
 export type Signature = string
 
+/**
+ * Tx object
+ * @param from Transaction sender address
+ * @param value Value to send with the Transaction
+ * @param gasPrice The Current gasPrice. Optional to let client libs estimate the value.
+ */
 export interface TxObject {
   from: string
-  value: number
-  gasprice: number
+  value: number | string
+  gasPrice?: number
 }
 
 /* 
