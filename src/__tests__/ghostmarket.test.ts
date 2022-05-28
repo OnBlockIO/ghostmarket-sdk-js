@@ -3,66 +3,51 @@ import Web3 from 'web3'
 
 import { createRinkebyProvider } from './create-rinkeby-provider'
 import { GhostMarket } from '../ghostmarket'
-import {
-  GhostMarketAPIConfig,
-  OrderLeft,
-  Network,
-  OrderRight,
-  TxObject,
-  ContractABI,
-} from '../types'
+import { GhostMarketAPIConfig, OrderLeft, Network, OrderRight, TxObject } from '../types'
 
-import { enc, ERC1155 } from './assets'
+import { enc, ERC1155, ETH } from './assets'
 import { Order, Asset, sign } from './order'
-
-import ERC155ABI from './GhostERC1155ABI.json'
+import { EXCHANGEV2_PROXY_ADDRESS_RINKEBY } from '../constants'
 
 /**
  * @param  {Web3} web3
- * @param  {string} maker
- * @param  {string} taker
+ * @param  {string} account1
+ * @param  {string} account2
  * @returns orderRight, orderLeft
  */
 async function prepareERC1155V1Orders(
   web3: Web3,
-  maker: string,
-  taker: string,
+  account1: string,
+  account2: string,
 ): Promise<{
   orderRight: OrderRight
   orderLeft: OrderLeft
 }> {
-  const erc1155ContractAddress = '0x51Add5946571a3DcB999c622477216A0466c7a34'
-  const transferProxyAddress = '0x9D55FA33713Cd19409768d04e288103e12812c9b'
-  const ERC1155ContractInstance = new web3.eth.Contract(
-    ERC155ABI as ContractABI,
-    erc1155ContractAddress,
-  )
+  const ZERO = '0x0000000000000000000000000000000000000000'
 
-  const erc1155TokenId = await ERC1155ContractInstance.methods.getCurrentCounter().call()
-  console.info(erc1155TokenId)
-
-  await ERC1155ContractInstance.methods.setApprovalForAll(transferProxyAddress, true)
+  const contractHash = '0xdD17F5013D9302046f5B52335CAbEEFA8E8286C7'
+  const erc1155TokenId = 4
 
   const orderLeft = Order(
-    maker,
-    Asset(ERC1155, '0x', 5),
-    maker,
-    Asset(ERC1155, enc(web3, erc1155ContractAddress, erc1155TokenId), 5),
+    account2,
+    Asset(ETH, '0x', 200),
+    ZERO,
+    Asset(ERC1155, enc(web3, contractHash, erc1155TokenId), 4),
+    1,
     0,
-    1650199607, // start
-    1660927607, // end
+    0,
     '0xffffffff',
     '0x',
   )
 
   const orderRight = Order(
-    maker,
-    Asset(ERC1155, enc(web3, erc1155ContractAddress, erc1155TokenId), 5),
-    maker,
-    Asset(ERC1155, '0x', 5),
+    account1,
+    Asset(ERC1155, enc(web3, contractHash, erc1155TokenId), 4),
+    ZERO,
+    Asset(ETH, '0x', 200),
+    1,
     0,
-    1650199607, // start
-    1660927607, // end date, a date future timestamp
+    0,
     '0xffffffff',
     '0x',
   )
@@ -91,21 +76,22 @@ describe('GhostMarketPlace Smart Contract method calls', () => {
     useReadOnlyProvider: false,
   }
 
-  const provider: Web3ProviderEngine = createRinkebyProvider()
-  provider.start()
-
+  let provider: Web3ProviderEngine
   let web3: Web3
   let accounts: Array<string>
-  let maker: string
-  let taker: string
+  let account1: string
+  let account2: string
   let ghostmarketPlace: GhostMarket
 
   beforeAll(async () => {
+    // A custom provider with a signer, can sign transactions
+    provider = createRinkebyProvider()
+    provider.start()
+
     web3 = new Web3(provider)
     accounts = await web3.eth.getAccounts()
-    maker = accounts[0]
-    taker = accounts[1]
-    // A custom provider with a signer, can sign transactions
+    account1 = accounts[0]
+    account2 = accounts[1]
     ghostmarketPlace = new GhostMarket(provider, ghostMarketAPIConfig)
   })
 
@@ -115,18 +101,16 @@ describe('GhostMarketPlace Smart Contract method calls', () => {
 
   describe('Orders', () => {
     it('should transfer NFTs by matching 2 Orders', async () => {
-      const { orderLeft, orderRight } = await prepareERC1155V1Orders(web3, maker, taker)
+      const { orderLeft, orderRight } = await prepareERC1155V1Orders(web3, account1, account2)
 
-      // this is an ExchangeV2 contract address
-      const verifyingConract = '0x29CC344F21BF573422ab5780b25F295935EB2C6F'
-      const signatureRight = await getSignature(web3, orderLeft, maker, verifyingConract)
+      // This is an ExchangeV2Proxy contract address
+      const verifyingConract = EXCHANGEV2_PROXY_ADDRESS_RINKEBY
+      const signatureRight = await getSignature(web3, orderRight, account1, verifyingConract)
+      const signatureLeft = await getSignature(web3, orderLeft, account2, verifyingConract)
 
-      const signatureLeft = '0x'
-
-      // gas to send with transaction
       const txObject: TxObject = {
         value: 300,
-        from: maker,
+        from: account1,
       }
 
       const txResult = await ghostmarketPlace.matchOrders(
@@ -142,9 +126,9 @@ describe('GhostMarketPlace Smart Contract method calls', () => {
   })
 
   it('should cancel an Order', async () => {
-    const { orderLeft } = await prepareERC1155V1Orders(web3, maker, taker)
+    const { orderLeft } = await prepareERC1155V1Orders(web3, account1, account2)
     const txObject: TxObject = {
-      from: maker,
+      from: account1,
       value: 300,
     }
     const texResult = await ghostmarketPlace.cancelOrder(orderLeft, txObject)

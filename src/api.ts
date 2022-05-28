@@ -436,8 +436,12 @@ export class GhostMarketAPI {
   }
 
   private async _handleApiResponse(response: Response) {
-    if (response.ok) return await response.json()
-    else return this._handleErrorResponse(response)
+    if (response.ok) {
+      const data = await response.json()
+      return data
+    } else {
+      return this._handleErrorResponse(response)
+    }
   }
 
   private async _handleErrorResponse(response: Response) {
