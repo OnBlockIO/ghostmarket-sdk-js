@@ -3,11 +3,19 @@ import Web3 from 'web3'
 
 import { createRinkebyProvider } from './create-rinkeby-provider'
 import { GhostMarket } from '../ghostmarket'
-import { GhostMarketAPIConfig, OrderLeft, Network, OrderRight, TxObject } from '../types'
+import {
+  GhostMarketAPIConfig,
+  OrderLeft,
+  Network,
+  OrderRight,
+  TxObject,
+  ContractABI,
+} from '../types'
 
 import { enc, ERC1155, ETH } from './assets'
 import { Order, Asset, sign } from './order'
 import { EXCHANGEV2_PROXY_ADDRESS_RINKEBY } from '../constants'
+import GhostERC1155ABI from './GhostERC1155ABI.json'
 
 /**
  * @param  {Web3} web3
@@ -25,14 +33,26 @@ async function prepareERC1155V1Orders(
 }> {
   const ZERO = '0x0000000000000000000000000000000000000000'
 
-  const contractHash = '0xdD17F5013D9302046f5B52335CAbEEFA8E8286C7'
-  const erc1155TokenId = 4
+  const contractHash = '0xbf49984e4A7924FE9d05A6B5D1F8d4C1b137660c'
+
+  const ERC1155Instance = new web3.eth.Contract(GhostERC1155ABI as ContractABI, contractHash)
+
+  const erc1155TokenId = await ERC1155Instance.methods.getCurrentCounter().call()
+  const transferProxyAddress = '0x7688d9ceD8c3541dC9eE17Dc7A3AC384EF385927'
+
+  try {
+    await ERC1155Instance.methods
+      .setApprovalForAll(transferProxyAddress, true)
+      .send({ from: account1 })
+  } catch (error) {
+    console.error(error)
+  }
 
   const orderLeft = Order(
     account2,
     Asset(ETH, '0x', 200),
     ZERO,
-    Asset(ERC1155, enc(web3, contractHash, erc1155TokenId), 4),
+    Asset(ERC1155, enc(web3, contractHash, erc1155TokenId.toString()), 4),
     1,
     0,
     0,
@@ -42,7 +62,7 @@ async function prepareERC1155V1Orders(
 
   const orderRight = Order(
     account1,
-    Asset(ERC1155, enc(web3, contractHash, erc1155TokenId), 4),
+    Asset(ERC1155, enc(web3, contractHash, erc1155TokenId.toString()), 4),
     ZERO,
     Asset(ETH, '0x', 200),
     1,
@@ -84,7 +104,6 @@ describe('GhostMarketPlace Smart Contract method calls', () => {
   let ghostmarketPlace: GhostMarket
 
   beforeAll(async () => {
-    // A custom provider with a signer, can sign transactions
     provider = createRinkebyProvider()
     provider.start()
 
@@ -122,17 +141,33 @@ describe('GhostMarketPlace Smart Contract method calls', () => {
       )
       // Note: call to contract method via proxy contract returns`true` for sucessful transaction and `false` for a failed transaction
       expect(txResult).toBe(true)
-    }, 10000)
+    }, 20000)
   })
 
   it('should cancel an Order', async () => {
-    const { orderLeft } = await prepareERC1155V1Orders(web3, account1, account2)
+    const { orderLeft, orderRight } = await prepareERC1155V1Orders(web3, account1, account2)
     const txObject: TxObject = {
       from: account1,
       value: 300,
     }
-    const texResult = await ghostmarketPlace.cancelOrder(orderLeft, txObject)
+    console.log("txObject",txObject)
+    console.log("orderRight",orderRight)
 
-    expect(texResult).toBe(true)
-  }, 6000)
+    const verifyingConract = EXCHANGEV2_PROXY_ADDRESS_RINKEBY
+    const signatureRight = await getSignature(web3, orderRight, account1, verifyingConract)
+    const signatureLeft = await getSignature(web3, orderLeft, account2, verifyingConract)
+
+    const cancelOrderResult = await ghostmarketPlace.cancelOrder(orderRight, txObject)
+
+    expect(cancelOrderResult).toHaveProperty('reverted')
+    const txResult = await ghostmarketPlace.matchOrders(
+      orderLeft,
+      signatureLeft,
+      orderRight,
+      signatureRight,
+      txObject,
+    )
+
+    expect(txResult.reverted).toBe('not a maker')
+  }, 20000)
 })
