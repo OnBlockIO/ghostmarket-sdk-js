@@ -9,10 +9,22 @@ const config: Config.InitialOptions = {
   collectCoverage: true,
   coverageProvider: 'babel',
   // https://github.com/jest-community/jest-extended: Extended matchers
-  setupFilesAfterEnv: ['jest-extended/all'],
+  setupFilesAfterEnv: ['jest-extended/all', './setEnvVar'],
   roots: ['src/__tests__'],
-  coveragePathIgnorePatterns: ['node_modules/', 'src/__tests__/sdk/utils/*'],
-  testPathIgnorePatterns: ['node_modules/', 'src/__tests__/sdk/utils/*'],
+  coveragePathIgnorePatterns: [
+    'node_modules/',
+    'src/__tests__/utils/*',
+    'src/constants.ts',
+    'src/types.ts',
+    'src/abis/',
+  ],
+  testPathIgnorePatterns: [
+    'node_modules/',
+    'src/__tests__/utils/*',
+    'src/constants.ts',
+    'src/types.ts',
+    'src/abis/',
+  ],
   transformIgnorePatterns: ['node_modules/(?!(level-sublevel/node_modules/lgtgt)/)'],
   transform: {
     '\\.[jt]s?$': 'babel-jest',

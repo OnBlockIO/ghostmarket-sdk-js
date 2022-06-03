@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Web3 from 'web3'
-import { ExchangeV2Core } from '././abis/ExchangeV2Core'
+import { ExchangeV2Core } from './abis/ExchangeV2Core'
 import { GhostMarketAPI } from './api'
 import {
   EXCHANGEV2_PROXY_ADDRESS_AVALANCHE,

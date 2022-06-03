@@ -984,7 +984,8 @@ export interface ListNFT {
 }
 
 export interface ListNFTResult {
-  success: boolean
+  success?: boolean
+  error?: string
 }
 
 export type PartialReadonlyContractAbi = AbiItem[]

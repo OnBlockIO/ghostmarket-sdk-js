@@ -10,16 +10,15 @@ import {
   SITE_HOST_TESTNET,
 } from './constants'
 import {
+  GhostMarketAPIConfig,
+  Network,
   AssetsQuery,
   Assets,
   CollectionsQuery,
   Collections,
   EventsQuery,
   Events,
-  GhostMarketAPIConfig,
   MarketplaceStatistics,
-  Network,
-  ListNFT,
   OpenMintingsQuery,
   OpenMintings,
   OpenOrders,
@@ -33,6 +32,7 @@ import {
   UserExists,
   UsersQuery,
   Users,
+  ListNFT,
   ListNFTResult,
 } from './types'
 

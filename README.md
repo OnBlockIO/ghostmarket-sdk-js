@@ -1,20 +1,20 @@
 <div align="center">
-  <h1>ghost-sdk</h1>
+  <h1>ghostmarket-js</h1>
 </div>
 
 
-Ghost SDK offers a complete set of functionalities enabling access to GhostMarket place as a full-fledged SDK written in TypeScript. 
+Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript. 
 
-Checkout the [underlying API changelog](https://github.com/selimerunkut/ghost-sdk/blob/main/CHANGELOG.md)
+Checkout the [underlying API changelog](https://github.com/OnBlockIO/ghostnarket-js/blob/main/CHANGELOG.md)
 
 ## Getting started
 Installation
 ```bash
-yarn add ghost-sdk
+yarn add ghostmarket-js
 ```
 or if using npm
 ```bash
-npm install --save ghost-sdk
+npm install --save ghostmarket-js
 ```
 
 ## Usage
@@ -23,10 +23,10 @@ Details coming soon.
 ## Development
 Clone this repo
 ```bash
-git clone https://github.com/selimerunkut/ghost-sdk
+git clone https://github.com/OnBlockIO/ghostmarket-js
 ```
 ```bash
-cd ghost-sdk/
+cd ghostmarket-js/
 yarn install
 ```
 

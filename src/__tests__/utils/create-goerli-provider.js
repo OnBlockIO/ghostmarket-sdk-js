@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
 const { MnemonicWalletSubprovider } = require('@0x/subproviders/')
-import 'dotenv/config'
 
 // NOTE:
 // https://www.npmjs.com/package/web3-provider-engine allow us to create our own custom providers
 const Web3ProviderEngine = require('web3-provider-engine')
 const RPCProvider = require('web3-provider-engine/subproviders/rpc')
 
-function createRpcProvider() {
+function createGoerliProvider() {
   const BASE_DERIVATION_PATH = `44'/60'/0'/0`
   const MNEMONIC = process.env.MNEMONIC
 
@@ -30,4 +29,4 @@ function createRpcProvider() {
   return providerEngine
 }
 
-module.exports = { createRpcProvider }
+module.exports = { createGoerliProvider }
