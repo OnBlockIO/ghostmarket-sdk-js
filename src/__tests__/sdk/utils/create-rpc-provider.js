@@ -1,25 +1,26 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
 const { MnemonicWalletSubprovider } = require('@0x/subproviders/')
+import 'dotenv/config'
 
 // NOTE:
 // https://www.npmjs.com/package/web3-provider-engine allow us to create our own custom providers
 const Web3ProviderEngine = require('web3-provider-engine')
 const RPCProvider = require('web3-provider-engine/subproviders/rpc')
 
-function createRinkebyProvider() {
+function createRpcProvider() {
   const BASE_DERIVATION_PATH = `44'/60'/0'/0`
-  const MNEMONIC = 'hill coyote hungry green glass provide valve rookie mad tell capable vintage'
+  const MNEMONIC = process.env.MNEMONIC
 
   const mnemonicWalletProvider = new MnemonicWalletSubprovider({
     mnemonic: MNEMONIC,
     baseDerivationPath: BASE_DERIVATION_PATH,
   })
 
-  const infuraRinkebyRPCUrl = 'https://rinkeby.infura.io/v3/73cf78206642489d9a34dd2eccd3c593'
+  const infuraGoerliRPCUrl = `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`
 
   const infuraRPCProvider = new RPCProvider({
-    rpcUrl: infuraRinkebyRPCUrl,
+    rpcUrl: infuraGoerliRPCUrl,
   })
 
   const providerEngine = new Web3ProviderEngine()
@@ -29,4 +30,4 @@ function createRinkebyProvider() {
   return providerEngine
 }
 
-module.exports = { createRinkebyProvider }
+module.exports = { createRpcProvider }

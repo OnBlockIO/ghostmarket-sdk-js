@@ -1,6 +1,6 @@
-# Ghost Market underlying SDK API changelog
+# GhostMarket underlying SDK API changelog
 
-Ghost Market is constantly innovating. This means the underlying API that this SDK aims to solve will be undergoing changes along the way. The intent of this document is to lay out the roadmap that this SDK will cover across different versions based on knowledge at the current point in time.
+GhostMarket is constantly innovating. This means the underlying API that this SDK aims to solve will be undergoing changes along the way. The intent of this document is to lay out the roadmap that this SDK will cover across different versions based on knowledge at the current point in time.
 
 ## v1
 
@@ -15,7 +15,7 @@ Ghost Market is constantly innovating. This means the underlying API that this S
 * Discover and Search series - GET - `/api/v1/series`
 * List and Search available assets - GET - `/api/v1/assets`
 * Marketplace statistics - GET - `/api/v1/statistics`
-* Track events across the Ghost Marketplace - GET - `/api/v1/events`
+* Track events across the GhostMarket - GET - `/api/v1/events`
 * NFT Token URI - GET - `/api/v1/tokenuri`
 * NFT metadata - GET - `/api/v1/metadata`
 * Trigger NFT metadata refresh - GET - `/api/v1/refreshmetadata`

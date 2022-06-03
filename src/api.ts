@@ -1,12 +1,13 @@
 import 'isomorphic-unfetch'
 import * as QueryString from 'query-string'
 import {
-  DEFAULT_NETWORK,
   API_BASE_MAINNET,
-  API_BASE_RINKEBY,
+  API_BASE_TESTNET,
   API_PATH,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ORDERBOOK_VERSION,
   SITE_HOST_MAINNET,
-  SITE_HOST_RINKEBY,
+  SITE_HOST_TESTNET,
 } from './constants'
 import {
   AssetsQuery,
@@ -54,34 +55,51 @@ export class GhostMarketAPI {
   /**
    * Page size to use for fetching orders
    */
-  public pageSize = 20
+  public pageSize = 25
 
   private apiKey: string | undefined
 
-  public static DEFAULT_NETWORK = DEFAULT_NETWORK
-  // public static TokenClient = TokenClient
-  // network: Network;
-
-  // configOverride: Partial<NetworkConfig>;
-
-  // token: TokenClient;
-
-  // neo: NEOClient;
-  // eth: ETHClient;
-  // bsc: ETHClient;
-
+  /**
+   * Create an instance of GhostMarket API
+   * @param config GhostMarketAPIConfig for setting up the API, including an optional API key, network name, and base URL
+   * @param logger Optional function for logging debug strings before and after requests are made
+   */
   constructor(config: GhostMarketAPIConfig, logger?: (arg: string) => void) {
     this.apiKey = config.apiKey
 
     switch (config.networkName) {
-      case Network.Rinkeby:
-        this.apiBaseUrl = config.apiBaseUrl || API_BASE_RINKEBY
-        this.hostUrl = SITE_HOST_RINKEBY
+      case Network.Avalanche:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_MAINNET
+        this.hostUrl = SITE_HOST_MAINNET
         break
-      case Network.Main:
+      case Network.AvalancheTestnet:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
+        this.hostUrl = SITE_HOST_TESTNET
+        break
+      case Network.BSC:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_MAINNET
+        this.hostUrl = SITE_HOST_MAINNET
+        break
+      case Network.BSCTestnet:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
+        this.hostUrl = SITE_HOST_TESTNET
+        break
+      case Network.Ethereum:
       default:
         this.apiBaseUrl = config.apiBaseUrl || API_BASE_MAINNET
         this.hostUrl = SITE_HOST_MAINNET
+        break
+      case Network.EthereumTestnet:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
+        this.hostUrl = SITE_HOST_TESTNET
+        break
+      case Network.Polygon:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_MAINNET
+        this.hostUrl = SITE_HOST_MAINNET
+        break
+      case Network.PolygonTestnet:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
+        this.hostUrl = SITE_HOST_TESTNET
         break
     }
 
@@ -89,7 +107,7 @@ export class GhostMarketAPI {
     this.logger = logger || ((arg: string) => arg)
   }
 
-  /** Get NFT assets available on the GhostMarket marketplace, throwing if none is found.
+  /** Get NFT assets available on GhostMarket.
    * @param query Query to use for getting assets.
    */
   public async getAssets(
@@ -98,7 +116,7 @@ export class GhostMarketAPI {
     order_by = 'mint_date',
     order_direction = 'asc',
     with_total = 0,
-    limit = 50,
+    limit = 25,
     fiat_currency = 'USD',
     auction_state = 'all',
     auction_started = 'all',
@@ -120,7 +138,7 @@ export class GhostMarketAPI {
     return assetsData as Assets
   }
 
-  /** Get NFT collection available on the GhostMarket marketplace, throwing if none is found.
+  /** Get NFT collection available on GhostMarket.
    * @param query Query to use for getting users.
    */
   public async getCollections(
@@ -143,7 +161,7 @@ export class GhostMarketAPI {
     return collectionsData as Collections
   }
 
-  /** Get NFT serices available on the GhostMarket marketplace, throwing if none is found.
+  /** Get NFT series available on GhostMarket.
    * @param query Query to use for getting users.
    */
   public async getEvents(
@@ -176,7 +194,7 @@ export class GhostMarketAPI {
     return eventsData as Events
   }
 
-  /** Get NFT Metadata, throwing if none is found.
+  /** Get NFT Metadata.
    * @param query Query to use for getting NFT metadata.
    */
   public async getMetadata(query: TokenMetadata = {}): Promise<TokenMetadata> {
@@ -186,7 +204,7 @@ export class GhostMarketAPI {
     return tokenMetadata as TokenMetadata
   }
 
-  /** Get Open Mintings availabe on the GhostMarket marketplace, throwing if none is found.
+  /** Get Open Mintings availabe on GhostMarket.
    * @param query Query to use for getting NFT metadata.
    */
   public async getOpenMintings(query: OpenMintingsQuery = {}): Promise<OpenMintings> {
@@ -196,7 +214,7 @@ export class GhostMarketAPI {
     return openMintingsData as OpenMintings
   }
 
-  /** Get Open Orders on the GhostMarket marketplace, throwing if none is found.
+  /** Get Open Orders on GhostMarket.
    * @param query Query to use for getting NFT metadata.
    */
   public async getOpenOrders(query: OrderQuery = {}): Promise<OpenOrders> {
@@ -207,7 +225,7 @@ export class GhostMarketAPI {
     return openOrdersData as OpenOrders
   }
 
-  /** Get order from the orderbook, throwing if none is found.
+  /** Get order from the orderbook.
    * @param query Query to use for getting orders. A subset of parameters
    *  on the `Order` type is supported
    */
@@ -224,7 +242,7 @@ export class GhostMarketAPI {
     return orderData as OpenOrders
   }
 
-  /** Get orders from the orderbook, throwing if none is found.
+  /** Get orders from the orderbook.
    * @param query Query to use for getting orders. A subset of parameters
    *  on the `Order` type is supported
    */
@@ -240,7 +258,7 @@ export class GhostMarketAPI {
     return ordersData as OpenOrders
   }
 
-  /** Refresh Token Metadata on GhostMarket marketplace, throwing if none is found.
+  /** Refresh Token Metadata on GhostMarket.
    * @param query Query to use for refreshing the metadata of a specific token.
    */
   public async getRefreshMetadata(query: TokenMetadata = {}): Promise<TokenRefreshMetadata> {
@@ -251,7 +269,7 @@ export class GhostMarketAPI {
     return tokenRefreshMetadata as TokenRefreshMetadata
   }
 
-  /** Get NFT serices available on the GhostMarket marketplace, throwing if none is found.
+  /** Get NFT series available on GhostMarket.
    * @param query Query to use for getting users.
    */
   public async getSeries(
@@ -272,7 +290,7 @@ export class GhostMarketAPI {
     return seriesData as Series
   }
 
-  /** Get statistics about the GhostMarket marketplace, throwing if none is found.
+  /** Get statistics about GhostMarket.
    * @param query Query to use for getting statistics.
    */
   public async getStatistics(
@@ -319,7 +337,7 @@ export class GhostMarketAPI {
     return statisticsData as MarketplaceStatistics
   }
 
-  /** Get NFT Token URI, throwing if none is found.
+  /** Get NFT Token URI.
    * @param query Query to use for getting Token URI.
    */
   public async getTokenURI(query: TokenMetadata = {}): Promise<TokenURI> {
@@ -330,7 +348,7 @@ export class GhostMarketAPI {
     return tokenUriData as TokenURI
   }
 
-  /** Check if user exists on GhostMarket, returns True or False.
+  /** Check if user exists on GhostMarket.
    * @param username Check if this username already exists on GhostMarket.
    */
   public async getUserExists(username: string): Promise<UserExists> {
@@ -341,7 +359,7 @@ export class GhostMarketAPI {
     return userExistsResult as UserExists
   }
 
-  /** Get users from the GhostMarket userbase API, throwing if none is found.
+  /** Get users from GhostMarket userbase API.
    * @param query Query to use for getting users.
    */
   public async getUsers(
@@ -367,7 +385,7 @@ export class GhostMarketAPI {
   }
 
   /**
-   * createOpenOrder List an NFT on the marketplace
+   * createOpenOrder list an NFT on GhostMarket
    * @param  {NFTListing} nftListing NFT details
    */
   public async createOpenOrder(nftListing: ListNFT) {
@@ -467,16 +485,19 @@ export class GhostMarketAPI {
       case 403:
         errorMessage = `Unauthorized. Full message was '${JSON.stringify(result)}'`
         break
+      case 429:
+        errorMessage = `Rate limited. Full message was '${JSON.stringify(result)}'`
+        break
       case 404:
         errorMessage = `Not found. Full message was '${JSON.stringify(result)}'`
         break
       case 500:
-        errorMessage = `Internal server error. Ghost Market has been alerted, but if the problem persists please contact us via Discord: https://discord.gg/ga8EJbv - full message was ${JSON.stringify(
+        errorMessage = `Internal server error. GhostMarket has been alerted, but if the problem persists please contact us via Discord: https://discord.gg/WraGYyJTvz - full message was ${JSON.stringify(
           result,
         )}`
         break
       case 503:
-        errorMessage = `Service unavailable. Please try again in a few minutes. If the problem persists please contact us via Discord: https://discord.gg/ga8EJbv - full message was ${JSON.stringify(
+        errorMessage = `Service unavailable. Please try again in a few minutes. If the problem persists please contact us via Discord: https://discord.gg/WraGYyJTvz - full message was ${JSON.stringify(
           result,
         )}`
         break

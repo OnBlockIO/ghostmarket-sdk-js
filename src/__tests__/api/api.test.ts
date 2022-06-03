@@ -1,13 +1,15 @@
-import { GhostMarketAPI } from '../api'
-import { GhostMarketAPIConfig, Network } from '../types'
+import { GhostMarketAPI } from '../../api'
+import { GhostMarketAPIConfig, Network } from '../../types'
+import { API_BASE_TESTNET } from '../../constants'
+import 'dotenv/config'
 import * as matchers from 'jest-extended'
 expect.extend(matchers)
 
 describe('GhostMarketAPI', () => {
-  const apiBaseUrl = 'https://api3.ghostmarket.io:7061'
+  const apiBaseUrl = API_BASE_TESTNET
   const ghostMarketAPIConfig: GhostMarketAPIConfig = {
-    networkName: Network.Rinkeby,
-    apiKey: '',
+    networkName: Network.EthereumTestnet,
+    apiKey: process.env.GM_API_KEY,
     apiBaseUrl,
     useReadOnlyProvider: true,
   }
@@ -27,7 +29,7 @@ describe('GhostMarketAPI', () => {
         with_total: 10,
         fiat_currency: 'USD',
         auction_state: 'all',
-        auction_started: 'all', // auction can have any start date: https://api3.ghostmarket.io:7061/swagger/index.html
+        auction_started: 'all', // auction can have any start date: https://api-testnet.ghostmarket.io/swagger/index.html
         auction_type: 'all', // all, classic, fixed, dutch, reserve, offer - or coma-separated list of types (except all and offer
         creator: '',
         maker: '',
@@ -335,7 +337,7 @@ describe('GhostMarketAPI', () => {
     }, 6000)
   })
 
-  describe('NFTs', () => {
+  /* describe('NFTs', () => {
     it('should list an NFT on the market place', async () => {
       const listNFTDetails = {
         chain: 'bsc',
@@ -385,5 +387,5 @@ describe('GhostMarketAPI', () => {
       expect(result).toBeDefined()
       expect(result).toHaveProperty('error')
     }, 6000)
-  })
+  }) */
 })

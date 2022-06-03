@@ -17,23 +17,18 @@ function enc(web3, token, tokenId) {
   }
 }
 
-//asset types that can be transfered
+// asset types that can be transfered
 const ETH = id('ETH')
 const ERC20 = id('ERC20')
 const ERC721 = id('ERC721')
 const ERC1155 = id('ERC1155')
-/**
- * see contracts/LibOrderData.sol
- * Order data can be set either empty = 0xffffffff
- * or ORDER_DATA_V1
- * if its set to ORDER_DATA_V1
- * it can handle payouts and origin fees
- * see also contracts/LibOrderDataV1.sol
- */
+const COLLECTION = id('COLLECTION')
+const CRYPTO_PUNKS = id('CRYPTO_PUNKS')
+
+// order types
 const ORDER_DATA_V1 = id('V1')
 const ORDER_DATA_V2 = id('V2')
 
-//for transferDirection and transferType see contracts/SimpleTransferManager.sol
 // used as a variable for emitting event, transferDirection
 const TO_MAKER = id('TO_MAKER')
 // used as variable for emitting event, transferDirection
@@ -47,9 +42,6 @@ const ORIGIN = id('ORIGIN')
 // used as variable for emitting event, transferType
 const PAYOUT = id('PAYOUT')
 
-const COLLECTION = id('COLLECTION')
-const CRYPTO_PUNKS = id('CRYPTO_PUNKS')
-
 // eslint-disable-next-line no-undef
 module.exports = {
   id,
@@ -57,6 +49,8 @@ module.exports = {
   ERC20,
   ERC721,
   ERC1155,
+  COLLECTION,
+  CRYPTO_PUNKS,
   ORDER_DATA_V1,
   ORDER_DATA_V2,
   TO_MAKER,
@@ -65,7 +59,5 @@ module.exports = {
   ROYALTY,
   ORIGIN,
   PAYOUT,
-  COLLECTION,
-  CRYPTO_PUNKS,
   enc,
 }

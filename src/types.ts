@@ -1,23 +1,32 @@
 import { AbiItem } from 'web3-utils'
 /**
- * @param Main Ethereum mainnet
- * @param Rinkeby Ethereum Rinkeby testnet
+ * @param Avalanche Avalanche mainnet
+ * @param AvalancheTestnet Avalanche testnet
+ * @param BSC BSC mainnet
+ * @param BSCTestnet BSC testnet
+ * @param Ethereum Ethereum mainnet
+ * @param EthereumTestnet Ethereum testnet
+ * @param Polygon Polygon mainnet
+ * @param PolygonTestnet Polygon testnet
  */
 export enum Network {
-  Main = 'Ethereum',
-  Rinkeby = 'Rinkeby',
-  Avax = 'Avalanche',
+  Avalanche = 'Avalanche',
+  AvalancheTestnet = 'Avalanche Testnet',
   BSC = 'BSC',
+  BSCTestnet = 'BSC Testnet',
+  Ethereum = 'Ethereum',
+  EthereumTestnet = 'Ethereum Goerli Testnet',
   Polygon = 'Polygon',
+  PolygonTestnet = 'Polygon Mumbai Testnet',
 }
 
 /**
  * GhostMarket API config object.
  * @param apiKey Optional key to use for API.
- * @param networkName `Network` type to use. Defaults to `Network.Main` (mainnet)
- * @param gasPrice Default gas price to send to the Wyvern Protocol.
+ * @param networkName `Network` type to use. Defaults to `Network.Ethereum` (Ethereum mainnet)
+ * @param gasPrice Default gas price to use.
  * @param apiBaseUrl Optional base URL to use for the API.
- * @param providerRPCUrl HTTP provider URL for use for setting up a Read-only provider.
+ * @param providerRPCUrl HTTP provider URL for use for setting up a read only provider.
  * @param useReadOnlyProvider Boolean option enable/disable use of a read only provider that reads only Blockchain state and can't make transactions.
  */
 export interface GhostMarketAPIConfig {
@@ -47,7 +56,7 @@ export interface Order {
 }
 
 /**
- * Query interface for finding project with Open Minting
+ * Query interface for finding open mintings
  */
 export interface OpenMintingsQuery {
   offset?: number
@@ -55,7 +64,7 @@ export interface OpenMintingsQuery {
 }
 
 /**
- * Query interface for Orders
+ * Query interface for orders
  */
 export interface OrderQuery {
   chain?: string
@@ -68,8 +77,6 @@ export interface OrderQuery {
 
 /**
  * Order attributes, including orderbook-specific query options
- * See https://docs.opensea.io/reference#retrieving-orders for the full
- * list of API query parameters and documentation.
  */
 export interface OrderJSON {
   id: number
@@ -909,7 +916,7 @@ export interface UserExists {
 /**
  * Smart Contract Related types
  */
-export type ContractABI = Array<AbiItem>
+export type ExchangeV2ABI = Array<AbiItem>
 
 /**
  * Left
@@ -951,6 +958,7 @@ export interface TxObject {
   from: string
   value: number | string
   gasPrice?: number
+  chainId: string
 }
 
 /* 
@@ -978,3 +986,5 @@ export interface ListNFT {
 export interface ListNFTResult {
   success: boolean
 }
+
+export type PartialReadonlyContractAbi = AbiItem[]

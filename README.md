@@ -3,7 +3,7 @@
 </div>
 
 
-Ghost SDK offers a complete set of functionalities enabling access to Ghost Market place as a full-fledged SDK written in TypeScript. 
+Ghost SDK offers a complete set of functionalities enabling access to GhostMarket place as a full-fledged SDK written in TypeScript. 
 
 Checkout the [underlying API changelog](https://github.com/selimerunkut/ghost-sdk/blob/main/CHANGELOG.md)
 

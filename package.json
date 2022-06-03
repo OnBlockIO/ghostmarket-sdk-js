@@ -1,7 +1,7 @@
 {
   "name": "ghostmarket-sdk-js",
   "version": "1.0.0",
-  "description": "Typescript / Javascript SDK for the Ghost Market NFT Marketplace. Allow buyers, sellers, or projects to integrate with Ghost Market cryptogoodies.",
+  "description": "Typescript / Javascript SDK for the GhostMarket NFT Marketplace. Allow buyers, sellers, or projects to integrate with GhostMarket cryptogoodies.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
