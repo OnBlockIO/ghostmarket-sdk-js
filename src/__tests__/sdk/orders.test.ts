@@ -15,11 +15,7 @@ import {
 
 import { enc, ERC1155, ETH } from '../utils/assets'
 import { Order, Asset, sign } from '../utils/order'
-import {
-  API_BASE_TESTNET,
-  EXCHANGEV2_PROXY_ADDRESS_ETHEREUM_TESTNET,
-  NULL_ADDRESS,
-} from '../../constants'
+import { API_BASE_TESTNET, ETHEREUM_TESTNET_CONTRACTS, NULL_ADDRESS } from '../../constants'
 import ERC1155ABI from '../../abis/ERC1155Abi.json'
 import { GhostMarketAPI } from '../../api'
 
