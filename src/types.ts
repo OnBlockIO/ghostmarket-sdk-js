@@ -8,6 +8,10 @@ import { AbiItem } from 'web3-utils'
  * @param EthereumTestnet Ethereum testnet
  * @param Polygon Polygon mainnet
  * @param PolygonTestnet Polygon testnet
+ * @param Neo3 Neo3 mainnet
+ * @param Neo3Testnet Neo3 testnet
+ * @param Phantasma Phantasma mainnet
+ * @param PhantasmaTestnet Phantasma testnet
  */
 export enum Network {
   Avalanche = 'Avalanche',
@@ -15,9 +19,13 @@ export enum Network {
   BSC = 'BSC',
   BSCTestnet = 'BSC Testnet',
   Ethereum = 'Ethereum',
-  EthereumTestnet = 'Ethereum Goerli Testnet',
+  EthereumTestnet = 'Ethereum Testnet',
   Polygon = 'Polygon',
-  PolygonTestnet = 'Polygon Mumbai Testnet',
+  PolygonTestnet = 'Polygon Testnet',
+  Neo3 = 'Neo3',
+  Neo3Testnet = 'Neo3 Testnet',
+  Phantasma = 'Phantasma',
+  PhantasmaTestnet = 'Phantasma Testnet',
 }
 
 /**
@@ -37,6 +45,9 @@ export interface GhostMarketAPIConfig {
   useReadOnlyProvider?: boolean
 }
 
+/**
+ * @deprecated The method should not be used
+ */
 export interface Order {
   id: number
   chain: string
@@ -53,6 +64,40 @@ export interface Order {
   salt: string
   origin_fees: string
   origin_address: string
+}
+
+export interface OrderV2 {
+  baseContract: string
+  baseSymbol: string
+  bids: BidV2[]
+  contractAuctionId: string
+  currentWinnerAddress: string
+  currentWinnerAddressVerified: boolean
+  currentWinnerAvatar: string
+  currentWinnerOffchainName: string
+  currentWinnerOnchainName: string
+  duration: string
+  endDate: string
+  endPrice: string
+  extensionPeriod: string
+  fiatCurrency: string
+  fiatEndPrice: string
+  fiatPrice: string
+  groupSize: number
+  listingFee: number
+  makerAddress: string
+  orderId: string
+  orderKeyHash: string
+  originAddress: string
+  originFees: string
+  price: string
+  quoteContract: string
+  quoteSymbol: string
+  salt: string
+  signature: string
+  startDate: string
+  tokenAmount: string
+  type: string
 }
 
 /**
@@ -78,25 +123,26 @@ export interface OrderQuery {
 /**
  * Order attributes, including orderbook-specific query options
  */
-export interface OrderJSON {
+export interface OrderJSONV2 {
   id: number
   chain: string
-  token_contract: string
-  token_id: string
-  token_amount: string
-  quote_contract: string
-  quote_price: string
-  maker_address: string
-  start_date: string
-  end_date: string
+  tokenContract: string
+  tokenId: string
+  tokenAmount: string
+  quoteContract: string
+  quotePrice: string
+  makerAddress: string
+  startDate: string
+  endDate: string
   signature: string
-  order_key_hash: string
+  orderKeyHash: string
   salt: string
-  origin_fees: string
-  origin_address: string
+  originFees: string
+  originAddress: string
 }
 
 /**
+ * @deprecated The method should not be used
  * Query interface for Assets
  */
 export interface AssetsQuery {
@@ -144,6 +190,56 @@ export interface AssetsQuery {
 }
 
 /**
+ * Query interface for Assets
+ */
+export interface AssetsQueryV2 {
+  page?: number
+  size?: number
+  auctionStarted?: string
+  auctionState?: string
+  auctionType?: string
+  bidder?: string
+  chain?: string
+  chainName?: string
+  collectionSlug?: string
+  contract?: string
+  contractId?: string
+  creator?: string
+  fiatCurrency?: string
+  filter1name?: string
+  filter1value?: string
+  filter2name?: string
+  filter2value?: string
+  filter3name?: string
+  filter3value?: string
+  filter4name?: string
+  filter4value?: string
+  filter5name?: string
+  filter5value?: string
+  grouping?: number
+  issuer?: string
+  light_mode?: number
+  limit?: number
+  maker?: string
+  name?: string
+  nsfw_mode?: string
+  offset?: number
+  onlyVerified?: number
+  orderBy?: string
+  orderDirection?: string
+  owner?: string
+  priceSimilar?: number
+  priceSimilarDelta?: number
+  quoteSymbol?: string
+  seriesId?: string
+  status?: string
+  symbol?: string
+  tokenId?: string
+  withTotal?: number
+}
+
+/**
+ * @deprecated The method should not be used
  * Interface for Assets from API response
  */
 export interface Assets {
@@ -151,7 +247,24 @@ export interface Assets {
   assets: Array<Asset> | null
 }
 
+/**
+ * Interface for Assets from API response
+ */
+export interface AssetsV2 {
+  totalResults?: number
+  assets: Array<AssetV2> | null
+}
+
+/**
+ * @deprecated The method should not be used
+ */
 interface Asset {
+  orders: Array<Order>
+  offers: Array<Offer>
+  nft: NFT
+}
+
+interface AssetV2 {
   orders: Array<Order>
   offers: Array<Offer>
   nft: NFT
@@ -209,7 +322,7 @@ interface Infusion {
   value: string
 }
 
-interface Series {
+export interface Series {
   id: string
   chain: string
   contract: string
@@ -396,6 +509,7 @@ export interface Order {
 }
 
 /**
+ * @deprecated The method should not be used
  * Standard interface for a bid per API response
  */
 interface Bid {
@@ -411,6 +525,24 @@ interface Bid {
   tx_hash: string
   quote_symbol: string
   bid_id: number
+}
+
+/**
+ * Standard interface for a bid per API response
+ */
+interface BidV2 {
+  chain: string
+  date: string
+  price: string
+  fiatPrice: string
+  address: string
+  addressVerified: boolean
+  onchainName: string
+  offchainName: string
+  avatar: string
+  txHash: string
+  quoteSymbol: string
+  bidId: number
 }
 
 /**
@@ -959,6 +1091,15 @@ export interface TxObject {
   value: number | string
   gasPrice?: number
   chainId: string
+}
+
+export interface Royalties {
+  royaltiesRecipients: RoyaltyRecipient[]
+}
+
+export interface RoyaltyRecipient {
+  recipient: string
+  amount: number
 }
 
 /* 

@@ -2,7 +2,7 @@
 import Web3ProviderEngine from 'web3-provider-engine'
 import Web3 from 'web3'
 
-import { createGoerliProvider } from '../utils/create-goerli-provider'
+import { createGoerliProvider } from '../utils-evm/create-goerli-provider'
 import { GhostMarketSDK } from '../../sdk'
 import {
   GhostMarketAPIConfig,
@@ -13,9 +13,14 @@ import {
   ExchangeV2ABI,
 } from '../../types'
 
-import { enc, ERC1155, ETH } from '../utils/assets'
-import { Order, Asset, sign } from '../utils/order'
-import { API_BASE_TESTNET, ETHEREUM_TESTNET_CONTRACTS, NULL_ADDRESS } from '../../constants'
+import { enc, ERC1155, ETH } from '../utils-evm/assets'
+import { Order, Asset, sign } from '../utils-evm/order'
+import {
+  API_BASE_TESTNET,
+  ORDERBOOK_VERSION,
+  ETHEREUM_TESTNET_CONTRACTS,
+  NULL_ADDRESS,
+} from '../../constants'
 import ERC1155ABI from '../../abis/ERC1155Abi.json'
 import { GhostMarketAPI } from '../../api'
 
@@ -73,7 +78,7 @@ async function getSignature(web3: Web3, order: object, from: string, verifyingCo
   return sign(web3, order, from, verifyingContract)
 }
 
-describe('GhostMarket API Post', () => {
+describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
   const ghostmarketBaseAPIUrl = API_BASE_TESTNET
 
   const ghostMarketAPIConfig: GhostMarketAPIConfig = {

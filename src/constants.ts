@@ -95,3 +95,13 @@ export const N3_TESTNET_CONTRACTS = {
     EXCHANGE: '0xa4276772f429fc31032c4cd8bf3c98c806318f3e',
     GM_TOKEN: '0x0e07f8d653133c023b4168699f38182956c58968'
 }
+
+export const PHA_MAINNET_CONTRACTS = {
+    EXCHANGE: '',
+    GM_TOKEN: ''
+}
+
+export const PHA_TESTNET_CONTRACTS = {
+    EXCHANGE: '',
+    GM_TOKEN: ''
+}

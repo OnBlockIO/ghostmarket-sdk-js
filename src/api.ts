@@ -14,26 +14,28 @@ import {
   Network,
   AssetsQuery,
   Assets,
+  AssetsQueryV2,
+  AssetsV2,
   CollectionsQuery,
   Collections,
   EventsQuery,
   Events,
-  MarketplaceStatistics,
+  SeriesQuery,
+  SeriesResponse as Series,
   OpenMintingsQuery,
   OpenMintings,
   OpenOrders,
   OrderQuery,
-  SeriesQuery,
-  SeriesResponse as Series,
   StatisticsQuery,
   TokenMetadata,
   TokenRefreshMetadata,
   TokenURI,
-  UserExists,
   UsersQuery,
   Users,
+  UserExists,
   ListNFT,
   ListNFTResult,
+  MarketplaceStatistics,
 } from './types'
 
 export class GhostMarketAPI {
@@ -101,20 +103,39 @@ export class GhostMarketAPI {
         this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
         this.hostUrl = SITE_HOST_TESTNET
         break
+      case Network.Neo3:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_MAINNET
+        this.hostUrl = SITE_HOST_MAINNET
+        break
+      case Network.Neo3Testnet:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
+        this.hostUrl = SITE_HOST_TESTNET
+        break
+      case Network.Phantasma:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_MAINNET
+        this.hostUrl = SITE_HOST_MAINNET
+        break
+      case Network.PhantasmaTestnet:
+        this.apiBaseUrl = config.apiBaseUrl || API_BASE_TESTNET
+        this.hostUrl = SITE_HOST_TESTNET
+        break
     }
 
     // Debugging: default to nothing
     this.logger = logger || ((arg: string) => arg)
   }
 
+  // -- ASSETS -- //
+
   /** Get NFT assets available on GhostMarket.
+   * @deprecated The method should not be used
    * @param query Query to use for getting assets.
    */
   public async getAssets(
     query: AssetsQuery = {},
     offset = 0,
-    order_by = 'mint_date',
-    order_direction = 'asc',
+    order_by = 'list_or_bid_time',
+    order_direction = 'desc',
     with_total = 0,
     limit = 25,
     fiat_currency = 'USD',
@@ -138,16 +159,45 @@ export class GhostMarketAPI {
     return assetsData as Assets
   }
 
-  /** Get NFT collection available on GhostMarket.
-   * @param query Query to use for getting users.
+  /** Get NFT assets available on GhostMarket.
+   * @param query Query to use for getting assets.
+   */
+  public async getAssetsV2(
+    query: AssetsQueryV2 = {},
+    page = 1,
+    size = 25,
+    orderBy = 'listOrBidTime',
+    orderDirection = 'desc',
+    withTotal = false,
+    fiatCurrency = 'USD',
+  ): Promise<AssetsV2> {
+    const assetsData = await this._get(`${API_PATH}/assets/`, {
+      page: page,
+      size: size,
+      orderBy: orderBy,
+      orderDirection: orderDirection,
+      withTotal: withTotal,
+      fiatCurrency: fiatCurrency,
+      ...query,
+    })
+
+    return assetsData as Assets
+  }
+
+  // -- END ASSETS -- //
+
+  // -- COLLECTIONS -- //
+
+  /** Get NFT collections available on GhostMarket.
+   * @param query Query to use for getting collections.
    */
   public async getCollections(
     query: CollectionsQuery = {},
     offset = 0,
-    order_by = 'mint_date',
-    order_direction = 'asc',
+    order_by = 'weekly_volume',
+    order_direction = 'desc',
     with_total = 1,
-    limit = 50,
+    limit = 25,
   ): Promise<Collections> {
     const collectionsData = await this._get(`${API_PATH}/collections/`, {
       limit: limit,
@@ -161,8 +211,12 @@ export class GhostMarketAPI {
     return collectionsData as Collections
   }
 
-  /** Get NFT series available on GhostMarket.
-   * @param query Query to use for getting users.
+  // -- END COLLECTIONS -- //
+
+  // -- EVENTS -- //
+
+  /** Get NFT events available on GhostMarket.
+   * @param query Query to use for getting events.
    */
   public async getEvents(
     query: EventsQuery = {},
@@ -194,80 +248,9 @@ export class GhostMarketAPI {
     return eventsData as Events
   }
 
-  /** Get NFT Metadata.
-   * @param query Query to use for getting NFT metadata.
-   */
-  public async getMetadata(query: TokenMetadata = {}): Promise<TokenMetadata> {
-    const tokenMetadata = await this._get(`${API_PATH}/metadata/`, {
-      ...query,
-    })
-    return tokenMetadata as TokenMetadata
-  }
+  // -- END EVENTS -- //
 
-  /** Get Open Mintings availabe on GhostMarket.
-   * @param query Query to use for getting NFT metadata.
-   */
-  public async getOpenMintings(query: OpenMintingsQuery = {}): Promise<OpenMintings> {
-    const openMintingsData = await this._get(`${API_PATH}/getopenmintings/`, {
-      ...query,
-    })
-    return openMintingsData as OpenMintings
-  }
-
-  /** Get Open Orders on GhostMarket.
-   * @param query Query to use for getting NFT metadata.
-   */
-  public async getOpenOrders(query: OrderQuery = {}): Promise<OpenOrders> {
-    const _query = { ...query, with_deleted: Number(query.with_deleted) }
-    const openOrdersData = await this._get(`${API_PATH}/getopenorders/`, {
-      ..._query,
-    })
-    return openOrdersData as OpenOrders
-  }
-
-  /** Get order from the orderbook.
-   * @param query Query to use for getting orders. A subset of parameters
-   *  on the `Order` type is supported
-   */
-  public async getOrder(query: OrderQuery = {}, page = 1): Promise<OpenOrders> {
-    // with_deleted is (cast to a number 0 or 1) from Boolean True or false
-    const _query = { ...query, with_deleted: Number(query.with_deleted) }
-
-    const orderData = await this._get(`${API_PATH}/openorders/`, {
-      limit: this.pageSize,
-      offset: (page - 1) * this.pageSize,
-      ..._query,
-    })
-
-    return orderData as OpenOrders
-  }
-
-  /** Get orders from the orderbook.
-   * @param query Query to use for getting orders. A subset of parameters
-   *  on the `Order` type is supported
-   */
-  public async getOrders(query: OrderQuery = {}, page = 1): Promise<OpenOrders> {
-    const _query = { ...query, with_deleted: Number(query.with_deleted) }
-
-    const ordersData = await this._get(`${API_PATH}/openorders/`, {
-      limit: this.pageSize,
-      offset: (page - 1) * this.pageSize,
-      ..._query,
-    })
-
-    return ordersData as OpenOrders
-  }
-
-  /** Refresh Token Metadata on GhostMarket.
-   * @param query Query to use for refreshing the metadata of a specific token.
-   */
-  public async getRefreshMetadata(query: TokenMetadata = {}): Promise<TokenRefreshMetadata> {
-    const tokenRefreshMetadata = await this._get(`${API_PATH}/refreshmetadata/`, {
-      ...query,
-    })
-
-    return tokenRefreshMetadata as TokenRefreshMetadata
-  }
+  // -- SERIES -- //
 
   /** Get NFT series available on GhostMarket.
    * @param query Query to use for getting users.
@@ -289,6 +272,93 @@ export class GhostMarketAPI {
 
     return seriesData as Series
   }
+
+  // -- END SERIES -- //
+
+  // -- USERS -- //
+
+  /** Get users from GhostMarket userbase API.
+   * @param query Query to use for getting users.
+   */
+  public async getUsers(
+    query: UsersQuery = {},
+    offset = 0,
+    order_by = 'join_order',
+    order_direction = 'asc',
+    with_sales_statistics = 0,
+    with_total = 0,
+    limit = 50,
+  ): Promise<Users> {
+    const usersData = await this._get(`${API_PATH}/users/`, {
+      limit: limit,
+      offset: offset,
+      order_by: order_by,
+      order_direction: order_direction,
+      with_sales_statistics: with_sales_statistics,
+      with_total: with_total,
+      ...query,
+    })
+
+    return usersData as Users
+  }
+
+  /** Check if user exists on GhostMarket.
+   * @param username Check if this username already exists on GhostMarket.
+   */
+  public async getUserExists(username: string): Promise<UserExists> {
+    const userExistsResult = await this._get(`${API_PATH}/userexists/`, {
+      username: username,
+    })
+
+    return userExistsResult as UserExists
+  }
+
+  // -- END USERS -- //
+
+  // -- OPEN MINTINGS -- //
+
+  /** Get Open Mintings available on GhostMarket.
+   * @param query Query to use for getting Open Mintings.
+   */
+  public async getOpenMintings(query: OpenMintingsQuery = {}): Promise<OpenMintings> {
+    const openMintingsData = await this._get(`${API_PATH}/getopenmintings/`, {
+      ...query,
+    })
+    return openMintingsData as OpenMintings
+  }
+
+  // -- END OPEN MINTINGS -- //
+
+  // -- OPEN ORDERS -- //
+
+  /** Get orders from the orderbook.
+   * @param query Query to use for getting orders. A subset of parameters
+   *  on the `Order` type is supported
+   */
+  public async getOpenOrders(query: OrderQuery = {}, page = 1): Promise<OpenOrders> {
+    const _query = { ...query, with_deleted: Number(query.with_deleted) }
+
+    const ordersData = await this._get(`${API_PATH}/openorders/`, {
+      limit: this.pageSize,
+      offset: (page - 1) * this.pageSize,
+      ..._query,
+    })
+
+    return ordersData as OpenOrders
+  }
+
+  /**
+   * createOpenOrder list an NFT on GhostMarket
+   * @param  {NFTListing} nftListing NFT details
+   */
+  public async createOpenOrder(nftListing: ListNFT) {
+    const result = await this._post<ListNFT>(`${API_PATH}/createopenorder`, nftListing)
+    return result as ListNFTResult
+  }
+
+  // -- END OPEN ORDERS -- //
+
+  // -- STATISTICS -- //
 
   /** Get statistics about GhostMarket.
    * @param query Query to use for getting statistics.
@@ -337,6 +407,35 @@ export class GhostMarketAPI {
     return statisticsData as MarketplaceStatistics
   }
 
+  // -- END STATISTICS -- //
+
+  // -- METADATA -- //
+
+  /** Get NFT Metadata.
+   * @param query Query to use for getting NFT metadata.
+   */
+  public async getMetadata(query: TokenMetadata = {}): Promise<TokenMetadata> {
+    const tokenMetadata = await this._get(`${API_PATH}/metadata/`, {
+      ...query,
+    })
+    return tokenMetadata as TokenMetadata
+  }
+
+  /** Refresh Token Metadata on GhostMarket.
+   * @param query Query to use for refreshing the metadata of a specific token.
+   */
+  public async getRefreshMetadata(query: TokenMetadata = {}): Promise<TokenRefreshMetadata> {
+    const tokenRefreshMetadata = await this._get(`${API_PATH}/refreshmetadata/`, {
+      ...query,
+    })
+
+    return tokenRefreshMetadata as TokenRefreshMetadata
+  }
+
+  // -- END METADATA -- //
+
+  // -- TOKEN URI -- //
+
   /** Get NFT Token URI.
    * @param query Query to use for getting Token URI.
    */
@@ -348,50 +447,9 @@ export class GhostMarketAPI {
     return tokenUriData as TokenURI
   }
 
-  /** Check if user exists on GhostMarket.
-   * @param username Check if this username already exists on GhostMarket.
-   */
-  public async getUserExists(username: string): Promise<UserExists> {
-    const userExistsResult = await this._get(`${API_PATH}/userexists/`, {
-      username: username,
-    })
+  // -- END TOKEN URI -- //
 
-    return userExistsResult as UserExists
-  }
-
-  /** Get users from GhostMarket userbase API.
-   * @param query Query to use for getting users.
-   */
-  public async getUsers(
-    query: UsersQuery = {},
-    offset = 0,
-    order_by = 'join_order',
-    order_direction = 'asc',
-    with_sales_statistics = 0,
-    with_total = 0,
-    limit = 50,
-  ): Promise<Users> {
-    const usersData = await this._get(`${API_PATH}/users/`, {
-      limit: limit,
-      offset: offset,
-      order_by: order_by,
-      order_direction: order_direction,
-      with_sales_statistics: with_sales_statistics,
-      with_total: with_total,
-      ...query,
-    })
-
-    return usersData as Users
-  }
-
-  /**
-   * createOpenOrder list an NFT on GhostMarket
-   * @param  {NFTListing} nftListing NFT details
-   */
-  public async createOpenOrder(nftListing: ListNFT) {
-    const result = await this._post<ListNFT>(`${API_PATH}/createopenorder`, nftListing)
-    return result as ListNFTResult
-  }
+  // -- API INTERACTION -- //
 
   /**
    * POST JSON data to API
@@ -508,4 +566,6 @@ export class GhostMarketAPI {
 
     throw new Error(`API Error ${response.status}: ${errorMessage}`)
   }
+
+  // -- END API INTERACTION -- //
 }

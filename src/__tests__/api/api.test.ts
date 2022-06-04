@@ -1,10 +1,15 @@
 import { GhostMarketAPI } from '../../api'
 import { GhostMarketAPIConfig, Network } from '../../types'
-import { API_BASE_MAINNET, API_BASE_TESTNET, NULL_ADDRESS } from '../../constants'
+import {
+  API_BASE_MAINNET,
+  API_BASE_TESTNET,
+  NULL_ADDRESS,
+  ORDERBOOK_VERSION,
+} from '../../constants'
 import * as matchers from 'jest-extended'
 expect.extend(matchers)
 
-describe('GhostMarket API Basics', () => {
+describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
   const apiBaseUrl = API_BASE_TESTNET
   const ghostMarketAPIConfig: GhostMarketAPIConfig = {
     networkName: Network.EthereumTestnet,
@@ -24,6 +29,13 @@ describe('GhostMarket API Basics', () => {
       expect(API_BASE_TESTNET).toBe('https://api-testnet.ghostmarket.io')
     }, 10000)
 
+    it('API only support version 1 and 2', async () => {
+      const incorrectVersion = `${API_BASE_TESTNET}/api/v3`
+      const customRequest = await fetch(`${incorrectVersion}/assets/`)
+      expect(customRequest).toHaveProperty('status')
+      expect(customRequest.status).toBe(400)
+    }, 10000)
+
     it('API key included in request', async () => {
       const oldLogger = ghostmarketAPI.logger
 
@@ -38,7 +50,7 @@ describe('GhostMarket API Basics', () => {
             ghostmarketAPI.logger = oldLogger
           }
         }
-        ghostmarketAPI.getAssets()
+        ORDERBOOK_VERSION > 1 ? ghostmarketAPI.getAssetsV2() : ghostmarketAPI.getAssets()
       })
       await logPromise
     }, 10000)
@@ -49,7 +61,9 @@ describe('GhostMarket API Basics', () => {
         const assetsQuery = {
           contract: NULL_ADDRESS,
         }
-        await ghostmarketAPI.getAssets(assetsQuery)
+        ORDERBOOK_VERSION > 1
+          ? ghostmarketAPI.getAssetsV2(assetsQuery)
+          : ghostmarketAPI.getAssets(assetsQuery)
       } catch (error) {
         expect(error).toInclude('Pass chain when using contract filter.')
       }
@@ -57,7 +71,7 @@ describe('GhostMarket API Basics', () => {
   })
 })
 
-describe('GhostMarket API Get', () => {
+describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
   const apiBaseUrl = API_BASE_TESTNET
   const ghostMarketAPIConfig: GhostMarketAPIConfig = {
     networkName: Network.EthereumTestnet,
@@ -73,7 +87,10 @@ describe('GhostMarket API Get', () => {
 
   describe('Assets', () => {
     it('should get Assets', async () => {
-      const assetsData = await ghostmarketAPI.getAssets()
+      const assetsData =
+        ORDERBOOK_VERSION > 1
+          ? await ghostmarketAPI.getAssetsV2()
+          : await ghostmarketAPI.getAssets()
       expect(assetsData).toHaveProperty('assets')
       const { assets } = assetsData
       expect(assets).toBeArray()
@@ -81,7 +98,10 @@ describe('GhostMarket API Get', () => {
     }, 10000)
 
     it('should get single Asset', async () => {
-      const assetsData = await ghostmarketAPI.getAssets({ limit: 1 })
+      const assetsData =
+        ORDERBOOK_VERSION > 1
+          ? await ghostmarketAPI.getAssetsV2({ size: 1 })
+          : await ghostmarketAPI.getAssets({ limit: 1 })
       expect(assetsData).toHaveProperty('assets')
       const { assets } = assetsData
       expect(assets).toBeArray()
@@ -95,7 +115,7 @@ describe('GhostMarket API Get', () => {
       expect(collectionsData).toHaveProperty('collections')
       const { collections } = collectionsData
       expect(collections).toBeArray()
-      expect(collections).toBeArrayOfSize(50)
+      expect(collections).toBeArrayOfSize(25)
     }, 10000)
 
     it('should get single Collection', async () => {
@@ -149,11 +169,11 @@ describe('GhostMarket API Get', () => {
       expect(openOrdersData).toHaveProperty('open_orders')
       const { open_orders: openOrders } = openOrdersData
       expect(openOrders).toBeArray()
-      expect(openOrders).toBeArrayOfSize(50)
+      expect(openOrders).toBeArrayOfSize(25)
     }, 10000)
 
     it('should get single Open Order', async () => {
-      const { open_orders: orders } = await ghostmarketAPI.getOrders({
+      const { open_orders: orders } = await ghostmarketAPI.getOpenOrders({
         with_deleted: false,
         limit: 1,
       })
