@@ -30,7 +30,7 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
     }, 10000)
 
     it('API only support version 1 and 2', async () => {
-      const incorrectVersion = `${API_BASE_TESTNET}/api/v3`
+      const incorrectVersion = `${API_BASE_TESTNET}/api/v${ORDERBOOK_VERSION + 2}`
       const customRequest = await fetch(`${incorrectVersion}/assets/`)
       expect(customRequest).toHaveProperty('status')
       expect(customRequest.status).toBe(400)
