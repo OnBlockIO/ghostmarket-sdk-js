@@ -5,6 +5,7 @@ import {
   API_BASE_MAINNET,
   API_BASE_TESTNET,
   API_PATH,
+  API_PATH_V2,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ORDERBOOK_VERSION,
   SITE_HOST_MAINNET,
@@ -144,7 +145,7 @@ export class GhostMarketAPI {
     auction_started = 'all',
     light_mode = 0,
   ): Promise<Assets> {
-    const assetsData = await this._get(`${API_PATH}/assets/`, {
+    const assetsData = await this._get(`${API_PATH_V2}/assets/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
