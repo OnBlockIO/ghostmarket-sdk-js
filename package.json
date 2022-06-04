@@ -6,6 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
+    "test:ci": "jest",
     "cacheClear": "jest --clearCache",
     "prepare": "npm run build",
     "build": "tsc -p tsconfig.build.json",
