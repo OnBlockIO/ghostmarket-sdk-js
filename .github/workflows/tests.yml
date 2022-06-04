@@ -2,6 +2,11 @@ name: Tests CI
 
 on: [push, pull_request]
 
+env:
+  INFURA_API_KEY: ${{ secrets.INFURA_API_KEY }}
+  GM_API_KEY: ${{ secrets.GM_API_KEY }}
+  MNEMONIC: ${{ secrets.MNEMNONIC }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
