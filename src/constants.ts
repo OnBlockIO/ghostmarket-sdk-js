@@ -6,13 +6,11 @@ export const GHOSTMARKET_TRADE_FEE_BPS = 200
 export const MIN_BID_INCREASE_BPS = 500
 
 export const ORDERBOOK_VERSION = 1
-export const ORDERBOOK_VERSION_V2 = 1
 export const API_BASE_MAINNET = 'https://api.ghostmarket.io'
 export const API_BASE_TESTNET = 'https://api-testnet.ghostmarket.io'
 export const SITE_HOST_MAINNET = 'https://ghostmarket.io'
 export const SITE_HOST_TESTNET = 'https://testnet.ghostmarket.io'
 export const API_PATH = `/api/v${ORDERBOOK_VERSION}`
-export const API_PATH_V2 = `/api/v${ORDERBOOK_VERSION_V2}`
 export const MAINNET_API_URL = `${API_BASE_MAINNET}/${API_PATH}`
 export const TESTNET_API_URL = `${API_BASE_TESTNET}/${API_PATH}`
 
