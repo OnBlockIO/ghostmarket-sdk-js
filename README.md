@@ -1,6 +1,6 @@
-<div align="center">
-  <h1>ghostmarket-sdk-ts</h1>
-</div>
+# ghostmarket-sdk-ts
+
+[![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT)
 
 
 Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript. 
