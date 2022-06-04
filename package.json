@@ -1,7 +1,7 @@
 {
-  "name": "ghostmarket-sdk-js",
+  "name": "ghostmarket-sdk-ts",
   "version": "1.0.0",
-  "description": "Typescript / Javascript SDK for GhostMarket. Allow buyers, sellers, or projects to integrate with GhostMarket.",
+  "description": "Typescript SDK for GhostMarket. Allow buyers, sellers, or projects to integrate with GhostMarket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -14,15 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OnBlockIO/ghostmarket-js.git"
+    "url": "git+https://github.com/OnBlockIO/ghostmarket-sdk-ts.git"
   },
-  "keywords": [],
   "author": "GhostMarket",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/OnBlockIO/ghostmarket-js/issues"
+    "url": "https://github.com/OnBlockIO/ghostmarket-sdk-ts/issues"
   },
-  "homepage": "https://github.com/OnBlockIO/ghostmarket-js#readme",
+  "homepage": "https://github.com/OnBlockIO/ghostmarket-sdk-ts#readme",
   "devDependencies": {
     "@0x/subproviders": "6.6.2",
     "@babel/core": "^7.17.10",
@@ -55,5 +54,13 @@
     "query-string": "^7.1.0",
     "web3": "^1.7.3",
     "web3-utils": "^1.7.3"
-  }
+  },
+  "keywords": [
+    "collectibles",
+    "typescript",
+    "marketplace",
+    "nft",
+    "ghostmarket",
+    "sdk"
+  ]
 }

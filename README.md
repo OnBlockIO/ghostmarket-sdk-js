@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>ghostmarket-js</h1>
+  <h1>ghostmarket-sdk-js</h1>
 </div>
 
 
@@ -10,11 +10,11 @@ Checkout the [underlying API changelog](https://github.com/OnBlockIO/ghostnarket
 ## Getting started
 Installation
 ```bash
-yarn add ghostmarket-js
+yarn add ghostmarket-sdk-ts
 ```
 or if using npm
 ```bash
-npm install --save ghostmarket-js
+npm install --save ghostmarket-sdk-ts
 ```
 
 ## Usage
@@ -23,10 +23,10 @@ Details coming soon.
 ## Development
 Clone this repo
 ```bash
-git clone https://github.com/OnBlockIO/ghostmarket-js
+git clone https://github.com/OnBlockIO/ghostmarket-sdk-ts
 ```
 ```bash
-cd ghostmarket-js/
+cd ghostmarket-sdk-ts/
 yarn install
 ```
 
