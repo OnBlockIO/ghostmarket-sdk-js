@@ -1,4 +1,5 @@
 import 'isomorphic-unfetch'
+import pjson from '../package.json'
 import * as QueryString from 'query-string'
 import {
   API_BASE_MAINNET,
@@ -464,6 +465,7 @@ export class GhostMarketAPI {
         // eslint-disable-next-line prettier/prettier
         'accept': 'application/json',
         'Content-Type': 'application/json',
+        'User-Agent': 'nodejs/' + pjson.version,
       },
     }
 
@@ -480,7 +482,14 @@ export class GhostMarketAPI {
     const qs = QueryString.stringify(query)
     const url = `${apiEndpoint}?${qs}`
 
-    const data = await this._fetch(url)
+    const options = {
+      headers: {
+        // eslint-disable-next-line prettier/prettier
+        'User-Agent': 'nodejs/' + pjson.version,
+      },
+    }
+
+    const data = await this._fetch(url, options)
     return data
   }
 
