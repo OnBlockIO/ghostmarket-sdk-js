@@ -1,4 +1,4 @@
-name: Tests CI
+name: CI Pipeline
 
 on: [push, pull_request]
 
@@ -8,7 +8,7 @@ env:
   MNEMONIC: ${{ secrets.MNEMNONIC }}
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
