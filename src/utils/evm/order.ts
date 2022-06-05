@@ -1,17 +1,30 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-undef */
+/* eslint-disable @typescript-eslint/no-var-requires */
+// eslint-disable-next-line no-undef
+const ethUtil = require('ethereumjs-util')
+
 // https://eips.ethereum.org/EIPS/eip-712
 const EIP712 = require('./EIP712')
 
-function AssetType(assetClass, data) {
+export function AssetType(assetClass: any, data: any) {
   return { assetClass, data }
 }
 
-function Asset(assetClass, assetData, value) {
+export function Asset(assetClass: string, assetData: string, value: number) {
   return { assetType: AssetType(assetClass, assetData), value }
 }
 
-function Order(maker, makeAsset, taker, takeAsset, salt, start, end, dataType, data) {
+export function Order(
+  maker: string,
+  makeAsset: { assetType: { assetClass: any; data: any }; value: any },
+  taker: string,
+  takeAsset: { assetType: { assetClass: any; data: any }; value: any },
+  salt: number,
+  start: number,
+  end: number,
+  dataType: string,
+  data: string,
+) {
   return { maker, makeAsset, taker, takeAsset, salt, start, end, dataType, data }
 }
 
@@ -37,8 +50,8 @@ const Types = {
   ],
 }
 
-async function sign(web3, order, account, verifyingContract) {
-  const chainId = Number(await web3.eth.getChainId())
+export async function sign(order: object, account: string, verifyingContract: string) {
+  const chainId = Number(await ethUtil.eth.getChainId())
   const data = EIP712.createTypeData(
     {
       name: 'GhostMarket',
@@ -50,7 +63,5 @@ async function sign(web3, order, account, verifyingContract) {
     order,
     Types,
   )
-  return (await EIP712.signTypedData(web3, account, data)).sig
+  return (await EIP712.signTypedData(account, data)).sig
 }
-
-module.exports = { AssetType, Asset, Order, sign }

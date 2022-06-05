@@ -7,7 +7,7 @@ const { MnemonicWalletSubprovider } = require('@0x/subproviders/')
 const Web3ProviderEngine = require('web3-provider-engine')
 const RPCProvider = require('web3-provider-engine/subproviders/rpc')
 
-function createGoerliProvider() {
+export function createGoerliProvider() {
   const BASE_DERIVATION_PATH = `44'/60'/0'/0`
   const MNEMONIC = process.env.MNEMONIC
 
@@ -28,5 +28,3 @@ function createGoerliProvider() {
 
   return providerEngine
 }
-
-module.exports = { createGoerliProvider }
