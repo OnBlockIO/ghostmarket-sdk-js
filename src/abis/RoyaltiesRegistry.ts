@@ -1,4 +1,4 @@
-import { PartialReadonlyContractAbi } from '../types'
+import { PartialReadonlyContractAbi } from '../types/types'
 import RoyaltiesRegistryAbi from './RoyaltiesRegistryAbi.json'
 
-export const RoyaltiesRegistry = RoyaltiesRegistryAbi as PartialReadonlyContractAbi
+export const RoyaltiesRegistryContract = RoyaltiesRegistryAbi as PartialReadonlyContractAbi

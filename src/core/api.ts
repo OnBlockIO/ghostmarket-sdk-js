@@ -1,5 +1,5 @@
 import 'isomorphic-unfetch'
-import pjson from '../package.json'
+import pjson from '../../package.json'
 import * as QueryString from 'query-string'
 import {
   API_BASE_MAINNET,
@@ -37,7 +37,7 @@ import {
   ListNFT,
   ListNFTResult,
   MarketplaceStatistics,
-} from './types'
+} from '../types/types'
 
 export class GhostMarketAPI {
   /**

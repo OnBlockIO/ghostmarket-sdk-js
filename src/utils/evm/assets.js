@@ -23,7 +23,6 @@ const ERC20 = id('ERC20')
 const ERC721 = id('ERC721')
 const ERC1155 = id('ERC1155')
 const COLLECTION = id('COLLECTION')
-const CRYPTO_PUNKS = id('CRYPTO_PUNKS')
 
 // order types
 const ORDER_DATA_V1 = id('V1')
@@ -50,7 +49,6 @@ module.exports = {
   ERC721,
   ERC1155,
   COLLECTION,
-  CRYPTO_PUNKS,
   ORDER_DATA_V1,
   ORDER_DATA_V2,
   TO_MAKER,

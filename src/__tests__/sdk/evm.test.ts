@@ -2,8 +2,8 @@
 import Web3ProviderEngine from 'web3-provider-engine'
 import Web3 from 'web3'
 
-import { createGoerliProvider } from '../utils-evm/create-goerli-provider'
-import { GhostMarketSDK } from '../../sdk'
+import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
+import { GhostMarketSDK } from '../../core/sdk'
 import {
   GhostMarketAPIConfig,
   OrderLeft,
@@ -11,18 +11,18 @@ import {
   OrderRight,
   TxObject,
   ExchangeV2ABI,
-} from '../../types'
+} from '../../types/types'
 
-import { enc, ERC1155, ETH } from '../utils-evm/assets'
-import { Order, Asset, sign } from '../utils-evm/order'
+import { enc, ERC1155, ETH } from '../../utils/evm/assets'
+import { Order, Asset, sign } from '../../utils/evm/order'
 import {
   API_BASE_TESTNET,
   ORDERBOOK_VERSION,
   ETHEREUM_TESTNET_CONTRACTS,
   NULL_ADDRESS,
-} from '../../constants'
+} from '../../core/constants'
 import ERC1155ABI from '../../abis/ERC1155Abi.json'
-import { GhostMarketAPI } from '../../api'
+import { GhostMarketAPI } from '../../core/api'
 
 /**
  * @param  {Web3} web3

@@ -1,11 +1,11 @@
-import { GhostMarketAPI } from '../../api'
-import { GhostMarketAPIConfig, Network } from '../../types'
+import { GhostMarketAPI } from '../../core/api'
+import { GhostMarketAPIConfig, Network } from '../../types/types'
 import {
   API_BASE_MAINNET,
   API_BASE_TESTNET,
   NULL_ADDRESS,
   ORDERBOOK_VERSION,
-} from '../../constants'
+} from '../../core/constants'
 import * as matchers from 'jest-extended'
 expect.extend(matchers)
 
