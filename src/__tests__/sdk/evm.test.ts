@@ -45,7 +45,7 @@ async function prepareERC1155Orders(
     account2,
     Asset(ETH, '0x', 200),
     NULL_ADDRESS,
-    Asset(ERC1155, enc(web3, contractHash, tokenId.toString()), 4),
+    Asset(ERC1155, enc(contractHash, tokenId.toString()), 4),
     1,
     0,
     0,
@@ -55,7 +55,7 @@ async function prepareERC1155Orders(
 
   const orderRight = Order(
     account1,
-    Asset(ERC1155, enc(web3, contractHash, tokenId.toString()), 4),
+    Asset(ERC1155, enc(contractHash, tokenId.toString()), 4),
     NULL_ADDRESS,
     Asset(ETH, '0x', 200),
     1,
@@ -75,7 +75,7 @@ async function prepareERC1155Orders(
  * @param  {string} verifyingContract
  */
 async function getSignature(web3: Web3, order: object, from: string, verifyingContract: string) {
-  return sign(web3, order, from, verifyingContract)
+  return sign(order, from, verifyingContract)
 }
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
