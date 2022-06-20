@@ -14,29 +14,29 @@ import {
   GhostMarketAPIConfig,
   Network,
   AssetsQuery,
-  Assets,
-  AssetsQueryV2,
-  AssetsV2,
-  CollectionsQuery,
-  Collections,
-  EventsQuery,
-  Events,
-  SeriesQuery,
-  SeriesResponse as Series,
-  OpenMintingsQuery,
-  OpenMintings,
+  IGetAssetsResult,
+  AssetsQueryV2 as GetAssetsRequest,
+  AssetsV2 as IAssetsResult,
+  CollectionsQuery as GetCollectionsRequest,
+  Collections as IGetCollectionsResult,
+  EventsQuery as GetEventsRequest,
+  Events as IGetEventsResult,
+  SeriesQuery as GetSeriesRequest,
+  SeriesResponse as IGetSeriesResult,
+  OpenMintingsQuery as GetOpenMintingsRequest,
+  OpenMintings as IGetOpenMintingsResult,
   OpenOrders,
   OrderQuery,
-  StatisticsQuery,
+  StatisticsQuery as GetMarketplaceStatisticsRequest,
   TokenMetadata,
   TokenRefreshMetadata,
   TokenURI,
-  UsersQuery,
-  Users,
-  UserExists,
-  ListNFT,
-  ListNFTResult,
-  MarketplaceStatistics,
+  UsersQuery as GetUsersRequest,
+  Users as IGetUsersResult,
+  UserExists as IGetUserExistsResult,
+  ListNFT as PostCreateOrderRequest,
+  ListNFTResult as IPostCreateOrderResult,
+  MarketplaceStatistics as IMarketplaceStatistics,
 } from '../types/types'
 
 export class GhostMarketAPI {
@@ -143,7 +143,7 @@ export class GhostMarketAPI {
     auction_state = 'all',
     auction_started = 'all',
     light_mode = 0,
-  ): Promise<Assets> {
+  ): Promise<IGetAssetsResult> {
     const assetsData = await this._get(`${API_PATH}/assets/`, {
       limit: limit,
       offset: offset,
@@ -157,21 +157,21 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return assetsData as Assets
+    return assetsData as IGetAssetsResult
   }
 
   /** Get NFT assets available on GhostMarket.
    * @param query Query to use for getting assets.
    */
   public async getAssetsV2(
-    query: AssetsQueryV2 = {},
+    query: GetAssetsRequest = {},
     page = 1,
     size = 25,
     orderBy = 'listOrBidTime',
     orderDirection = 'desc',
     withTotal = false,
     fiatCurrency = 'USD',
-  ): Promise<AssetsV2> {
+  ): Promise<IAssetsResult> {
     const assetsData = await this._get(`${API_PATH}/assets/`, {
       page: page,
       size: size,
@@ -182,7 +182,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return assetsData as Assets
+    return assetsData as IAssetsResult
   }
 
   // -- END ASSETS -- //
@@ -193,13 +193,13 @@ export class GhostMarketAPI {
    * @param query Query to use for getting collections.
    */
   public async getCollections(
-    query: CollectionsQuery = {},
+    query: GetCollectionsRequest = {},
     offset = 0,
     order_by = 'weekly_volume',
     order_direction = 'desc',
     with_total = 1,
     limit = 25,
-  ): Promise<Collections> {
+  ): Promise<IGetCollectionsResult> {
     const collectionsData = await this._get(`${API_PATH}/collections/`, {
       limit: limit,
       offset: offset,
@@ -209,7 +209,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return collectionsData as Collections
+    return collectionsData as IGetCollectionsResult
   }
 
   // -- END COLLECTIONS -- //
@@ -220,7 +220,7 @@ export class GhostMarketAPI {
    * @param query Query to use for getting events.
    */
   public async getEvents(
-    query: EventsQuery = {},
+    query: GetEventsRequest = {},
     offset = 0,
     order_by = 'id',
     order_direction = 'asc',
@@ -231,7 +231,7 @@ export class GhostMarketAPI {
     with_metadata = 0,
     with_series = 0,
     with_total = 0,
-  ): Promise<Events> {
+  ): Promise<IGetEventsResult> {
     const eventsData = await this._get(`${API_PATH}/events/`, {
       limit: limit,
       offset: offset,
@@ -246,7 +246,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return eventsData as Events
+    return eventsData as IGetEventsResult
   }
 
   // -- END EVENTS -- //
@@ -257,12 +257,12 @@ export class GhostMarketAPI {
    * @param query Query to use for getting users.
    */
   public async getSeries(
-    query: SeriesQuery = {},
+    query: GetSeriesRequest = {},
     offset = 0,
     order_by = 'id',
     order_direction = 'asc',
     limit = 50,
-  ): Promise<Series> {
+  ): Promise<IGetSeriesResult> {
     const seriesData = await this._get(`${API_PATH}/series/`, {
       limit: limit,
       offset: offset,
@@ -271,7 +271,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return seriesData as Series
+    return seriesData as IGetSeriesResult
   }
 
   // -- END SERIES -- //
@@ -282,14 +282,14 @@ export class GhostMarketAPI {
    * @param query Query to use for getting users.
    */
   public async getUsers(
-    query: UsersQuery = {},
+    query: GetUsersRequest = {},
     offset = 0,
     order_by = 'join_order',
     order_direction = 'asc',
     with_sales_statistics = 0,
     with_total = 0,
     limit = 50,
-  ): Promise<Users> {
+  ): Promise<IGetUsersResult> {
     const usersData = await this._get(`${API_PATH}/users/`, {
       limit: limit,
       offset: offset,
@@ -300,18 +300,18 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return usersData as Users
+    return usersData as IGetUsersResult
   }
 
   /** Check if user exists on GhostMarket.
    * @param username Check if this username already exists on GhostMarket.
    */
-  public async getUserExists(username: string): Promise<UserExists> {
+  public async getUserExists(username: string): Promise<IGetUserExistsResult> {
     const userExistsResult = await this._get(`${API_PATH}/userexists/`, {
       username: username,
     })
 
-    return userExistsResult as UserExists
+    return userExistsResult as IGetUserExistsResult
   }
 
   // -- END USERS -- //
@@ -321,11 +321,13 @@ export class GhostMarketAPI {
   /** Get Open Mintings available on GhostMarket.
    * @param query Query to use for getting Open Mintings.
    */
-  public async getOpenMintings(query: OpenMintingsQuery = {}): Promise<OpenMintings> {
+  public async getOpenMintings(
+    query: GetOpenMintingsRequest = {},
+  ): Promise<IGetOpenMintingsResult> {
     const openMintingsData = await this._get(`${API_PATH}/getopenmintings/`, {
       ...query,
     })
-    return openMintingsData as OpenMintings
+    return openMintingsData as IGetOpenMintingsResult
   }
 
   // -- END OPEN MINTINGS -- //
@@ -352,9 +354,12 @@ export class GhostMarketAPI {
    * createOpenOrder list an NFT on GhostMarket
    * @param  {NFTListing} nftListing NFT details
    */
-  public async createOpenOrder(nftListing: ListNFT) {
-    const result = await this._post<ListNFT>(`${API_PATH}/createopenorder`, nftListing)
-    return result as ListNFTResult
+  public async createOpenOrder(nftListing: PostCreateOrderRequest) {
+    const result = await this._post<PostCreateOrderRequest>(
+      `${API_PATH}/createopenorder`,
+      nftListing,
+    )
+    return result as IPostCreateOrderResult
   }
 
   // -- END OPEN ORDERS -- //
@@ -365,7 +370,7 @@ export class GhostMarketAPI {
    * @param query Query to use for getting statistics.
    */
   public async getStatistics(
-    query: StatisticsQuery = {},
+    query: GetMarketplaceStatisticsRequest = {},
     offset = 0,
     order_by = 'id',
     order_direction = 'asc',
@@ -383,8 +388,8 @@ export class GhostMarketAPI {
     with_marketplace_weekly_stats = 1,
     with_marketplace_monthly_stats = 1,
     with_marketplace_total_stats = 1,
-  ): Promise<MarketplaceStatistics> {
-    const statisticsData = await this._get(`${API_PATH}/marketPlaceStatistics/`, {
+  ): Promise<IMarketplaceStatistics> {
+    const statisticsData = await this._get(`${API_PATH}/marketplaceStatistics/`, {
       limit: limit,
       offset: offset,
       order_by: order_by,
@@ -405,7 +410,7 @@ export class GhostMarketAPI {
       ...query,
     })
 
-    return statisticsData as MarketplaceStatistics
+    return statisticsData as IMarketplaceStatistics
   }
 
   // -- END STATISTICS -- //

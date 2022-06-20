@@ -48,7 +48,8 @@ export interface GhostMarketAPIConfig {
 /**
  * @deprecated The method should not be used
  */
-export interface Order {
+
+export interface IOrder {
   id: number
   chain: string
   token_contract: string
@@ -242,7 +243,8 @@ export interface AssetsQueryV2 {
  * @deprecated The method should not be used
  * Interface for Assets from API response
  */
-export interface Assets {
+
+export interface IGetAssetsResult {
   total_results?: number
   assets: Array<Asset> | null
 }
@@ -259,13 +261,15 @@ export interface AssetsV2 {
  * @deprecated The method should not be used
  */
 interface Asset {
-  orders: Array<Order>
+  orders: Array<IOrder>
+
   offers: Array<Offer>
   nft: NFT
 }
 
 interface AssetV2 {
-  orders: Array<Order>
+  orders: Array<IOrder>
+
   offers: Array<Offer>
   nft: NFT
 }
@@ -474,7 +478,8 @@ interface Offer {
 /**
  * Standard interface for an Order in the order book per API response
  */
-export interface Order {
+
+export interface IOrder {
   contract_auction_id: string
   type: string
   start_date: string
