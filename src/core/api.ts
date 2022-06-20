@@ -13,31 +13,33 @@ import {
 import {
   GhostMarketAPIConfig,
   Network,
-  AssetsQuery,
-  IGetAssetsResult,
-  AssetsQueryV2 as GetAssetsRequest,
-  AssetsV2 as IAssetsResult,
-  CollectionsQuery as GetCollectionsRequest,
-  Collections as IGetCollectionsResult,
-  EventsQuery as GetEventsRequest,
-  Events as IGetEventsResult,
-  SeriesQuery as GetSeriesRequest,
-  SeriesResponse as IGetSeriesResult,
-  OpenMintingsQuery as GetOpenMintingsRequest,
-  OpenMintings as IGetOpenMintingsResult,
   OpenOrders,
   OrderQuery,
-  StatisticsQuery as GetMarketplaceStatisticsRequest,
   TokenMetadata,
   TokenRefreshMetadata,
   TokenURI,
-  UsersQuery as GetUsersRequest,
-  Users as IGetUsersResult,
-  UserExists as IGetUserExistsResult,
-  ListNFT as PostCreateOrderRequest,
-  ListNFTResult as IPostCreateOrderResult,
-  MarketplaceStatistics as IMarketplaceStatistics,
 } from '../types/types'
+import {
+  GetAssetsRequest,
+  GetCollectionsRequest,
+  GetEventsRequest,
+  GetMarketplaceStatisticsRequest,
+  GetOpenMintingsRequest,
+  GetSeriesRequest,
+  GetUsersRequest,
+  IGetAssetsResult,
+  IGetCollectionsResult,
+  IGetEventsResult,
+  IGetOpenMintingsResult,
+  IGetSeriesResult,
+  IGetUsersResult,
+  IMarketplaceStatistics,
+  IPostCreateOrderResult,
+  PostCreateOrderRequest,
+} from '../lib/api/ghostmarket'
+import { AssetsRequest } from '../lib/api/ghostmarket/requests2/asset/AssetsRequest'
+import { IAssetsResult } from '../lib/api/ghostmarket/requests2/asset/IAssetsResult'
+import { IGetUserExistsResult } from '../lib/api/ghostmarket/requests/users/IGetUserExistsResult'
 
 export class GhostMarketAPI {
   /**
@@ -133,7 +135,7 @@ export class GhostMarketAPI {
    * @param query Query to use for getting assets.
    */
   public async getAssets(
-    query: AssetsQuery = {},
+    query: GetAssetsRequest,
     offset = 0,
     order_by = 'list_or_bid_time',
     order_direction = 'desc',
@@ -164,7 +166,7 @@ export class GhostMarketAPI {
    * @param query Query to use for getting assets.
    */
   public async getAssetsV2(
-    query: GetAssetsRequest = {},
+    query: AssetsRequest,
     page = 1,
     size = 25,
     orderBy = 'listOrBidTime',
@@ -193,7 +195,7 @@ export class GhostMarketAPI {
    * @param query Query to use for getting collections.
    */
   public async getCollections(
-    query: GetCollectionsRequest = {},
+    query: GetCollectionsRequest,
     offset = 0,
     order_by = 'weekly_volume',
     order_direction = 'desc',
@@ -220,7 +222,7 @@ export class GhostMarketAPI {
    * @param query Query to use for getting events.
    */
   public async getEvents(
-    query: GetEventsRequest = {},
+    query: GetEventsRequest,
     offset = 0,
     order_by = 'id',
     order_direction = 'asc',
@@ -256,21 +258,8 @@ export class GhostMarketAPI {
   /** Get NFT series available on GhostMarket.
    * @param query Query to use for getting users.
    */
-  public async getSeries(
-    query: GetSeriesRequest = {},
-    offset = 0,
-    order_by = 'id',
-    order_direction = 'asc',
-    limit = 50,
-  ): Promise<IGetSeriesResult> {
-    const seriesData = await this._get(`${API_PATH}/series/`, {
-      limit: limit,
-      offset: offset,
-      order_by: order_by,
-      order_direction: order_direction,
-      ...query,
-    })
-
+  public async getSeries(query: GetSeriesRequest): Promise<IGetSeriesResult> {
+    const seriesData = await this._get(`${API_PATH}/series/`, query)
     return seriesData as IGetSeriesResult
   }
 
@@ -281,25 +270,8 @@ export class GhostMarketAPI {
   /** Get users from GhostMarket userbase API.
    * @param query Query to use for getting users.
    */
-  public async getUsers(
-    query: GetUsersRequest = {},
-    offset = 0,
-    order_by = 'join_order',
-    order_direction = 'asc',
-    with_sales_statistics = 0,
-    with_total = 0,
-    limit = 50,
-  ): Promise<IGetUsersResult> {
-    const usersData = await this._get(`${API_PATH}/users/`, {
-      limit: limit,
-      offset: offset,
-      order_by: order_by,
-      order_direction: order_direction,
-      with_sales_statistics: with_sales_statistics,
-      with_total: with_total,
-      ...query,
-    })
-
+  public async getUsers(query: GetUsersRequest): Promise<IGetUsersResult> {
+    const usersData = await this._get(`${API_PATH}/users/`, query)
     return usersData as IGetUsersResult
   }
 
@@ -307,10 +279,7 @@ export class GhostMarketAPI {
    * @param username Check if this username already exists on GhostMarket.
    */
   public async getUserExists(username: string): Promise<IGetUserExistsResult> {
-    const userExistsResult = await this._get(`${API_PATH}/userexists/`, {
-      username: username,
-    })
-
+    const userExistsResult = await this._get(`${API_PATH}/userexists/`, { username: username })
     return userExistsResult as IGetUserExistsResult
   }
 
@@ -321,12 +290,8 @@ export class GhostMarketAPI {
   /** Get Open Mintings available on GhostMarket.
    * @param query Query to use for getting Open Mintings.
    */
-  public async getOpenMintings(
-    query: GetOpenMintingsRequest = {},
-  ): Promise<IGetOpenMintingsResult> {
-    const openMintingsData = await this._get(`${API_PATH}/getopenmintings/`, {
-      ...query,
-    })
+  public async getOpenMintings(query: GetOpenMintingsRequest): Promise<IGetOpenMintingsResult> {
+    const openMintingsData = await this._get(`${API_PATH}/getopenmintings/`, { ...query })
     return openMintingsData as IGetOpenMintingsResult
   }
 
@@ -370,46 +335,9 @@ export class GhostMarketAPI {
    * @param query Query to use for getting statistics.
    */
   public async getStatistics(
-    query: GetMarketplaceStatisticsRequest = {},
-    offset = 0,
-    order_by = 'id',
-    order_direction = 'asc',
-    limit = 50,
-    currency = 'USD',
-    with_collections_daily_stats = 1,
-    with_collections_weekly_stats = 1,
-    with_collections_monthly_stats = 1,
-    with_collections_total_stats = 1,
-    with_chains_daily_stats = 1,
-    with_chains_weekly_stats = 1,
-    with_chains_monthly_stats = 1,
-    with_chains_total_stats = 1,
-    with_marketplace_daily_stats = 1,
-    with_marketplace_weekly_stats = 1,
-    with_marketplace_monthly_stats = 1,
-    with_marketplace_total_stats = 1,
+    query: GetMarketplaceStatisticsRequest,
   ): Promise<IMarketplaceStatistics> {
-    const statisticsData = await this._get(`${API_PATH}/marketplaceStatistics/`, {
-      limit: limit,
-      offset: offset,
-      order_by: order_by,
-      order_direction: order_direction,
-      currency: currency,
-      with_collections_daily_stats: with_collections_daily_stats,
-      with_collections_weekly_stats: with_collections_weekly_stats,
-      with_collections_monthly_stats: with_collections_monthly_stats,
-      with_collections_total_stats: with_collections_total_stats,
-      with_chains_daily_stats: with_chains_daily_stats,
-      with_chains_weekly_stats: with_chains_weekly_stats,
-      with_chains_monthly_stats: with_chains_monthly_stats,
-      with_chains_total_stats: with_chains_total_stats,
-      with_marketplace_daily_stats: with_marketplace_daily_stats,
-      with_marketplace_weekly_stats: with_marketplace_weekly_stats,
-      with_marketplace_monthly_stats: with_marketplace_monthly_stats,
-      with_marketplace_total_stats: with_marketplace_total_stats,
-      ...query,
-    })
-
+    const statisticsData = await this._get(`${API_PATH}/marketplaceStatistics/`, { ...query })
     return statisticsData as IMarketplaceStatistics
   }
 
