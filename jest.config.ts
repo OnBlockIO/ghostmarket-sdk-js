@@ -14,20 +14,20 @@ const config: Config.InitialOptions = {
     coveragePathIgnorePatterns: [
         'node_modules/',
         'src/abis/',
-        'src/common/',
         'src/core/constants',
         'src/external',
         'src/types',
         'src/utils',
+        'src/lib',
     ],
     testPathIgnorePatterns: [
         'node_modules/',
         'src/abis/',
-        'src/common/',
         'src/core/constants',
         'src/external',
         'src/types',
         'src/utils',
+        'src/lib',
     ],
     transformIgnorePatterns: ['node_modules/(?!(level-sublevel/node_modules/lgtgt)/)'],
     transform: {
