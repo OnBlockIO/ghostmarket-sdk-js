@@ -5,7 +5,6 @@ const ethUtil = require('ethereumjs-util')
 
 export function id(str: string) {
     const hex = `0x${ethUtil.keccak256(Buffer.from(str)).toString('hex').substring(0, 8)}`
-    // console.log("id: "+ str + ": ",hex)
     return hex
 }
 
@@ -30,13 +29,13 @@ export const ORDER_DATA_V2 = id('V2')
 
 // used as a variable for emitting event, transferDirection
 export const TO_MAKER = id('TO_MAKER')
-// used as variable for emitting event, transferDirection
+// used as a variable for emitting event, transferDirection
 export const TO_TAKER = id('TO_TAKER')
-// used as variable for emitting event, transferType
+// used as a variable for emitting event, transferType
 export const PROTOCOL = id('PROTOCOL')
-// used as variable for emitting event, transferType
+// used as a variable for emitting event, transferType
 export const ROYALTY = id('ROYALTY')
-// used as variable for emitting event, transferType
+// used as a variable for emitting event, transferType
 export const ORIGIN = id('ORIGIN')
-// used as variable for emitting event, transferType
+// used as a variable for emitting event, transferType
 export const PAYOUT = id('PAYOUT')

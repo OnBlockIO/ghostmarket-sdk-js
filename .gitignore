@@ -13,8 +13,6 @@ logs
 results
 tmp
 
-.DS_Store
-
 # Coverage reports
 coverage
 
