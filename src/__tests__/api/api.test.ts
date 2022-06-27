@@ -51,8 +51,8 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
                     contract: NULL_ADDRESS,
                 }
                 ORDERBOOK_VERSION > 1
-                    ? ghostmarketAPI.getAssetsV2(assetsQuery)
-                    : ghostmarketAPI.getAssets(assetsQuery)
+                    ? ghostmarketAPI.getAssetsV2(new AssetsRequest(assetsQuery))
+                    : ghostmarketAPI.getAssetsV1(new GetAssetsRequest(assetsQuery))
             } catch (error) {
                 expect(error).toInclude('Pass chain when using contract filter.')
             }
@@ -102,7 +102,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             expect(collectionsData).toHaveProperty('collections')
             const { collections } = collectionsData
             expect(collections).toBeArray()
-            expect(collections).toBeArrayOfSize(25)
+            expect(collections).toBeArrayOfSize(10)
         }, 10000)
 
         it('should get single Collection', async () => {
@@ -122,7 +122,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             expect(eventsData).toHaveProperty('events')
             const { events } = eventsData
             expect(events).toBeArray()
-            expect(events).toBeArrayOfSize(50)
+            expect(events).toBeArrayOfSize(25)
         }, 10000)
 
         it('should get single Event', async () => {
@@ -140,7 +140,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             expect(serriesData).toHaveProperty('series')
             const { series } = serriesData
             expect(series).toBeArray()
-            expect(series).toBeArrayOfSize(50)
+            expect(series).toBeArrayOfSize(25)
         }, 10000)
 
         it('should get single Serie', async () => {
@@ -197,7 +197,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             expect(usersData).toHaveProperty('users')
             const { users } = usersData
             expect(users).toBeArray()
-            expect(users).toBeArrayOfSize(50)
+            expect(users).toBeArrayOfSize(25)
         }, 10000)
 
         it('should get single User', async () => {
