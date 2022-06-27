@@ -1,5 +1,5 @@
 export interface IPagedResult {
-  page: number
-  total: number
-  error?: string
+    page: number
+    total: number
+    error?: string
 }

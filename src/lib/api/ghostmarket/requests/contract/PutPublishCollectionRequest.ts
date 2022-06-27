@@ -1,24 +1,24 @@
 import { ISignatureV2 } from './ISignatureV2'
 
 export interface ISignDataPublishCollection {
-  /** Timestamp until when the operation can be performed */
-  timestamp: number
+    /** Timestamp until when the operation can be performed */
+    timestamp: number
 
-  method: 'ModeratorPublishCollection'
+    method: 'ModeratorPublishCollection'
 
-  collection: string
+    collection: string
 
-  dismiss: boolean
+    dismiss: boolean
 }
 
 export class PutPublishCollectionRequest {
-  /** Signature */
-  signature!: ISignatureV2
+    /** Signature */
+    signature!: ISignatureV2
 
-  /** data signed */
-  data!: ISignDataPublishCollection
+    /** data signed */
+    data!: ISignDataPublishCollection
 
-  public constructor(init: PutPublishCollectionRequest) {
-    ;(<any>Object).assign(this, init)
-  }
+    public constructor(init: PutPublishCollectionRequest) {
+        ;(<any>Object).assign(this, init)
+    }
 }

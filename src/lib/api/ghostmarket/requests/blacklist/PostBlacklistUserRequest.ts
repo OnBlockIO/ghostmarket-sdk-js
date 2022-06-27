@@ -1,27 +1,27 @@
 import { ISignature } from './ISignature'
 
 export interface ISignDataBlacklistUser {
-  /** Timestamp until when the operation can be performed */
-  timestamp: number
+    /** Timestamp until when the operation can be performed */
+    timestamp: number
 
-  method: 'ModeratorBlacklistUser'
+    method: 'ModeratorBlacklistUser'
 
-  /** Offhain name */
-  offchain_name: string
-  /** On - Off toggle */
-  blacklist: boolean
-  /** Reason to (un)blacklist */
-  reason: string
+    /** Offhain name */
+    offchain_name: string
+    /** On - Off toggle */
+    blacklist: boolean
+    /** Reason to (un)blacklist */
+    reason: string
 }
 
 export class PostBlacklistUserRequest {
-  /** Signature */
-  signature!: ISignature
+    /** Signature */
+    signature!: ISignature
 
-  /** data signed */
-  data!: ISignDataBlacklistUser
+    /** data signed */
+    data!: ISignDataBlacklistUser
 
-  public constructor(init: PostBlacklistUserRequest) {
-    ;(<any>Object).assign(this, init)
-  }
+    public constructor(init: PostBlacklistUserRequest) {
+        ;(<any>Object).assign(this, init)
+    }
 }

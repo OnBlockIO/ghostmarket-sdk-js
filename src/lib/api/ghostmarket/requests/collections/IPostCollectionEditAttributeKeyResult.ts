@@ -1,5 +1,5 @@
 import { IResult } from '../IResult'
 
 export interface IPostCollectionEditAttributeKeyResult extends IResult {
-  success: boolean
+    success: boolean
 }

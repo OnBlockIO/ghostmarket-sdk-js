@@ -1,23 +1,23 @@
 import { ISignature } from './ISignature'
 
 export interface ISignDataCacheInvalidate {
-  /** Timestamp until when the operation can be performed */
-  timestamp: number
+    /** Timestamp until when the operation can be performed */
+    timestamp: number
 
-  method: 'InvalidateCache'
+    method: 'InvalidateCache'
 
-  /** Tag to invalidate */
-  tag: string
+    /** Tag to invalidate */
+    tag: string
 }
 
 export class PostCacheInvalidateRequest {
-  /** Signature */
-  signature!: ISignature
+    /** Signature */
+    signature!: ISignature
 
-  /** data signed */
-  data!: ISignDataCacheInvalidate
+    /** data signed */
+    data!: ISignDataCacheInvalidate
 
-  public constructor(init: PostCacheInvalidateRequest) {
-    ;(<any>Object).assign(this, init)
-  }
+    public constructor(init: PostCacheInvalidateRequest) {
+        ;(<any>Object).assign(this, init)
+    }
 }

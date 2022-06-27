@@ -5,17 +5,17 @@ import { IOrderDataV2 } from '../models/IOrderDataV2'
 import { IFees } from '../models/IFees'
 
 export interface IOffer {
-  end_date: number
-  fiat_currency: string
-  fiat_price: number
-  maker: IUserInfo
-  base_contract: IBaseContractV2
-  quote_contract: IQuoteContractV2
-  order_data: IOrderDataV2
-  price: string
-  start_date: number
-  type: string
-  token_amount: number
-  origin_fees: IFees
-  is_collection_offer: boolean
+    end_date: number
+    fiat_currency: string
+    fiat_price: number
+    maker: IUserInfo
+    base_contract: IBaseContractV2
+    quote_contract: IQuoteContractV2
+    order_data: IOrderDataV2
+    price: string
+    start_date: number
+    type: string
+    token_amount: number
+    origin_fees: IFees
+    is_collection_offer: boolean
 }

@@ -1,3 +1,3 @@
 export interface IResult {
-  error?: string
+    error?: string
 }

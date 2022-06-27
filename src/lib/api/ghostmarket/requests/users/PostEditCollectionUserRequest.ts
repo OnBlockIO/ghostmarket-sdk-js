@@ -1,53 +1,53 @@
 import { ISignature } from './ISignature'
 
 export interface ISignDataEditCollectionUser {
-  /** Timestamp until when the operation can be performed */
-  timestamp: number
+    /** Timestamp until when the operation can be performed */
+    timestamp: number
 
-  /** Method */
-  method: 'UserEditCollection'
+    /** Method */
+    method: 'UserEditCollection'
 
-  /** Slug */
-  // slug: string;
-  /** Name of collection */
-  name?: string
-  /** Description */
-  description?: string
-  /** URL */
-  website?: string
-  /** Avatar */
-  logo_url?: string
-  /** Banner */
-  featured_image?: string
-  /** Background color **/
-  background_color?: string
-  /** Socials Facebook */
-  socials_facebook?: string
-  /** Socials Twitter */
-  socials_twitter?: string
-  /** Socials Spotify */
-  socials_spotify?: string
-  /** Socials Youtube */
-  socials_youtube?: string
-  /** Socials Instagram */
-  socials_instagram?: string
-  /** Socials Telegram */
-  socials_telegram?: string
-  /** Category of collection */
-  category?: string
+    /** Slug */
+    // slug: string;
+    /** Name of collection */
+    name?: string
+    /** Description */
+    description?: string
+    /** URL */
+    website?: string
+    /** Avatar */
+    logo_url?: string
+    /** Banner */
+    featured_image?: string
+    /** Background color **/
+    background_color?: string
+    /** Socials Facebook */
+    socials_facebook?: string
+    /** Socials Twitter */
+    socials_twitter?: string
+    /** Socials Spotify */
+    socials_spotify?: string
+    /** Socials Youtube */
+    socials_youtube?: string
+    /** Socials Instagram */
+    socials_instagram?: string
+    /** Socials Telegram */
+    socials_telegram?: string
+    /** Category of collection */
+    category?: string
 }
 
 export class PostEditCollectionUserRequest {
-  /** slug */
-  slug!: string
+    /** slug */
+    slug!: string
 
-  /** signature */
-  signature!: ISignature
+    /** signature */
+    signature!: ISignature
 
-  /** data signed */
-  data!: ISignDataEditCollectionUser
+    /** data signed */
+    data!: ISignDataEditCollectionUser
 
-  public constructor(init: PostEditCollectionUserRequest) {
-    ;(<any>Object).assign(this, init)
-  }
+    public constructor(init: PostEditCollectionUserRequest) {
+        ;(<any>Object).assign(this, init)
+    }
 }

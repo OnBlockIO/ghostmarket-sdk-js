@@ -8,23 +8,23 @@ const Web3ProviderEngine = require('web3-provider-engine')
 const RPCProvider = require('web3-provider-engine/subproviders/rpc')
 
 export function createGoerliProvider() {
-  const BASE_DERIVATION_PATH = `44'/60'/0'/0`
-  const MNEMONIC = process.env.MNEMONIC
+    const BASE_DERIVATION_PATH = `44'/60'/0'/0`
+    const MNEMONIC = process.env.MNEMONIC
 
-  const mnemonicWalletProvider = new MnemonicWalletSubprovider({
-    mnemonic: MNEMONIC,
-    baseDerivationPath: BASE_DERIVATION_PATH,
-  })
+    const mnemonicWalletProvider = new MnemonicWalletSubprovider({
+        mnemonic: MNEMONIC,
+        baseDerivationPath: BASE_DERIVATION_PATH,
+    })
 
-  const infuraGoerliRPCUrl = `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`
+    const infuraGoerliRPCUrl = `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`
 
-  const infuraRPCProvider = new RPCProvider({
-    rpcUrl: infuraGoerliRPCUrl,
-  })
+    const infuraRPCProvider = new RPCProvider({
+        rpcUrl: infuraGoerliRPCUrl,
+    })
 
-  const providerEngine = new Web3ProviderEngine()
-  providerEngine.addProvider(mnemonicWalletProvider)
-  providerEngine.addProvider(infuraRPCProvider)
+    const providerEngine = new Web3ProviderEngine()
+    providerEngine.addProvider(mnemonicWalletProvider)
+    providerEngine.addProvider(infuraRPCProvider)
 
-  return providerEngine
+    return providerEngine
 }

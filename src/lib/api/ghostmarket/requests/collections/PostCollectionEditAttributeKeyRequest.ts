@@ -1,28 +1,28 @@
 import { ISignature } from './ISignature'
 
 export interface ISignDataCollectionEditAttributeKey {
-  /** Timestamp until when the operation can be performed */
-  timestamp: number
+    /** Timestamp until when the operation can be performed */
+    timestamp: number
 
-  method: 'ModeratorEditAttributeKey'
+    method: 'ModeratorEditAttributeKey'
 
-  /** Slug of the collection */
-  slug: string
-  attribute_keys: {
-    id: number
-    display_name: string
-    queriable: boolean
-  }[]
+    /** Slug of the collection */
+    slug: string
+    attribute_keys: {
+        id: number
+        display_name: string
+        queriable: boolean
+    }[]
 }
 
 export class PostCollectionEditAttributeKeyRequest {
-  /** Signature */
-  signature!: ISignature
+    /** Signature */
+    signature!: ISignature
 
-  /** data signed */
-  data!: ISignDataCollectionEditAttributeKey
+    /** data signed */
+    data!: ISignDataCollectionEditAttributeKey
 
-  public constructor(init: PostCollectionEditAttributeKeyRequest) {
-    ;(<any>Object).assign(this, init)
-  }
+    public constructor(init: PostCollectionEditAttributeKeyRequest) {
+        ;(<any>Object).assign(this, init)
+    }
 }

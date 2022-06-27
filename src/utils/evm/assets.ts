@@ -4,17 +4,17 @@
 const ethUtil = require('ethereumjs-util')
 
 export function id(str: string) {
-  const hex = `0x${ethUtil.keccak256(Buffer.from(str)).toString('hex').substring(0, 8)}`
-  // console.log("id: "+ str + ": ",hex)
-  return hex
+    const hex = `0x${ethUtil.keccak256(Buffer.from(str)).toString('hex').substring(0, 8)}`
+    // console.log("id: "+ str + ": ",hex)
+    return hex
 }
 
 export function enc(token: string, tokenId: string) {
-  if (tokenId) {
-    return ethUtil.encodeParameters(['address', 'uint256'], [token, tokenId])
-  } else {
-    return ethUtil.encodeParameter('address', token)
-  }
+    if (tokenId) {
+        return ethUtil.encodeParameters(['address', 'uint256'], [token, tokenId])
+    } else {
+        return ethUtil.encodeParameter('address', token)
+    }
 }
 
 // asset types that can be transfered

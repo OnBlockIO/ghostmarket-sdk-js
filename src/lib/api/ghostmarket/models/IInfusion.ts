@@ -1,4 +1,4 @@
 export interface IInfusion {
-  key: string
-  value: string
+    key: string
+    value: string
 }

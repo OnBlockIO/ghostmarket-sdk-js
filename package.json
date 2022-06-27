@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@0x/subproviders": "^6.6.5",
+    "axios": "^0.27.2",
     "dotenv": "^16.0.1",
     "ethereumjs-util": "^7.1.4",
     "isomorphic-unfetch": "^3.1.0",

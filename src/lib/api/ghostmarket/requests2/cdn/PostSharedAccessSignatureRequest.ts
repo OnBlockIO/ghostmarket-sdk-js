@@ -1,25 +1,25 @@
 import { ISignature } from './ISignature'
 
 export interface ISignDataSharedAccess {
-  /** Timestamp until when the operation can be performed */
-  timestamp: number
+    /** Timestamp until when the operation can be performed */
+    timestamp: number
 
-  method: 'GetSharedAccessSignature'
+    method: 'GetSharedAccessSignature'
 
-  /** Slug (for collections) */
-  slug?: string
-  /** username (for users) */
-  user?: string
+    /** Slug (for collections) */
+    slug?: string
+    /** username (for users) */
+    user?: string
 }
 
 export class PostSharedAccessSignatureRequest {
-  /** Signature */
-  signature!: ISignature
+    /** Signature */
+    signature!: ISignature
 
-  /** data signed */
-  data!: ISignDataSharedAccess
+    /** data signed */
+    data!: ISignDataSharedAccess
 
-  public constructor(init: PostSharedAccessSignatureRequest) {
-    ;(<any>Object).assign(this, init)
-  }
+    public constructor(init: PostSharedAccessSignatureRequest) {
+        ;(<any>Object).assign(this, init)
+    }
 }

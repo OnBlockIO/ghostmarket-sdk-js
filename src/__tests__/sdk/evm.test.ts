@@ -5,21 +5,21 @@ import Web3 from 'web3'
 import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
 import { GhostMarketSDK } from '../../core/sdk'
 import {
-  GhostMarketAPIConfig,
-  OrderLeft,
-  Network,
-  OrderRight,
-  TxObject,
-  ExchangeV2ABI,
+    GhostMarketAPIConfig,
+    OrderLeft,
+    Network,
+    OrderRight,
+    TxObject,
+    ExchangeV2ABI,
 } from '../../types/types'
 
 import { enc, ERC1155, ETH } from '../../utils/evm/assets'
 import { Order, Asset, sign } from '../../utils/evm/order'
 import {
-  API_BASE_TESTNET,
-  ORDERBOOK_VERSION,
-  ETHEREUM_TESTNET_CONTRACTS,
-  NULL_ADDRESS,
+    API_BASE_TESTNET,
+    ORDERBOOK_VERSION,
+    ETHEREUM_TESTNET_CONTRACTS,
+    NULL_ADDRESS,
 } from '../../core/constants'
 import ERC1155ABI from '../../abis/ERC1155Abi.json'
 import { GhostMarketAPI } from '../../core/api'
@@ -31,40 +31,40 @@ import { GhostMarketAPI } from '../../core/api'
  * @returns orderRight, orderLeft
  */
 async function prepareERC1155Orders(
-  web3: Web3,
-  account1: string,
-  account2: string,
+    web3: Web3,
+    account1: string,
+    account2: string,
 ): Promise<{
-  orderRight: OrderRight
-  orderLeft: OrderLeft
+    orderRight: OrderRight
+    orderLeft: OrderLeft
 }> {
-  const contractHash = '0xbf49984e4A7924FE9d05A6B5D1F8d4C1b137660c'
-  const tokenId = 4
+    const contractHash = '0xbf49984e4A7924FE9d05A6B5D1F8d4C1b137660c'
+    const tokenId = 4
 
-  const orderLeft = Order(
-    account2,
-    Asset(ETH, '0x', 200),
-    NULL_ADDRESS,
-    Asset(ERC1155, enc(contractHash, tokenId.toString()), 4),
-    1,
-    0,
-    0,
-    '0xffffffff',
-    '0x',
-  )
+    const orderLeft = Order(
+        account2,
+        Asset(ETH, '0x', 200),
+        NULL_ADDRESS,
+        Asset(ERC1155, enc(contractHash, tokenId.toString()), 4),
+        1,
+        0,
+        0,
+        '0xffffffff',
+        '0x',
+    )
 
-  const orderRight = Order(
-    account1,
-    Asset(ERC1155, enc(contractHash, tokenId.toString()), 4),
-    NULL_ADDRESS,
-    Asset(ETH, '0x', 200),
-    1,
-    0,
-    0,
-    '0xffffffff',
-    '0x',
-  )
-  return { orderLeft, orderRight }
+    const orderRight = Order(
+        account1,
+        Asset(ERC1155, enc(contractHash, tokenId.toString()), 4),
+        NULL_ADDRESS,
+        Asset(ETH, '0x', 200),
+        1,
+        0,
+        0,
+        '0xffffffff',
+        '0x',
+    )
+    return { orderLeft, orderRight }
 }
 
 /**
@@ -75,96 +75,96 @@ async function prepareERC1155Orders(
  * @param  {string} verifyingContract
  */
 async function getSignature(web3: Web3, order: object, from: string, verifyingContract: string) {
-  return sign(order, from, verifyingContract)
+    return sign(order, from, verifyingContract)
 }
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
-  const ghostmarketBaseAPIUrl = API_BASE_TESTNET
+    const ghostmarketBaseAPIUrl = API_BASE_TESTNET
 
-  const ghostMarketAPIConfig: GhostMarketAPIConfig = {
-    networkName: Network.EthereumTestnet,
-    apiKey: process.env.GM_API_KEY,
-    apiBaseUrl: ghostmarketBaseAPIUrl,
-    providerRPCUrl: '',
-    useReadOnlyProvider: false,
-  }
+    const ghostMarketAPIConfig: GhostMarketAPIConfig = {
+        networkName: Network.EthereumTestnet,
+        apiKey: process.env.GM_API_KEY,
+        apiBaseUrl: ghostmarketBaseAPIUrl,
+        providerRPCUrl: '',
+        useReadOnlyProvider: false,
+    }
 
-  let provider: Web3ProviderEngine
-  let web3: Web3
-  let accounts: Array<string>
-  let account1: string
-  let account2: string
-  let GhostMarket: GhostMarketSDK
+    let provider: Web3ProviderEngine
+    let web3: Web3
+    let accounts: Array<string>
+    let account1: string
+    let account2: string
+    let GhostMarket: GhostMarketSDK
 
-  beforeAll(async () => {
-    provider = createGoerliProvider()
-    provider.start()
+    beforeAll(async () => {
+        provider = createGoerliProvider()
+        provider.start()
 
-    web3 = new Web3(provider)
-    accounts = await web3.eth.getAccounts()
-    account1 = accounts[0]
-    account2 = accounts[1]
-    GhostMarket = new GhostMarketSDK(provider, ghostMarketAPIConfig)
-  })
+        web3 = new Web3(provider)
+        accounts = await web3.eth.getAccounts()
+        account1 = accounts[0]
+        account2 = accounts[1]
+        GhostMarket = new GhostMarketSDK(provider, ghostMarketAPIConfig)
+    })
 
-  afterAll(() => {
-    provider.stop()
-  })
+    afterAll(() => {
+        provider.stop()
+    })
 
-  describe('Orders', () => {
-    it('should not be able to list n3 tokens', async () => {
-      const nftToList = {
-        chain: 'n3',
-        token_contract: NULL_ADDRESS,
-        token_id: '',
-        token_amount: 0,
-        quote_contract: '',
-        quote_price: '0',
-        maker_address: '',
-        is_buy_offer: false,
-        start_date: 0,
-        end_date: 0,
-        signature: '',
-        order_key_hash: '',
-        salt: '',
-        origin_fees: 0,
-        origin_address: '',
-      }
+    describe('Orders', () => {
+        it('should not be able to list n3 tokens', async () => {
+            const nftToList = {
+                chain: 'n3',
+                token_contract: NULL_ADDRESS,
+                token_id: '',
+                token_amount: 0,
+                quote_contract: '',
+                quote_price: '0',
+                maker_address: '',
+                is_buy_offer: false,
+                start_date: 0,
+                end_date: 0,
+                signature: '',
+                order_key_hash: '',
+                salt: '',
+                origin_fees: 0,
+                origin_address: '',
+            }
 
-      const listing = await GhostMarket.api.createOpenOrder(nftToList)
-      expect(listing).toHaveProperty('error')
-      expect(listing.error).toBe(
-        `Token contract '0000000000000000000000000000000000000000/n3' is not supported by backend (main db).`,
-      )
-    }, 10000)
+            const listing = await GhostMarket.api.createOpenOrder(nftToList)
+            expect(listing).toHaveProperty('error')
+            expect(listing.error).toBe(
+                `Token contract '0000000000000000000000000000000000000000/n3' is not supported by backend (main db).`,
+            )
+        }, 10000)
 
-    it('should not be able to list unaccepted quote_contract', async () => {
-      const nftToList = {
-        chain: 'etht',
-        token_contract: '0xd35b5d7e184013233cc43139dc7242223ec0a708',
-        token_id: '',
-        token_amount: 0,
-        quote_contract: NULL_ADDRESS,
-        quote_price: '0',
-        maker_address: '',
-        is_buy_offer: false,
-        start_date: 0,
-        end_date: 0,
-        signature: '',
-        order_key_hash: '',
-        salt: '',
-        origin_fees: 0,
-        origin_address: '',
-      }
+        it('should not be able to list unaccepted quote_contract', async () => {
+            const nftToList = {
+                chain: 'etht',
+                token_contract: '0xd35b5d7e184013233cc43139dc7242223ec0a708',
+                token_id: '',
+                token_amount: 0,
+                quote_contract: NULL_ADDRESS,
+                quote_price: '0',
+                maker_address: '',
+                is_buy_offer: false,
+                start_date: 0,
+                end_date: 0,
+                signature: '',
+                order_key_hash: '',
+                salt: '',
+                origin_fees: 0,
+                origin_address: '',
+            }
 
-      const listing = await GhostMarket.api.createOpenOrder(nftToList)
-      expect(listing).toHaveProperty('error')
-      expect(listing.error).toBe(
-        `Token contract 'd35b5d7e184013233cc43139dc7242223ec0a708/etht' is not supported by backend (main db).`,
-      )
-    }, 10000)
-  })
-  /* it('should not match orders blabla', async () => {
+            const listing = await GhostMarket.api.createOpenOrder(nftToList)
+            expect(listing).toHaveProperty('error')
+            expect(listing.error).toBe(
+                `Token contract 'd35b5d7e184013233cc43139dc7242223ec0a708/etht' is not supported by backend (main db).`,
+            )
+        }, 10000)
+    })
+    /* it('should not match orders blabla', async () => {
       const { orderLeft, orderRight } = await prepareERC1155Orders(web3, account1, account2)
 
       // This is an ExchangeV2Proxy contract address
@@ -192,7 +192,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
     }, 20000)
   }) */
 
-  /* it('should cancel an Order', async () => {
+    /* it('should cancel an Order', async () => {
     const { orderLeft, orderRight } = await prepareERC1155Orders(web3, account1, account2)
     const txObject: TxObject = {
       from: account1,
