@@ -1,11 +1,11 @@
 export enum GetAssetsRequestOrderBy {
-    // start_date = 'listingStartDate',
-    list_or_bid_time = 'listOrBidTime',
-    end_date = 'listingEndDate',
-    mint_date = 'mintDate',
-    mint_number = 'mintNumber',
+    // start_date = 'listing_start_date',
+    list_or_bid_time = 'list_or_bid_time',
+    end_date = 'listing_end_date',
+    mint_date = 'mint_date',
+    mint_number = 'mint_number',
     price = 'price',
-    bid_price = 'bidPrice',
+    bid_price = 'bid_price',
 }
 
 export enum GetAssetsRequestOrderDirection {
@@ -24,18 +24,18 @@ export enum GetAssetsRequestListingTypes {
 
 export enum GetAssetsRequestListingStates {
     all = '',
-    buy_now = 'buyNow',
+    buy_now = 'buy_now',
     auction = 'auction',
-    on_sale_all = 'onSaleAll',
-    on_sale_not_expired = 'onSaleNotExpired',
-    not_on_sale = 'notOnSale',
+    on_sale_all = 'on_sale_all',
+    on_sale_not_expired = 'on_sale_not_expired',
+    not_on_sale = 'not_on_sale',
 }
 
 export enum GetAssetsRequestListingStarted {
     all = '',
     started = 'started',
-    not_started = 'notStarted',
-    no_start_date = 'noStartDate',
+    not_started = 'not_started',
+    no_start_date = 'no_start_date',
 }
 
 /** Returns assets available on the marketplace. */
