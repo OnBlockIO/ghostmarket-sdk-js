@@ -159,7 +159,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             expect(openOrdersData).toHaveProperty('open_orders')
             const { open_orders: openOrders } = openOrdersData
             expect(openOrders).toBeArray()
-            expect(openOrders).toBeArrayOfSize(25)
+            expect(openOrders).toBeArrayOfSize(50)
         }, 10000)
 
         it('should get single Open Order', async () => {
@@ -246,15 +246,20 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             expect(tokenURIData.token_uri).toBeString()
         })
 
-        it('Should return an object with "error" property for token with no tokenURI', async () => {
-            const tokenQueryData = {
-                token_id: '3618701890081213769',
-                contract: '0xaa4fb927b3fe004e689a278d188689c9f050a8b2',
-                chain: 'n3',
+        it('Should return an error for token with no tokenURI', async () => {
+            try {
+                // non existent token id passed
+                const tokenQueryData = {
+                    token_id: '3618701890081213769',
+                    contract: '0xaa4fb927b3fe004e689a278d188689c9f050a8b2',
+                    chain: 'n3',
+                }
+                await ghostmarketAPI.getTokenURI(tokenQueryData)
+            } catch (error: any) {
+                expect(error.toString()).toInclude(
+                    'NFT with token id 3618701890081213769 has no URI.',
+                )
             }
-            const tokenURIData = await ghostmarketAPI.getTokenURI(tokenQueryData)
-            expect(tokenURIData).toHaveProperty('error')
-            expect(tokenURIData.error).toBe('NFT with token id 3618701890081213769 has no URI.')
         })
     })
 })
