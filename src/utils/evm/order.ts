@@ -3,28 +3,30 @@
 // eslint-disable-next-line no-undef
 const ethUtil = require('ethereumjs-util')
 
-// https://eips.ethereum.org/EIPS/eip-712
-const EIP712 = require('./EIP712')
+import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
+import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
+import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
+import EIP712 from './EIP712'
 
-export function AssetType(assetClass: any, data: any) {
+export function AssetType(assetClass: string, data: string): IEVMAssetType {
     return { assetClass, data }
 }
 
-export function Asset(assetClass: string, assetData: string, value: number) {
+export function Asset(assetClass: string, assetData: string, value: string): IEVMAsset {
     return { assetType: AssetType(assetClass, assetData), value }
 }
 
 export function Order(
     maker: string,
-    makeAsset: { assetType: { assetClass: any; data: any }; value: any },
+    makeAsset: IEVMAsset,
     taker: string,
-    takeAsset: { assetType: { assetClass: any; data: any }; value: any },
-    salt: number,
+    takeAsset: IEVMAsset,
+    salt: string | number,
     start: number,
     end: number,
     dataType: string,
     data: string,
-) {
+): IEVMOrder {
     return { maker, makeAsset, taker, takeAsset, salt, start, end, dataType, data }
 }
 
@@ -50,7 +52,7 @@ const Types = {
     ],
 }
 
-export async function sign(order: object, account: string, verifyingContract: string) {
+export async function sign(order: IEVMOrder, account: string, verifyingContract: string) {
     const chainId = Number(await ethUtil.eth.getChainId())
     const data = EIP712.createTypeData(
         {

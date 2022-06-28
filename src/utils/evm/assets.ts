@@ -3,12 +3,12 @@
 // eslint-disable-next-line no-undef
 const ethUtil = require('ethereumjs-util')
 
-export function id(str: string) {
+export function id(str: string): string {
     const hex = `0x${ethUtil.keccak256(Buffer.from(str)).toString('hex').substring(0, 8)}`
     return hex
 }
 
-export function enc(token: string, tokenId: string) {
+export function enc(token: string, tokenId: string): string {
     if (tokenId) {
         return ethUtil.encodeParameters(['address', 'uint256'], [token, tokenId])
     } else {
