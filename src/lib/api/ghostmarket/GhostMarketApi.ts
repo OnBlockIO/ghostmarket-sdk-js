@@ -1,18 +1,20 @@
 import axios from 'axios'
-import { IAddressIncentive, ICollectionCategory, IMarketplaceStatistics, IOffer } from './models'
+import {
+    IAddressIncentive,
+    IAddressIncentiveResults,
+    ICollectionCategory,
+    IMarketplaceStatistics,
+    IOffer,
+} from './models'
 import {
     GetUsersRequest,
     IGetUsersResult,
-    PostUserRequest,
-    IPostUserResult,
     GetAssetsRequest,
     IGetAssetsResult,
     GetCollectionsRequest,
     IGetCollectionsResult,
     GetEventsRequest,
     IGetEventsResult,
-    GetReferralsRequest,
-    IGetReferralsResult,
     GetSeriesRequest,
     IGetSeriesResult,
     IGetStatisticsResult,
@@ -22,12 +24,8 @@ import {
     IPostCreateOrderResult,
     PostDeleteOrderRequest,
     IPostDeleteOrderResult,
-    PostLockContentRequest,
-    IPostLockContentResult,
-    PostUnlockContentRequest,
-    IPostUnlockContentResult,
     GetOpenMintingsRequest,
-    GetRefreshMetadataRequest,
+    GetMetadataRequest,
     IGetRefreshMetadataResult,
     IGetDailyStatisticsResult,
     GetMarketplaceStatisticsRequest,
@@ -35,52 +33,17 @@ import {
     GetChainStatisticsRequest,
     GetChainDailyStatisticsRequest,
     IGetOpenMintingsResult,
-    PostCollectionAttributesReprocessRequest,
-    IPostCollectionAttributesReprocessResult,
-    PostBlacklistAddressRequest,
-    IPostBlacklistResult,
-    PostBlacklistSeriesRequest,
-    PostBlacklistUserRequest,
     GetCollectionDailyStatisticsRequest,
     GetUserExistsRequest,
     IGetUserExistsResult,
     GetCollectionAttributesRequest,
     IGetCollectionAttributesResult,
-    PostCacheInvalidateRequest,
-    IPostCacheInvalidateResult,
-    PostCollectionEditAttributeKeyRequest,
-    IPostCollectionEditAttributeKeyResult,
     GetCollectionAttributeKeysRequest,
     IGetCollectionAttributeKeysResult,
-    GetContractDetailsRequest,
-    IGetContractDetailsResult,
-    IPostCreateContractResult,
-    PostCreateContractRequest,
-    PutEditContractRequest,
-    IPutEditContractResult,
-    PutPublishCollectionRequest,
-    IPutPublishCollectionResult,
-    PostNsfwSeriesRequest,
-    IPostNsfwResult,
     GetCollectionStatisticsRequest,
     GetAddressReward,
     GetRewardsChain,
-    PostCreateUserRequest,
-    IPostCreateUserResult,
-    IPostDeleteUserResult,
-    PostDeleteUserRequest,
-    PostAddAddressRequest,
-    IPostAddAddressResult,
-    IPostRemoveAddressResult,
-    PostRemoveAddressRequest,
-    PostEditProfileUserRequest,
-    IPostEditProfileUserResult,
-    IPostEditProfileModeratorResult,
-    PostEditProfileModeratorRequest,
-    PostEditCollectionUserRequest,
-    IPostEditCollectionUserResult,
-    IPostEditCollectionModeratorResult,
-    PostEditCollectionModeratorRequest,
+    IGetTokenURIResult,
 } from './requests'
 import {
     AssetsRequest,
@@ -89,9 +52,7 @@ import {
     IAssetOrdersResult,
     IAssetRoyaltiesResult,
     IAssetsResult,
-    IPostSharedAccessSignatureResult,
-    PostSharedAccessSignatureRequest,
-} from './requests2'
+} from './requestsV2'
 
 export interface IGhostMarketApiOptions {
     baseUrl: string
@@ -145,12 +106,6 @@ export class GhostMarketApi {
         }
     }
 
-    async postUser(request: PostUserRequest): Promise<IPostUserResult> {
-        const url = this.options.baseUrl + '/user'
-        const res = await axios.post(url, this.config(request))
-        return res.data
-    }
-
     async getAssetsV1(request: GetAssetsRequest): Promise<IGetAssetsResult> {
         const url = this.options.baseUrl + '/assets'
         // fix for backend not supporting collection_slug with series_id
@@ -165,7 +120,7 @@ export class GhostMarketApi {
         return res.data
     }
 
-    async getOpenEditions(request: GetOpenMintingsRequest): Promise<IGetOpenMintingsResult> {
+    async getOpenMintings(request: GetOpenMintingsRequest): Promise<IGetOpenMintingsResult> {
         const url = this.options.baseUrl + '/getOpenMintings'
         const res = await axios.get(url, this.config(request))
         return res.data
@@ -188,79 +143,6 @@ export class GhostMarketApi {
         return res.data
     }
 
-    async postCacheInvalidate(
-        request: PostCacheInvalidateRequest,
-    ): Promise<IPostCacheInvalidateResult> {
-        const url = this.options.baseUrl + '/cache/invalidate'
-        try {
-            const res = await axios.post<IPostCacheInvalidateResult>(
-                url,
-                request,
-                this.configPost(),
-            )
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            throw new Error(err)
-        }
-    }
-
-    async postCollectionAttributesReprocess(
-        request: PostCollectionAttributesReprocessRequest,
-    ): Promise<IPostCollectionAttributesReprocessResult> {
-        const url = this.options.baseUrl + '/moderation/collection/attribute/reprocess'
-        try {
-            const res = await axios.post<IPostCollectionAttributesReprocessResult>(
-                url,
-                request,
-                this.configPost(),
-            )
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            if (err.response?.data?.errors['$.data.remove_connection']) {
-                throw new Error(err.response.data.errors['$.data.remove_connection'][0])
-            } // only show first error
-            if (err.response?.data?.errors['$.data.remove_main_keys']) {
-                throw new Error(err.response.data.errors['$.data.remove_main_keys'][0])
-            } // only show first error
-            if (err.response?.data?.errors['$.data.remove_user_keys']) {
-                throw new Error(err.response.data.errors['$.data.remove_user_keys'][0])
-            } // only show first error
-            if (err.response?.data?.errors['$.data.remove_values']) {
-                throw new Error(err.response.data.errors['$.data.remove_values'][0])
-            } // only show first error
-            if (err.response?.data?.errors['$.data.metadata_force_refetch']) {
-                throw new Error(err.response.data.errors['$.data.metadata_force_refetch'][0])
-            } // only show first error
-            if (err.response?.data?.errors['$.data.metadata_update']) {
-                throw new Error(err.response.data.errors['$.data.metadata_update'][0])
-            } // only show first error
-            throw new Error(err)
-        }
-    }
-
-    async postCollectionEditAttributeKey(
-        request: PostCollectionEditAttributeKeyRequest,
-    ): Promise<IPostCollectionEditAttributeKeyResult> {
-        const url = this.options.baseUrl + '/moderator/attributeKey/edit'
-        const res = await axios.post<IPostCollectionEditAttributeKeyResult>(
-            url,
-            request,
-            this.configPost(),
-        )
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
     async getCollectionCategories(): Promise<ICollectionCategory[]> {
         const url = this.options.baseUrl + '/collection/categories'
         const res = await axios.get(url, this.config())
@@ -275,155 +157,8 @@ export class GhostMarketApi {
         return res.data
     }
 
-    async getContractDetailsNew(
-        request: GetContractDetailsRequest,
-    ): Promise<IGetContractDetailsResult> {
-        const url = this.baseUrl2 + '/moderator/contract/discover'
-        const res = await axios.get(url, this.config(request))
-        return res.data
-    }
-
-    async getContractDetails(
-        request: GetContractDetailsRequest,
-    ): Promise<IGetContractDetailsResult> {
-        const url = this.baseUrl2 + '/moderator/contract/details'
-        const res = await axios.get(url, this.config(request))
-        return res.data
-    }
-
-    async postCreateContract(
-        request: PostCreateContractRequest,
-    ): Promise<IPostCreateContractResult> {
-        const url = this.baseUrl2 + '/moderator/contract'
-        try {
-            const res = await axios.post<IPostCreateContractResult>(url, request, this.configPost())
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            throw new Error(err)
-        }
-    }
-
-    async putEditContract(request: PutEditContractRequest): Promise<IPutEditContractResult> {
-        const url = this.baseUrl2 + '/moderator/contract'
-        try {
-            const res = await axios.put<IPutEditContractResult>(url, request, this.configPost())
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            throw new Error(err)
-        }
-    }
-
-    async putPublishCollection(
-        request: PutPublishCollectionRequest,
-    ): Promise<IPutPublishCollectionResult> {
-        const url = this.baseUrl2 + '/moderator/collection/publish'
-        try {
-            const res = await axios.put<IPutPublishCollectionResult>(
-                url,
-                request,
-                this.configPost(),
-            )
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            throw new Error(err)
-        }
-    }
-
-    async postBlacklistAddress(
-        request: PostBlacklistAddressRequest,
-    ): Promise<IPostBlacklistResult> {
-        const url = this.options.baseUrl + '/moderator/blacklist/address'
-        const res = await axios.post<IPostBlacklistResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postBlacklistSeries(request: PostBlacklistSeriesRequest): Promise<IPostBlacklistResult> {
-        const url = this.options.baseUrl + '/moderator/blacklist/series'
-        const res = await axios.post<IPostBlacklistResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postBlacklistUser(request: PostBlacklistUserRequest): Promise<IPostBlacklistResult> {
-        const url = this.options.baseUrl + '/moderator/blacklist/user'
-        const res = await axios.post<IPostBlacklistResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postNsfwSeries(request: PostNsfwSeriesRequest): Promise<IPostNsfwResult> {
-        const url = this.options.baseUrl + '/moderator/nsfw/series'
-        try {
-            const res = await axios.post<IPostNsfwResult>(url, request, this.configPost())
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            if (err.response?.data?.errors['Data.chain']) {
-                throw new Error(err.response.data.errors['Data.chain'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.contract']) {
-                throw new Error(err.response.data.errors['Data.contract'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.series']) {
-                throw new Error(err.response.data.errors['Data.series'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.reason']) {
-                throw new Error(err.response.data.errors['Data.reason'][0])
-            } // only show first error
-            throw new Error(err)
-        }
-    }
-
-    async postLockContent(request: PostLockContentRequest): Promise<IPostLockContentResult> {
-        const url = this.options.baseUrl + '/lockedLock'
-        const res = await axios.get<IPostLockContentResult>(url, this.config(request))
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postUnlockContent(request: PostUnlockContentRequest): Promise<IPostUnlockContentResult> {
-        const url = this.options.baseUrl + '/lockedUnlock'
-        const res = await axios.post<IPostUnlockContentResult>(url, request, {
-            headers: { 'Content-Type': 'application/json' },
-        })
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
     async getEvents(request: GetEventsRequest): Promise<IGetEventsResult> {
         const url = this.options.baseUrl + '/events'
-        const res = await axios.get(url, this.config(request))
-        return res.data
-    }
-
-    async getReferrals(request: GetReferralsRequest): Promise<IGetReferralsResult[]> {
-        const url = this.options.baseUrl + '/referrals'
         const res = await axios.get(url, this.config(request))
         return res.data
     }
@@ -507,7 +242,7 @@ export class GhostMarketApi {
     }
 
     /** get chain rewards */
-    async getRewardsChain(request: GetRewardsChain): Promise<IAddressIncentive[]> {
+    async getRewardsChain(request: GetRewardsChain): Promise<IAddressIncentiveResults> {
         // TODO: change to commented url when endpoints will be deployed
         const url = 'https://api-incentives.ghostmarket.io/statistics/get_rewards_chain'
         // const url = this.options.baseUrl + '/get_rewards_chain'
@@ -523,12 +258,6 @@ export class GhostMarketApi {
         }
         const url = this.options.baseUrl + '/buyOpenMint'
         const res = await axios.post(url, data, this.config())
-        return res.data
-    }
-
-    async getOpenMint(request: GetOpenMintingsRequest): Promise<IGetOpenMintingsResult> {
-        const url = this.options.baseUrl + '/getOpenMintings'
-        const res = await axios.get(url, this.config(request))
         return res.data
     }
 
@@ -550,10 +279,26 @@ export class GhostMarketApi {
         return res.data
     }
 
-    async getRefreshMetadata(
-        request: GetRefreshMetadataRequest,
-    ): Promise<IGetRefreshMetadataResult> {
+    async getMetadata(request: GetMetadataRequest): Promise<string> {
+        const url = this.options.baseUrl + '/metadata'
+        const res = await axios.get(url, this.config(request))
+        if (res.data.error) {
+            throw new Error(res.data.error)
+        }
+        return res.data
+    }
+
+    async getRefreshMetadata(request: GetMetadataRequest): Promise<IGetRefreshMetadataResult> {
         const url = this.options.baseUrl + '/refreshMetadata'
+        const res = await axios.get(url, this.config(request))
+        if (res.data.error) {
+            throw new Error(res.data.error)
+        }
+        return res.data
+    }
+
+    async getTokenURI(request: GetMetadataRequest): Promise<IGetTokenURIResult> {
+        const url = this.options.baseUrl + '/tokenuri'
         const res = await axios.get(url, this.config(request))
         if (res.data.error) {
             throw new Error(res.data.error)
@@ -568,149 +313,6 @@ export class GhostMarketApi {
             throw new Error(res.data.error)
         }
         return res.data
-    }
-
-    async postCreateUser(request: PostCreateUserRequest): Promise<IPostCreateUserResult> {
-        const url = this.options.baseUrl + '/createUser'
-        const res = await axios.post<IPostCreateUserResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postDeleteUser(request: PostDeleteUserRequest): Promise<IPostDeleteUserResult> {
-        const url = this.options.baseUrl + '/deleteUser'
-        const res = await axios.post<IPostDeleteUserResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postAddAddress(request: PostAddAddressRequest): Promise<IPostAddAddressResult> {
-        const url = this.options.baseUrl + '/addAddress'
-        const res = await axios.post<IPostAddAddressResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postRemoveAddress(request: PostRemoveAddressRequest): Promise<IPostRemoveAddressResult> {
-        const url = this.options.baseUrl + '/removeAddress'
-        const res = await axios.post<IPostRemoveAddressResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postEditProfileUser(
-        request: PostEditProfileUserRequest,
-    ): Promise<IPostEditProfileUserResult> {
-        const url = this.options.baseUrl + '/editUser'
-        const res = await axios.post<IPostEditProfileUserResult>(url, request, this.configPost())
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
-        return res.data
-    }
-
-    async postEditProfileModerator(
-        request: PostEditProfileModeratorRequest,
-    ): Promise<IPostEditProfileModeratorResult> {
-        const url = this.options.baseUrl + '/ModeratorEditUser'
-        try {
-            const res = await axios.post<IPostEditProfileModeratorResult>(
-                url,
-                request,
-                this.configPost(),
-            )
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            if (err.response?.data?.errors['Data.name']) {
-                throw new Error(err.response.data.errors['Data.name'][0])
-            } // only show first error
-            throw new Error(err)
-        }
-    }
-
-    async postEditCollectionUser(
-        request: PostEditCollectionUserRequest,
-    ): Promise<IPostEditCollectionUserResult> {
-        const url = this.options.baseUrl + '/user/collection'
-        try {
-            const res = await axios.post<IPostEditCollectionUserResult>(
-                url,
-                request,
-                this.configPost(),
-            )
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            if (err.response?.data?.errors['Data.name']) {
-                throw new Error(err.response.data.errors['Data.name'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.reason']) {
-                throw new Error(err.response.data.errors['Data.reason'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.category']) {
-                throw new Error(err.response.data.errors['Data.category'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.website']) {
-                throw new Error(err.response.data.errors['Data.website'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.socials_youtube']) {
-                throw new Error(err.response.data.errors['Data.socials_youtube'][0])
-            } // only show first error
-            throw new Error(err)
-        }
-    }
-
-    async postEditCollectionModerator(
-        request: PostEditCollectionModeratorRequest,
-    ): Promise<IPostEditCollectionModeratorResult> {
-        const url = this.options.baseUrl + '/moderation/collection'
-        try {
-            const res = await axios.post<IPostEditCollectionModeratorResult>(
-                url,
-                request,
-                this.configPost(),
-            )
-            if (res.data.error) {
-                throw new Error(res.data.error)
-            }
-            return res.data
-        } catch (err: any) {
-            console.log(err)
-            if (err.response?.data?.errors['Data.name']) {
-                throw new Error(err.response.data.errors['Data.name'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.reason']) {
-                throw new Error(err.response.data.errors['Data.reason'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.category']) {
-                throw new Error(err.response.data.errors['Data.category'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.website']) {
-                throw new Error(err.response.data.errors['Data.website'][0])
-            } // only show first error
-            if (err.response?.data?.errors['Data.socials_youtube']) {
-                throw new Error(err.response.data.errors['Data.socials_youtube'][0])
-            } // only show first error
-            if (err.response?.data?.errors['$.data.verified']) {
-                throw new Error(err.response.data.errors['$.data.verified'][0])
-            } // only show first error
-            throw new Error(err)
-        }
     }
 
     // v2 api
@@ -903,21 +505,6 @@ export class GhostMarketApi {
             request.issuer = this.options.issuer
         }
         const res = await axios.get(url, this.config(request, undefined, 2 * 15000))
-        return res.data
-    }
-
-    async postSharedAccessSignature(
-        request: PostSharedAccessSignatureRequest,
-    ): Promise<IPostSharedAccessSignatureResult> {
-        const url = this.baseUrl2 + '/cdn/access'
-        const res = await axios.post<IPostSharedAccessSignatureResult>(
-            url,
-            request,
-            this.configPost(),
-        )
-        if (res.data.error) {
-            throw new Error(res.data.error)
-        }
         return res.data
     }
 }
