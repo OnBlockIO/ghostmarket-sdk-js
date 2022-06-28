@@ -6,7 +6,6 @@ import { ERC721Contract } from '../abis/ERC721'
 import { ERC1155Contract } from '../abis/ERC1155'
 import { ExchangeV2Contract } from '../abis/ExchangeV2Core'
 import { RoyaltiesRegistryContract } from '../abis/RoyaltiesRegistry'
-import { GhostMarketAPI } from './api'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
     ETHEREUM_TESTNET_CONTRACTS,
@@ -23,7 +22,7 @@ import {
     NULL_ADDRESS,
 } from './constants'
 import {
-    GhostMarketAPIConfig,
+    GhostMarketSDKConfig,
     Network,
     OrderLeft,
     OrderRight,
@@ -33,12 +32,13 @@ import {
 } from '../types/types'
 import { Order, Asset } from '../utils/evm/order'
 import { ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
+import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
     private web3: Web3
     private web3Readonly: Web3
-    public readonly api: GhostMarketAPI
+    public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
     private _networkname: Network
@@ -53,22 +53,27 @@ export class GhostMarketSDK {
      */
     constructor(
         provider: Web3['currentProvider'],
-        apiConfig: GhostMarketAPIConfig,
+        options: {
+            apiConfig: IGhostMarketApiOptions
+            useReadOnlyProvider?: boolean
+            providerRPCUrl?: string
+            networkName?: Network
+        },
         logger?: (arg: string) => void,
     ) {
-        const useReadOnlyProvider = apiConfig.useReadOnlyProvider ?? true
+        const useReadOnlyProvider = options.useReadOnlyProvider ?? true
         this._isReadonlyProvider = useReadOnlyProvider
-        apiConfig.providerRPCUrl = apiConfig.providerRPCUrl || ''
+        options.providerRPCUrl = options.providerRPCUrl || ''
 
         const readonlyProvider = useReadOnlyProvider
-            ? new Web3.providers.HttpProvider(apiConfig.providerRPCUrl)
+            ? new Web3.providers.HttpProvider(options.providerRPCUrl)
             : null
 
-        apiConfig.networkName = apiConfig.networkName || Network.EthereumTestnet
-        this._networkname = apiConfig.networkName
+        options.networkName = options.networkName || Network.EthereumTestnet
+        this._networkname = options.networkName
         this.web3 = new Web3(provider)
         this.web3Readonly = useReadOnlyProvider ? new Web3(readonlyProvider) : this.web3
-        this.api = new GhostMarketAPI(apiConfig)
+        this.api = new GhostMarketApi(options.apiConfig)
         // Logger: Default to nothing.
         this.logger = logger || ((arg: string) => arg)
     }

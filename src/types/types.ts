@@ -37,24 +37,12 @@ export enum Network {
  * @param providerRPCUrl HTTP provider URL for use for setting up a read only provider.
  * @param useReadOnlyProvider Boolean option enable/disable use of a read only provider that reads only Blockchain state and can't make transactions.
  */
-export interface GhostMarketAPIConfig {
+export interface GhostMarketSDKConfig {
     networkName?: Network
     apiKey?: string
     apiBaseUrl?: string
     providerRPCUrl?: string
     useReadOnlyProvider?: boolean
-}
-
-/**
- * Query interface for orders
- */
-export interface OrderQuery {
-    chain?: string
-    contract?: string
-    token_id?: string
-    offset?: number
-    limit?: number
-    with_deleted?: boolean
 }
 
 /**
@@ -76,67 +64,6 @@ export interface OrderJSONV2 {
     salt: string
     originFees: string
     originAddress: string
-}
-
-/**
- * Standard interface for OpenOrders Result per API response.
- */
-export interface OpenOrders {
-    open_orders: Array<OpenOrder>
-}
-
-interface OpenOrder {
-    id: number
-    chain: string
-    token_contract: string
-    token_id: string
-    token_amount: string
-    quote_contract: string
-    quote_price: string
-    maker_address: string
-    is_buy_offer: boolean
-    start_date: string
-    end_date: string
-    signature: string
-    order_key_hash: string
-    salt: string
-    origin_fees: string
-    origin_address: string
-}
-
-/**
- * Interface for basic Token information.
- */
-export interface TokenMetadata {
-    chain?: string
-    contract?: string
-    token_id?: string
-}
-
-/**
- * Interface for TokenRefreshMetadata per API response. Current API returns: { sucess: boolean }
- */
-export type TokenRefreshMetadata = {
-    success: boolean
-}
-
-export type TokenRefreshMetadataError = {
-    error?: string
-}
-
-/**
- * Interface for TokenURI for a Token as per API response
- */
-export type TokenURI = {
-    token_uri?: string
-    error?: TokenURIError
-}
-
-/**
- * Interface for TokenURIError for a Token that does not have a URI as per API response
- */
-export type TokenURIError = {
-    error: string
 }
 
 /**
@@ -194,33 +121,6 @@ export interface Royalties {
 export interface RoyaltyRecipient {
     recipient: string
     amount: number
-}
-
-/* 
-Request body interface for `createopenorder` API endpoint, for listing an NFT
-*
-*/
-export interface ListNFT {
-    chain: string
-    token_contract: string
-    token_id: string
-    token_amount: number
-    quote_contract: string
-    quote_price: string
-    maker_address: string
-    is_buy_offer?: boolean
-    start_date: number
-    end_date: number
-    signature: string
-    order_key_hash: string
-    salt: string
-    origin_fees: number
-    origin_address: string
-}
-
-export interface ListNFTResult {
-    success?: boolean
-    error?: string
 }
 
 export type PartialReadonlyContractAbi = AbiItem[]
