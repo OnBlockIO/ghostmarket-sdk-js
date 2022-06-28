@@ -11,12 +11,13 @@ import {
     GetEventsRequest,
     GetMarketplaceStatisticsRequest,
     GetOpenMintingsRequest,
+    GetOpenOrdersRequest,
     GetSeriesRequest,
     GetUsersRequest,
     GhostMarketApi,
     IGhostMarketApiOptions,
 } from '../../lib/api/ghostmarket'
-import { AssetsRequest } from '../../lib/api/ghostmarket/requests2'
+import { AssetsRequest } from '../../lib/api/ghostmarket/requestsV2'
 expect.extend(matchers)
 
 describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
@@ -154,7 +155,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
 
     describe('Open Orders', () => {
         it('should get Open Orders ', async () => {
-            const openOrdersData = await ghostmarketAPI.getOpenOrders({ with_deleted: false })
+            const openOrdersData = await ghostmarketAPI.getOpenOrders(new GetOpenOrdersRequest())
             expect(openOrdersData).toHaveProperty('open_orders')
             const { open_orders: openOrders } = openOrdersData
             expect(openOrders).toBeArray()
@@ -162,10 +163,9 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
         }, 10000)
 
         it('should get single Open Order', async () => {
-            const { open_orders: orders } = await ghostmarketAPI.getOpenOrders({
-                with_deleted: false,
-                limit: 1,
-            })
+            const { open_orders: orders } = await ghostmarketAPI.getOpenOrders(
+                new GetOpenOrdersRequest({ limit: 1 }),
+            )
             expect(orders).toBeArray()
             expect(orders).toBeArrayOfSize(1)
         }, 10000)
@@ -173,7 +173,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
 
     describe('Open Mintings', () => {
         it('should get Open Mintings', async () => {
-            const openMintingsData = await ghostmarketAPI.getOpenEditions(
+            const openMintingsData = await ghostmarketAPI.getOpenMintings(
                 new GetOpenMintingsRequest(),
             )
             expect(openMintingsData).toHaveProperty('open_mintings')
@@ -183,7 +183,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
         }, 10000)
 
         it('should get single Open Minting', async () => {
-            const openMintingsData = await ghostmarketAPI.getOpenEditions({ limit: 1 })
+            const openMintingsData = await ghostmarketAPI.getOpenMintings({ limit: 1 })
             expect(openMintingsData).toHaveProperty('open_mintings')
             const { open_mintings: openMintings } = openMintingsData
             expect(openMintings).toBeArray()

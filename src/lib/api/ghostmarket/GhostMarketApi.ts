@@ -44,6 +44,8 @@ import {
     GetAddressReward,
     GetRewardsChain,
     IGetTokenURIResult,
+    GetOpenOrdersRequest,
+    IGetOpenOrdersResult,
 } from './requests'
 import {
     AssetsRequest,
@@ -308,6 +310,15 @@ export class GhostMarketApi {
 
     async getUserExists(request: GetUserExistsRequest): Promise<IGetUserExistsResult> {
         const url = this.options.baseUrl + '/userExists'
+        const res = await axios.get(url, this.config(request))
+        if (res.data.error) {
+            throw new Error(res.data.error)
+        }
+        return res.data
+    }
+
+    async getOpenOrders(request: GetOpenOrdersRequest): Promise<IGetOpenOrdersResult> {
+        const url = this.options.baseUrl + '/openorders'
         const res = await axios.get(url, this.config(request))
         if (res.data.error) {
             throw new Error(res.data.error)

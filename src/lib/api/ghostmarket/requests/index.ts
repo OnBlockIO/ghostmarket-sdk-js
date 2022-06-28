@@ -20,6 +20,8 @@ export * from './orders/PostDeleteOrderRequest'
 export * from './orders/IPostDeleteOrderResult'
 export * from './orders/PostCreateOrderRequest'
 export * from './orders/IPostCreateOrderResult'
+export * from './orders/GetOpenOrdersRequest'
+export * from './orders/IGetOpenOrdersResult'
 
 export * from './series/GetSeriesRequest'
 export * from './series/IGetSeriesResult'
