@@ -1,3 +1,4 @@
+import axios from 'axios'
 import {
     API_BASE_MAINNET,
     API_BASE_TESTNET,
@@ -39,10 +40,12 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
         }, 10000)
 
         it('API only support version 1 and 2', async () => {
-            const incorrectVersion = `${API_BASE_TESTNET}/api/v${ORDERBOOK_VERSION + 2}`
-            const customRequest = await fetch(`${incorrectVersion}/assets/`)
-            expect(customRequest).toHaveProperty('status')
-            expect(customRequest.status).toBe(400)
+            try {
+                const incorrectVersion = `${API_BASE_TESTNET}/api/v${ORDERBOOK_VERSION + 2}`
+                await axios.get(incorrectVersion)
+            } catch (err: any) {
+                expect(err.response.status).toBe(404)
+            }
         }, 10000)
 
         it('API handles errors', async () => {
