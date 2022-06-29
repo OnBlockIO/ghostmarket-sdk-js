@@ -45,11 +45,11 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
     describe('Orders', () => {
         const dummyErc721Contract = '0xd35b5d7e184013233cc43139dc7242223ec0a708'
         const dummyErc20Contract = '0xb4fbf271143f4fbf7b91a5ded31805e42b2208d6'
-        const dummyAddress = '0x85'
-        const dummyToken = '85'
+        const dummyAddress = '0x83'
+        const dummyToken = '83'
         const dummyChain = 'etht'
         const dummyAmount = 1
-        const dummyPrice = '85'
+        const dummyPrice = '83'
 
         it('should not be able to list unaccepted chain', async () => {
             try {
