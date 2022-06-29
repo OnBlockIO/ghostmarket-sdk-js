@@ -128,7 +128,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
                 await ghostmarketAPI.postCreateOrder(nftToList)
             } catch (err: any) {
                 expect(err.toString()).toInclude(
-                    `Error: Unsupported value for 'token_id' parameter`,
+                    `Error: NFT with token ID '${dummyAddress}' was not found in backend's database.`,
                 )
             }
         }, 10000)
