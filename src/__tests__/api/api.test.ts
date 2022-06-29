@@ -2,6 +2,7 @@ import axios from 'axios'
 import {
     API_BASE_MAINNET,
     API_BASE_TESTNET,
+    API_PATH,
     NULL_ADDRESS,
     ORDERBOOK_VERSION,
 } from '../../core/constants'
@@ -22,10 +23,10 @@ import { AssetsRequest } from '../../lib/api/ghostmarket/requestsV2'
 expect.extend(matchers)
 
 describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
-    const apiBaseUrl = API_BASE_TESTNET
+    const url = API_BASE_TESTNET + API_PATH
     const ghostMarketAPIConfig: IGhostMarketApiOptions = {
         apiKey: process.env.GM_API_KEY,
-        baseUrl: apiBaseUrl + '/api/v1',
+        baseUrl: url,
     }
 
     let ghostmarketAPI: GhostMarketApi
@@ -66,10 +67,10 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
 })
 
 describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
-    const apiBaseUrl = API_BASE_TESTNET
+    const url = API_BASE_TESTNET + API_PATH
     const ghostMarketAPIConfig: IGhostMarketApiOptions = {
         apiKey: process.env.GM_API_KEY,
-        baseUrl: apiBaseUrl + '/api/v1',
+        baseUrl: url,
     }
 
     let ghostmarketAPI: GhostMarketApi

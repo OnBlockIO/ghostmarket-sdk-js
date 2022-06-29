@@ -8,16 +8,17 @@ import { GhostMarketApi, IGhostMarketApiOptions } from '../../lib/api/ghostmarke
 import { Network, TxObject } from '../../types/types'
 import {
     API_BASE_TESTNET,
+    API_PATH,
     ORDERBOOK_VERSION,
     ETHEREUM_TESTNET_CONTRACTS,
     NULL_ADDRESS,
 } from '../../core/constants'
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
-    const apiBaseUrl = API_BASE_TESTNET
+    const url = API_BASE_TESTNET + API_PATH
     const ghostMarketAPIConfig: IGhostMarketApiOptions = {
         apiKey: process.env.GM_API_KEY,
-        baseUrl: apiBaseUrl + '/api/v1',
+        baseUrl: url,
     }
 
     let ghostmarketAPI: GhostMarketApi
