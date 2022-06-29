@@ -41,6 +41,7 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
 
         it('API only support version 1 and 2', async () => {
             try {
+                // wrong orderbook version passed
                 const incorrectVersion = `${API_BASE_TESTNET}/api/v${ORDERBOOK_VERSION + 2}`
                 await axios.get(incorrectVersion)
             } catch (err: any) {

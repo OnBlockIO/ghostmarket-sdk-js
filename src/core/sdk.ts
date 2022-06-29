@@ -1,11 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Web3 from 'web3'
-import { ERC20Contract } from '../abis/ERC20'
-import { ERC20WrappedContract } from '../abis/ERC20Wrapped'
-import { ERC721Contract } from '../abis/ERC721'
-import { ERC1155Contract } from '../abis/ERC1155'
-import { ExchangeV2Contract } from '../abis/ExchangeV2Core'
-import { RoyaltiesRegistryContract } from '../abis/RoyaltiesRegistry'
+import { ERC20WrappedContract, ExchangeV2Contract, RoyaltiesRegistryContract } from '../abis/'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
     ETHEREUM_TESTNET_CONTRACTS,
@@ -15,23 +10,9 @@ import {
     POLYGON_TESTNET_CONTRACTS,
     BSC_MAINNET_CONTRACTS,
     BSC_TESTNET_CONTRACTS,
-    N3_MAINNET_CONTRACTS,
-    N3_TESTNET_CONTRACTS,
-    PHA_MAINNET_CONTRACTS,
-    PHA_TESTNET_CONTRACTS,
-    NULL_ADDRESS,
 } from './constants'
-import {
-    GhostMarketSDKConfig,
-    Network,
-    OrderLeft,
-    OrderRight,
-    Signature,
-    Royalties,
-    TxObject,
-} from '../types/types'
-import { Order, Asset } from '../utils/evm/order'
-import { ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
+import { Network, TxObject } from '../types/types'
+import { IEVMOrder } from '../lib/api/ghostmarket/models/'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 
 export class GhostMarketSDK {
@@ -81,17 +62,17 @@ export class GhostMarketSDK {
     // -- EVM METHODS -- //
 
     /** Match orders
-     * @param {OrderLeft} orderLeft
-     * @param {Signature} signatureLeft
-     * @param {OrderRight} orderRight
-     * @param {Signature} signatureRight
-     * @param {TxObject} txObject Transaction object to send when calling `matchOrders`.
+     * @param {IEVMOrder} orderLeft order left to match.
+     * @param {string} signatureLeft signature left to match.
+     * @param {IEVMOrder} orderRight order right to match.
+     * @param {string} signatureRight signature right to match.
+     * @param {TxObject} txObject transaction object to send when calling `matchOrders`.
      */
     public async matchOrders(
-        orderLeft: OrderLeft,
-        signatureLeft: Signature,
-        orderRight: OrderRight,
-        signatureRight: Signature,
+        orderLeft: IEVMOrder,
+        signatureLeft: string,
+        orderRight: IEVMOrder,
+        signatureRight: string,
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
@@ -107,15 +88,18 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute matchOrders for ${exchangeV2ProxyAddress} with:`, e)
+            console.error(
+                `Failed to execute matchOrders for ${exchangeV2ProxyAddress} with error:`,
+                e,
+            )
         }
     }
 
     /** Cancel one order
-     * @param  {OrderLeft | OrderRight} order Order to be reverted/cancelled.
-     * @param  {TxObject} txObject Transaction object to send when calling `cancel`.
+     * @param {IEVMOrder} order order to cancel.
+     * @param {TxObject} txObject transaction object to send when calling `cancelOrder`.
      */
-    public async cancelOrder(order: OrderLeft | OrderLeft, txObject: TxObject) {
+    public async cancelOrder(order: IEVMOrder, txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._networkname)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
@@ -129,15 +113,18 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute cancelOrder for ${exchangeV2ProxyAddress} with:`, e)
+            console.error(
+                `Failed to execute cancelOrder for ${exchangeV2ProxyAddress} with error:`,
+                e,
+            )
         }
     }
 
     /** Cancel multiple orders
-     * @param  {OrderLeft | OrderRight} orders[] Orders to be reverted/cancelled.
-     * @param  {TxObject} txObject Transaction object to send when calling `bulkCancelOrders`.
+     * @param {IEVMOrder[]} orders[] orders to cancel.
+     * @param {TxObject} txObject transaction object to send when calling `bulkCancelOrders`.
      */
-    public async bulkCancelOrders(orders: OrderLeft[] | OrderRight[], txObject: TxObject) {
+    public async bulkCancelOrders(orders: IEVMOrder[], txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._networkname)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
@@ -152,22 +139,18 @@ export class GhostMarketSDK {
             return txResult
         } catch (e) {
             console.error(
-                `Failed to execute bulkCancelOrders for ${exchangeV2ProxyAddress} with:`,
+                `Failed to execute bulkCancelOrders for ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Set royalties for contract
-     * @param  {address} string contract address to set royalties for.
-     * @param  {Royalties} royalties Royalties settings to use for the contract.
-     * @param  {TxObject} txObject Transaction object to send when calling `setRoyaltiesByToken`.
+     * @param {string} address contract address to set royalties for.
+     * @param {Royalties} royalties royalties settings to use for the contract.
+     * @param {TxObject} txObject transaction object to send when calling `setRoyaltiesByToken`.
      */
-    public async setRoyaltiesForContract(
-        address: string,
-        royalties: Royalties,
-        txObject: TxObject,
-    ) {
+    public async setRoyaltiesForContract(address: string, royalties: any, txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const royaltiesRegistryProxyAddress = this._getRoyaltiesRegistryContractAddress(
             this._networkname,
@@ -184,16 +167,16 @@ export class GhostMarketSDK {
             return txResult
         } catch (e) {
             console.error(
-                `Failed to execute setRoyaltiesByToken for ${royaltiesRegistryProxyAddress} with:`,
+                `Failed to execute setRoyaltiesByToken for ${royaltiesRegistryProxyAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Wrap token or unwrap token
-     * @param  {amount} number value to wrap token from/to.
-     * @param  {isFromNativeToWrap} boolean true if native to wrap, or false from wrap to native
-     * @param  {TxObject} txObject Transaction object to send when calling `deposit` or `withdraw`.
+     * @param {amount} number value to wrap token from/to.
+     * @param {isFromNativeToWrap} boolean true if native to wrap, or false from wrap to native
+     * @param {TxObject} txObject transaction object to send when calling `wrapToken`.
      */
     public async wrapToken(amount: number, isFromNativeToWrap: boolean, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -210,7 +193,7 @@ export class GhostMarketSDK {
                     .send(amount, txObject)
                 return txResult
             } catch (e) {
-                console.error(`Failed to execute deposit for ${wrappedTokenAddress} with:`, e)
+                console.error(`Failed to execute deposit for ${wrappedTokenAddress} with error:`, e)
             }
         } else {
             try {
@@ -219,130 +202,16 @@ export class GhostMarketSDK {
                     .send(txObject)
                 return txResult
             } catch (e) {
-                console.error(`Failed to execute withdraw for ${wrappedTokenAddress} with:`, e)
+                console.error(
+                    `Failed to execute withdraw for ${wrappedTokenAddress} with error:`,
+                    e,
+                )
             }
         }
     }
 
-    /** Wrap token or unwrap token
-     * @param  {amount} number value to wrap token from/to.
-     * @param  {isFromNativeToWrap} boolean true if native to wrap, or false from wrap to native
-     * @param  {TxObject} txObject Transaction object to send when calling `deposit` or `withdraw`.
-     */
-    /* public async placeOffer(order: OrderLeft, isFromNativeToWrap: boolean, txObject: TxObject) {
-    // if (this._isReadonlyProvider) return
-    const { maker, makeAsset, taker, takeAsset, salt, start, end, dataType, data } = order
-    const typeAssetMaker = ERC20
-    const encodedAssetMaker = Asset(typeAssetMaker, enc(contractHashRight), priceRight)
-    const encodedAssetTaker = Asset(typeAssetTaker, enc(contractHashLeft, tokenIdLeft), quantity)
-
-    const orderLeft = Order(
-      maker,
-      encodedAssetMaker,
-      NULL_ADDRESS,
-      encodedAssetTaker,
-      salt,
-      start,
-      end,
-      dataType,
-      data,
-    )
-  } */
-
-    /* 
-const addressMaker = address
-const symbol = offer.settings.offerAmount.currency.symbol
-const quantity = offer.settings.offerAmount.token_amount ?? 1
-const typeAssetTaker = nft.nft_type.includes('ERC1155')
-    ? ERC1155
-    : ERC721
-const contractHashLeft = nft.contract
-const tokenIdLeft = nft.token_id
-const typeAssetMaker = symbol === nativeSymbol ? ETH : ERC20
-const contractFiltered = supportedAssets.find(item => item.symbol === symbol)
-let contractHashRight = symbol === nativeSymbol ? '0x' : contractFiltered!.hash!
-const priceRight = this.core.formatter.priceToBig(offer.settings.offerAmount.amount, symbol)
-const salt = '0x' + [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
-const start = Math.floor(startDate.getTime() / 1000)
-const end = typeof (endDate) === 'number' ? endDate : Math.floor(endDate.getTime() / 1000)
-
-const originFeeInfo = offer.asset.originFeesOnListing
-const originFees = originFeeInfo?.originFees ? originFeeInfo.originFees : 0
-const originAddress = originFeeInfo?.originAddress ? originFeeInfo.originAddress : ''
-
-let dataType = '0xffffffff'
-let data = '0x'
-
-if (originFees > 0) {
-    const addrOriginLeft = [[originAddress, originFees]]
-    data = encDataV1([[[addressMaker, 10000]], addrOriginLeft])
-    dataType = ORDER_DATA_V1
-}
-
-const encodedAssetMaker = Asset(typeAssetMaker, enc(contractHashRight), priceRight)
-const encodedAssetTaker = Asset(typeAssetTaker, enc(contractHashLeft, tokenIdLeft), quantity)
-
-const orderLeft = Order(
-    addressMaker,
-    encodedAssetMaker,
-    ZERO,
-    encodedAssetTaker,
-    salt,
-    start,
-    end,
-    dataType,
-    data
-)
-
-// console.log('orderLeft', orderLeft)
-
-// backend expects ETH/BNB/MATIC/AVAX/ONG and not 0x for ETH/BNB/MATIC/AVAX/ONG
-if (contractHashRight === '0x') {
-    contractHashRight = nativeSymbol
-}
-
-// if offer already exist for same currency, abort
-if (offer.asset.offers) {
-    const offersFiltered = offer.asset.offers.find(
-        item => item.quote_contract === contractHashRight && item.maker_address == addressMaker
-    )
-    if (offersFiltered) {
-        console.log('already existing offer with this currency')
-        throw new Error('already existing offer with this currency')
-    }
-}
-
-const signatureLeft = await getSignature(orderLeft, addressMaker, web3, this.providerHint)
-const orderHashKey = hashKey(orderLeft)
-
-await this.core.apis.ghost.postCreateOrder(new PostCreateOrderRequest({
-    chain: nft.chain, // chain_name,
-    token_contract: contractHashLeft, // token_contract_hash
-    token_id: tokenIdLeft, // token_id
-    quote_contract: contractHashRight, // quote_contract_hash,
-    quote_price: priceRight, // quote_price
-    maker_address: addressMaker, // maker_address
-    is_buy_offer: true, // is_buy_offer,
-    start_date: start, // start_date
-    end_date: end, // end_date
-    signature: signatureLeft, // signature,
-    order_key_hash: orderHashKey, // order_key_hash
-    salt, // salt
-    token_amount: quantity, // token_amount
-    origin_fees: originFees || 0, // origin_fees
-    origin_address: originAddress || '' // origin_address
-}))
-const newAction = new ChainAction(this.core, this.chain, {
-    address,
-    command: 'place_offer',
-    status: 'confirmed',
-    items: [offer]
-})
-*/
-
-    // TO ADD getTokenBalancesss
-
     /* TO ADD ALL BELOW
+    // TO ADD getTokenBalancesss
     buyMultiple (nfts: IBuyCartItem[], currentAddress: string, refAddress: string | undefined) : Promise<any>;
     sellMultiple (nfts: ISellCartItem[], currentAddress: string, startDate: Date, endDate: Date) : Promise<any>;
     editPrice (item: ICartItem<null>, currentAddress: string, newPrice: number) : Promise<any>;
@@ -359,6 +228,9 @@ const newAction = new ChainAction(this.core, this.chain, {
     checkNFTContractApproval? (contractHash: string, currentAddress: string) : Promise<any>;
     checkTokenContractApproval? (symbol: string, currentAddress: string) : Promise<string>;
     */
+
+    //- add mint() / burn() / transfer() / approveNFT / approveToken / checkNFTContractApproval / checkTokenContractApproval / sell multiple / processOffer /
+    //- add processOfferCollection / placeOffer / placeOfferCollection / editPrice / readIncentives / claimIncentives / getLockedContent / signData
 
     // -- END EVM METHODS -- //
 

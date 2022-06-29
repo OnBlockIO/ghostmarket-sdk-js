@@ -47,3 +47,7 @@ export * from './IOwnershipV2'
 export * from './IOrderDataV2'
 export * from './IBaseContractV2'
 export * from './IQuoteContractV2'
+
+export * from './IEVMOrder'
+export * from './IEVMAsset'
+export * from './IEVMAssetType'
