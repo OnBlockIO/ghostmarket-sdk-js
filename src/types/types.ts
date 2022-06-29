@@ -43,3 +43,16 @@ export interface TxObject {
     gasPrice?: number
     chainId: string
 }
+
+// not included in main frontend lib yet
+
+export interface Royalties {
+    royaltiesRecipients: RoyaltyRecipient[]
+}
+
+export interface RoyaltyRecipient {
+    recipient: string
+    amount: number
+}
+
+// not included in main frontend lib yet

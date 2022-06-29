@@ -11,7 +11,7 @@ import {
     BSC_MAINNET_CONTRACTS,
     BSC_TESTNET_CONTRACTS,
 } from './constants'
-import { Network, TxObject } from '../types/types'
+import { Network, TxObject, Royalties } from '../types/types'
 import { IEVMOrder } from '../lib/api/ghostmarket/models/'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 
@@ -150,7 +150,11 @@ export class GhostMarketSDK {
      * @param {Royalties} royalties royalties settings to use for the contract.
      * @param {TxObject} txObject transaction object to send when calling `setRoyaltiesByToken`.
      */
-    public async setRoyaltiesForContract(address: string, royalties: any, txObject: TxObject) {
+    public async setRoyaltiesForContract(
+        address: string,
+        royalties: Royalties,
+        txObject: TxObject,
+    ) {
         if (this._isReadonlyProvider) return
         const royaltiesRegistryProxyAddress = this._getRoyaltiesRegistryContractAddress(
             this._networkname,
@@ -211,7 +215,7 @@ export class GhostMarketSDK {
     }
 
     /* TO ADD ALL BELOW
-    // TO ADD getTokenBalancesss
+    getTokenBalances
     buyMultiple (nfts: IBuyCartItem[], currentAddress: string, refAddress: string | undefined) : Promise<any>;
     sellMultiple (nfts: ISellCartItem[], currentAddress: string, startDate: Date, endDate: Date) : Promise<any>;
     editPrice (item: ICartItem<null>, currentAddress: string, newPrice: number) : Promise<any>;
@@ -227,10 +231,10 @@ export class GhostMarketSDK {
     approveToken? (symbol: string, amount: string, currentAddress: string) : Promise<any>;
     checkNFTContractApproval? (contractHash: string, currentAddress: string) : Promise<any>;
     checkTokenContractApproval? (symbol: string, currentAddress: string) : Promise<string>;
+    readIncentives
+    claimIncentives
+    getLockedContent
     */
-
-    //- add mint() / burn() / transfer() / approveNFT / approveToken / checkNFTContractApproval / checkTokenContractApproval / sell multiple / processOffer /
-    //- add processOfferCollection / placeOffer / placeOfferCollection / editPrice / readIncentives / claimIncentives / getLockedContent / signData
 
     // -- END EVM METHODS -- //
 
