@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Web3 from 'web3'
-import { ERC20WrappedContract, ExchangeV2Contract, RoyaltiesRegistryContract } from '../abis/'
+import {
+    ERC20WrappedContract,
+    ExchangeV2Contract,
+    RoyaltiesRegistryContract,
+    ERC721Contract,
+} from '../abis/'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
     ETHEREUM_TESTNET_CONTRACTS,
@@ -214,6 +219,28 @@ export class GhostMarketSDK {
         }
     }
 
+    /** Approve NFT Contract
+     * @param {hash} string contract to approve.
+     * @param {TxObject} txObject transaction object to send when calling `wrapToken`.
+     */
+    public async approveContract(hash: string, txObject: TxObject) {
+        if (this._isReadonlyProvider) return
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._networkname)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods
+                .setApprovalForAll(proxyContractAddress, true)
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(
+                `Failed to execute setApprovalForAll for ${proxyContractAddress} with error:`,
+                e,
+            )
+        }
+    }
+
     /* TO ADD ALL BELOW
     getTokenBalances
     buyMultiple (nfts: IBuyCartItem[], currentAddress: string, refAddress: string | undefined) : Promise<any>;
@@ -227,7 +254,6 @@ export class GhostMarketSDK {
     processOfferCollection? (offers: ICartItem<IOffer>[], currentAddress: string) : Promise<any>;
     placeOffer? (offers: IOfferCartItem[], address: string, startDate: Date, endDate: Date | number): Promise<any>;
     placeOfferCollection? (offers: IOfferCartItem[], address: string, startDate: Date, endDate: Date | number): Promise<any>;
-    approveNFT? (contractHash: string, currentAddress: string) : Promise<any>;
     approveToken? (symbol: string, amount: string, currentAddress: string) : Promise<any>;
     checkNFTContractApproval? (contractHash: string, currentAddress: string) : Promise<any>;
     checkTokenContractApproval? (symbol: string, currentAddress: string) : Promise<string>;
@@ -247,6 +273,29 @@ export class GhostMarketSDK {
     // -- END PHA METHODS -- //
 
     // -- COMMON METHODS -- //
+
+    private _getNFTProxyContractAddress(networkName: string): string {
+        switch (networkName) {
+            case Network.Avalanche:
+                return AVALANCHE_MAINNET_CONTRACTS.PROXY_NFT
+            case Network.AvalancheTestnet:
+                return AVALANCHE_TESTNET_CONTRACTS.PROXY_NFT
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.PROXY_NFT
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.PROXY_NFT
+            case Network.Ethereum:
+                return ETHEREUM_MAINNET_CONTRACTS.PROXY_NFT
+            case Network.EthereumTestnet:
+                return ETHEREUM_TESTNET_CONTRACTS.PROXY_NFT
+            case Network.Polygon:
+                return POLYGON_MAINNET_CONTRACTS.PROXY_NFT
+            case Network.PolygonTestnet:
+                return POLYGON_TESTNET_CONTRACTS.PROXY_NFT
+            default:
+                throw new Error('Unsupported Network')
+        }
+    }
 
     private _getExchangeV2ProxyContractAddress(networkName: string): string {
         switch (networkName) {

@@ -5,14 +5,7 @@ import Web3 from 'web3'
 import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
 import { GhostMarketSDK } from '../../core/sdk'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../../lib/api/ghostmarket'
-import { Network, TxObject } from '../../types/types'
-import {
-    API_BASE_TESTNET,
-    API_PATH,
-    ORDERBOOK_VERSION,
-    ETHEREUM_TESTNET_CONTRACTS,
-    NULL_ADDRESS,
-} from '../../core/constants'
+import { API_BASE_TESTNET, API_PATH, ORDERBOOK_VERSION } from '../../core/constants'
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
     const url = API_BASE_TESTNET + API_PATH
@@ -216,7 +209,4 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             }
         }, 10000)
     })
-
-    // TO ADD , match fake orders?
-    // TO ADD , others ?
 })
