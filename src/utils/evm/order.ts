@@ -21,7 +21,7 @@ export function Order(
     makeAsset: IEVMAsset,
     taker: string,
     takeAsset: IEVMAsset,
-    salt: string | number,
+    salt: string,
     start: number,
     end: number,
     dataType: string,

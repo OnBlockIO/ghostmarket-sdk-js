@@ -8,7 +8,7 @@ export function id(str: string): string {
     return hex
 }
 
-export function enc(token: string, tokenId: string): string {
+export function enc(token: string, tokenId?: string): string {
     if (tokenId) {
         return ethUtil.encodeParameters(['address', 'uint256'], [token, tokenId])
     } else {
