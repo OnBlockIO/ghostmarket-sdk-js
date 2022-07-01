@@ -4,7 +4,7 @@
 
 Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript. 
 
-Checkout the [underlying API changelog](https://github.com/OnBlockIO/ghostmarket-sdk-ts/blob/master/CHANGELOG.md)
+Checkout the [Changelog](https://github.com/OnBlockIO/ghostmarket-sdk-ts/blob/master/CHANGELOG.md)
 
 Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-ts) and [npm](https://www.npmjs.com/package/ghostmarket-sdk-ts)
 
@@ -66,6 +66,6 @@ To run the tests
 yarn test
 ```
 
-Contributing
+**Contributing**
 
 Contributions welcome! Please use [GitHub issues](https://github.com/OnBlockIO/ghostmarket-sdk-ts/issues) for suggestions/concerns - if you prefer to express your intentions in code, feel free to submit a pull request.

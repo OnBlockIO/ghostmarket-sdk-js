@@ -1,4 +1,4 @@
-# GhostMarket underlying SDK API changelog
+# Changelog
 
 GhostMarket is constantly innovating. This means the underlying API that this SDK aims to help with will be undergoing changes along the way. The intent of this document is to lay out the roadmap that this SDK will cover across different versions based on knowledge at the current time.
 
@@ -48,7 +48,7 @@ GhostMarket is constantly innovating. This means the underlying API that this SD
 * GM Token Supply
 * GM Incentives
 * GM Staking
-* Referal Endpoint
+* Referral Endpoint
 * Moderator Tools
 * Lock/Unlock
 
