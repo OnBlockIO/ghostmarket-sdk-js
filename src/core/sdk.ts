@@ -79,7 +79,7 @@ export class GhostMarketSDK {
     // -- EVM METHODS -- //
 
     /** Create a sell order or a single nft offer or a collection offer
-     * @param {string} chain chain for the order.
+     * @param {string} chain for the order.
      * @param {string} tokenContract token contract for the order.
      * @param {string} tokenId token id for the order.
      * @param {number} tokenAmount token amount for the order.
@@ -161,7 +161,6 @@ export class GhostMarketSDK {
     /** Prepare match of a sell order or a single nft offer or a collection offer
      * @param {string} signatureLeft left signature for the order match.
      * @param {string} salt salt for the order match.
-     * @param {string} chain chain for the order.
      * @param {string} tokenContract token contract for the order.
      * @param {string} tokenId token id for the order.
      * @param {number} tokenAmount token amount for the order.
