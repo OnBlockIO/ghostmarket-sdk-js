@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Web3 from 'web3'
+import { BigNumber } from '@ethersproject/bignumber'
 import {
     ERC20WrappedContract,
     ExchangeV2Contract,
     RoyaltiesRegistryContract,
     ERC721Contract,
+    ERC1155Contract,
 } from '../abis/'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
@@ -15,10 +17,20 @@ import {
     POLYGON_TESTNET_CONTRACTS,
     BSC_MAINNET_CONTRACTS,
     BSC_TESTNET_CONTRACTS,
+    MAX_UINT_256,
+    NULL_ADDRESS,
+    GHOSTMARKET_TRADE_FEE_BPS,
 } from './constants'
 import { Network, TxObject, Royalties } from '../types/types'
 import { IEVMOrder } from '../lib/api/ghostmarket/models/'
-import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
+import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
+import { hashKey } from '../utils/evm/hash'
+import { sign, Order, Asset } from '../utils/evm/order'
+import {
+    GhostMarketApi,
+    IGhostMarketApiOptions,
+    PostCreateOrderRequest,
+} from '../lib/api/ghostmarket'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
@@ -66,6 +78,178 @@ export class GhostMarketSDK {
 
     // -- EVM METHODS -- //
 
+    /** Create a sell order or a single nft offer or a collection offer
+     * @param {string} chain chain for the order.
+     * @param {string} tokenContract token contract for the order.
+     * @param {string} tokenId token id for the order.
+     * @param {number} tokenAmount token amount for the order.
+     * @param {string} quoteContract quote contract for the order.
+     * @param {string} quotePrice quote price for the order.
+     * @param {string} makerAddress maker address for the order.
+     * @param {number} type type of order. // 1 - sell order, 2 - offer, 3 - collection offer
+     * @param {number} typeAsset asset type of order. // 1 - ERC721, 2 - ERC1155
+     * @param {number} startDate start date the order can be matched.
+     * @param {number} endDate end date the order can be matched.
+     */
+    public async createOrder(
+        chain: string,
+        tokenContract: string,
+        tokenId: string,
+        tokenAmount: number,
+        quoteContract: string,
+        quotePrice: string,
+        makerAddress: string,
+        type: number,
+        typeAsset: number,
+        startDate: number,
+        endDate: number,
+    ) {
+        try {
+            const salt =
+                '0x' +
+                [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
+
+            const encType = typeAsset == 1 ? ERC721 : ERC1155
+
+            const order = Order(
+                makerAddress,
+                type === 2
+                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
+                    : type === 3
+                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(tokenContract), quotePrice)
+                    : Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString()),
+                NULL_ADDRESS,
+                type === 2
+                    ? Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString())
+                    : type === 3
+                    ? Asset(COLLECTION, enc(quoteContract), quotePrice)
+                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
+                salt,
+                startDate,
+                endDate,
+                '0xffffffff',
+                '0x',
+            )
+
+            const verifyingContract = this._getExchangeV2ProxyContractAddress(this._networkname)
+            const signature = await sign(order, makerAddress, verifyingContract)
+            const orderKeyHash = hashKey(order)
+
+            const nftToList = {
+                chain,
+                token_contract: tokenContract,
+                token_id: tokenId,
+                token_amount: tokenAmount,
+                quote_contract: quoteContract,
+                quote_price: quotePrice,
+                maker_address: makerAddress,
+                is_buy_offer: type === 2,
+                start_date: startDate,
+                end_date: endDate,
+                signature,
+                order_key_hash: orderKeyHash,
+                salt,
+                origin_fees: 0,
+                origin_address: '',
+            } as PostCreateOrderRequest
+            await this.api.postCreateOrder(new PostCreateOrderRequest(nftToList))
+        } catch (e) {
+            console.error(`Failed to execute postCreateOrder with error:`, e)
+        }
+    }
+
+    /** Prepare match of a sell order or a single nft offer or a collection offer
+     * @param {string} signatureLeft left signature for the order match.
+     * @param {string} salt salt for the order match.
+     * @param {string} chain chain for the order.
+     * @param {string} tokenContract token contract for the order.
+     * @param {string} tokenId token id for the order.
+     * @param {number} tokenAmount token amount for the order.
+     * @param {string} quoteContract quote contract for the order.
+     * @param {string} quotePrice quote price for the order.
+     * @param {string} makerAddress maker address for the order.
+     * @param {number} type type of order. // 1 - sell order, 2 - offer, 3 - collection offer
+     * @param {number} typeAsset asset type of order. // 1 - ERC721, 2 - ERC1155
+     * @param {number} startDate start date the order can be matched.
+     * @param {number} endDate end date the order can be matched.
+     */
+    public async prepareMatchOrders(
+        signatureLeft: string,
+        salt: string,
+        tokenContract: string,
+        tokenId: string,
+        tokenAmount: number,
+        quoteContract: string,
+        quotePrice: string,
+        makerAddress: string,
+        takerAddress: string,
+        type: number,
+        typeAsset: number,
+        startDate: number,
+        endDate: number,
+    ) {
+        try {
+            const encType = typeAsset == 1 ? ERC721 : ERC1155
+
+            const orderLeft = Order(
+                makerAddress,
+                type === 2
+                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
+                    : type === 3
+                    ? Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString())
+                    : Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString()),
+                NULL_ADDRESS,
+                type === 2
+                    ? Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString())
+                    : type === 3
+                    ? Asset(COLLECTION, enc(tokenContract), tokenAmount.toString())
+                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
+                salt,
+                startDate,
+                endDate,
+                '0xffffffff',
+                '0x',
+            )
+
+            const orderRight = Order(
+                takerAddress,
+                type === 2
+                    ? Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString())
+                    : type === 3
+                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
+                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
+                NULL_ADDRESS,
+                type === 2
+                    ? Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString())
+                    : type === 3
+                    ? Asset(COLLECTION, enc(tokenContract), tokenAmount.toString())
+                    : Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString()),
+                salt,
+                startDate,
+                endDate,
+                '0xffffffff',
+                '0x',
+            )
+
+            const signatureRight = '0x'
+
+            const priceTotal = BigNumber.from(quotePrice)
+            const priceToSend =
+                quoteContract === '0x' && type === 1
+                    ? priceTotal.mul(GHOSTMARKET_TRADE_FEE_BPS).div(10000).toString()
+                    : 0
+
+            const tx = {
+                from: takerAddress,
+                value: priceToSend,
+            } as TxObject
+
+            this.matchOrders(orderLeft, signatureLeft, orderRight, signatureRight, tx)
+        } catch (e) {
+            console.error(`Failed to execute prepareMatchOrders with error:`, e)
+        }
+    }
+
     /** Match orders
      * @param {IEVMOrder} orderLeft order left to match.
      * @param {string} signatureLeft signature left to match.
@@ -94,7 +278,7 @@ export class GhostMarketSDK {
             return txResult
         } catch (e) {
             console.error(
-                `Failed to execute matchOrders for ${exchangeV2ProxyAddress} with error:`,
+                `Failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
         }
@@ -119,7 +303,7 @@ export class GhostMarketSDK {
             return txResult
         } catch (e) {
             console.error(
-                `Failed to execute cancelOrder for ${exchangeV2ProxyAddress} with error:`,
+                `Failed to execute cancelOrder on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
         }
@@ -144,7 +328,7 @@ export class GhostMarketSDK {
             return txResult
         } catch (e) {
             console.error(
-                `Failed to execute bulkCancelOrders for ${exchangeV2ProxyAddress} with error:`,
+                `Failed to execute bulkCancelOrders on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
         }
@@ -176,7 +360,7 @@ export class GhostMarketSDK {
             return txResult
         } catch (e) {
             console.error(
-                `Failed to execute setRoyaltiesByToken for ${royaltiesRegistryProxyAddress} with error:`,
+                `Failed to execute setRoyaltiesByToken on ${royaltiesRegistryProxyAddress} with error:`,
                 e,
             )
         }
@@ -202,7 +386,7 @@ export class GhostMarketSDK {
                     .send(amount, txObject)
                 return txResult
             } catch (e) {
-                console.error(`Failed to execute deposit for ${wrappedTokenAddress} with error:`, e)
+                console.error(`Failed to execute deposit on ${wrappedTokenAddress} with error:`, e)
             }
         } else {
             try {
@@ -211,17 +395,14 @@ export class GhostMarketSDK {
                     .send(txObject)
                 return txResult
             } catch (e) {
-                console.error(
-                    `Failed to execute withdraw for ${wrappedTokenAddress} with error:`,
-                    e,
-                )
+                console.error(`Failed to execute withdraw on ${wrappedTokenAddress} with error:`, e)
             }
         }
     }
 
     /** Approve NFT Contract
      * @param {hash} string contract to approve.
-     * @param {TxObject} txObject transaction object to send when calling `wrapToken`.
+     * @param {TxObject} txObject transaction object to send when calling `approveContract`.
      */
     public async approveContract(hash: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -234,32 +415,234 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(
-                `Failed to execute setApprovalForAll for ${proxyContractAddress} with error:`,
-                e,
-            )
+            console.error(`Failed to execute setApprovalForAll on ${hash} with error:`, e)
         }
     }
 
-    /* TO ADD ALL BELOW
-    getTokenBalances
-    buyMultiple (nfts: IBuyCartItem[], currentAddress: string, refAddress: string | undefined) : Promise<any>;
-    sellMultiple (nfts: ISellCartItem[], currentAddress: string, startDate: Date, endDate: Date) : Promise<any>;
-    editPrice (item: ICartItem<null>, currentAddress: string, newPrice: number) : Promise<any>;
-    burn (nfts: IBurnCartItem[], currentAddress: string) : Promise<any>;
-    signData (data: string, address: string, providerHint?: string) : Promise<any>;
-    mint (item: ICartItem<MintData>) : Promise<any>;
-    transfer (nfts: ITransferCartItem[], currentAddress: string) : Promise<any>;
-    processOffer? (offers: ICartItem<IOffer>[], currentAddress: string) : Promise<any>;
-    processOfferCollection? (offers: ICartItem<IOffer>[], currentAddress: string) : Promise<any>;
-    placeOffer? (offers: IOfferCartItem[], address: string, startDate: Date, endDate: Date | number): Promise<any>;
-    placeOfferCollection? (offers: IOfferCartItem[], address: string, startDate: Date, endDate: Date | number): Promise<any>;
-    approveToken? (symbol: string, amount: string, currentAddress: string) : Promise<any>;
-    checkNFTContractApproval? (contractHash: string, currentAddress: string) : Promise<any>;
-    checkTokenContractApproval? (symbol: string, currentAddress: string) : Promise<string>;
-    readIncentives
-    claimIncentives
-    getLockedContent
+    /** Approve Token Contract
+     * @param {hash} string contract to approve.
+     * @param {TxObject} txObject transaction object to send when calling `approveToken`.
+     */
+    public async approveToken(hash: string, txObject: TxObject) {
+        if (this._isReadonlyProvider) return
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._networkname)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods
+                .approve(proxyContractAddress, MAX_UINT_256)
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute approve on ${hash} with error:`, e)
+        }
+    }
+
+    /** Check NFT Contract Approval
+     * @param {address} string address to check approval.
+     * @param {hash} string contract to check approval.
+     */
+    public async checkContractApproval(address: string, hash: string) {
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._networkname)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods.isApprovedForAll(
+                address,
+                proxyContractAddress,
+            )
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute isApprovedForAll on ${hash} with error:`, e)
+        }
+    }
+
+    /** Check ERC20 Token Contract Approval
+     * @param {address} string address to check approval.
+     * @param {hash} string contract to check approval.
+     */
+    public async checkTokenApproval(address: string, hash: string) {
+        const ERC20ContractInstance = new this.web3.eth.Contract(ERC20WrappedContract, hash)
+
+        try {
+            const txResult = await ERC20ContractInstance.methods.allowance(address, hash)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute allowance on ${hash} with error:`, e)
+        }
+    }
+
+    /** Transfer ERC721 NFT
+     * @param {address} string address transferring NFT.
+     * @param {destination} string destination address of NFT.
+     * @param {hash} string contract of NFT to transfer.
+     * @param {tokenId} string token ID of NFT to transfer.
+     * @param {TxObject} txObject transaction object to send when calling `transferERC721`.
+     */
+    public async transferERC721(
+        address: string,
+        destination: string,
+        hash: string,
+        tokenId: string,
+        txObject: TxObject,
+    ) {
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods
+                .safeTransferFrom(address, destination, tokenId)
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute safeTransferFrom on ${hash} with error:`, e)
+        }
+    }
+
+    /** Transfer Batch ERC1155 NFT
+     * @param {address} string address transferring NFT.
+     * @param {destination} string destination address of NFT.
+     * @param {hash} string contract of NFT to transfer.
+     * @param {tokenIds} string token ID of NFTs to transfer.
+     * @param {amounts} string amount of NFTs to transfer.
+     * @param {TxObject} txObject transaction object to send when calling `transferERC1155`.
+     */
+    public async transferERC1155(
+        address: string,
+        destination: string,
+        hash: string,
+        tokenIds: string,
+        amounts: number,
+        txObject: TxObject,
+    ) {
+        const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods
+                .safeBatchTransferFrom(address, destination, tokenIds, amounts, '0x')
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute safeBatchTransferFrom on ${hash} with error:`, e)
+        }
+    }
+
+    /** Burn ERC721 NFT
+     * @param {address} string address transferring NFT.
+     * @param {hash} string contract of NFT to transfer.
+     * @param {tokenId} string token ID of NFTs to transfer.
+     * @param {TxObject} txObject transaction object to send when calling `burnERC721`.
+     */
+    public async burnERC721(address: string, hash: string, tokenId: string, txObject: TxObject) {
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods.burn(address, tokenId).send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute burn on ${hash} with error:`, e)
+        }
+    }
+
+    /** Burn ERC1155 NFT
+     * @param {address} string address transferring NFT.
+     * @param {hash} string contract of NFT to transfer.
+     * @param {tokenId} string token ID of NFTs to transfer.
+     * @param {amount} string amount of NFTs to transfer.
+     * @param {TxObject} txObject transaction object to send when calling `burnERC1155`.
+     */
+    public async burnERC1155(
+        address: string,
+        hash: string,
+        tokenId: string,
+        amount: number,
+        txObject: TxObject,
+    ) {
+        const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, hash)
+
+        try {
+            const txResult = await ContractInstance.methods
+                .burn(address, tokenId, amount)
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute burn on ${hash} with error:`, e)
+        }
+    }
+
+    /** Mint ERC1155 GHOST NFT
+     * @param {creator} string creator of the NFT.
+     * @param {amount} number amount of NFT to mint.
+     * @param {royalties} any royalties of the NFT.
+     * @param {externalURI} string externalURI of the NFT.
+     * @param {TxObject} txObject transaction object to send when calling `mintERC721`.
+     */
+    public async mintERC721(
+        creator: string,
+        royalties: any,
+        externalURI: string,
+        txObject: TxObject,
+    ) {
+        const ERC721GhostAddress = this._getERC721GhostContractAddress(this._networkname)
+        const ERC721GhostAddressInstance = new this.web3.eth.Contract(
+            ERC721Contract,
+            ERC721GhostAddress,
+        )
+
+        try {
+            const txResult = await ERC721GhostAddressInstance.methods
+                .mintGhost(creator, royalties, externalURI, '', '') // lock content & onchain metadata not available at the moment on SDK
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute mintGhost on ${ERC721GhostAddress} with error:`, e)
+        }
+    }
+
+    /** Mint ERC1155 GHOST NFT
+     * @param {creator} string creator of the NFT.
+     * @param {amount} number amount of NFT to mint.
+     * @param {royalties} any royalties of the NFT.
+     * @param {externalURI} string externalURI of the NFT.
+     * @param {TxObject} txObject transaction object to send when calling `mintERC1155`.
+     */
+    public async mintERC1155(
+        creator: string,
+        amount: number,
+        royalties: any,
+        externalURI: string,
+        txObject: TxObject,
+    ) {
+        const ERC1155GhostAddress = this._getERC1155GhostContractAddress(this._networkname)
+        const ERC1155GhostAddressInstance = new this.web3.eth.Contract(
+            ERC1155Contract,
+            ERC1155GhostAddress,
+        )
+
+        try {
+            const txResult = await ERC1155GhostAddressInstance.methods
+                .mintGhost(creator, amount, [], royalties, externalURI, '', '') // data && lock content & onchain metadata not available at the moment on SDK
+                .send(txObject)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute mintGhost on ${ERC1155GhostAddress} with error:`, e)
+        }
+    }
+
+    /** Sign Data
+     * @param {data} string data to sign.
+     * @param {addresss} string address to sign message.
+     */
+    public async signData(data: string, address: string) {
+        try {
+            const txResult = this.web3.eth.sign(data, address)
+            return txResult
+        } catch (e) {
+            console.error(`Failed to execute signData with error:`, e)
+        }
+    }
+
+    /* TO ADD
+    getTokenBalances / getOwnerships
     */
 
     // -- END EVM METHODS -- //
@@ -273,6 +656,48 @@ export class GhostMarketSDK {
     // -- END PHA METHODS -- //
 
     // -- COMMON METHODS -- //
+
+    private _getERC721GhostContractAddress(networkName: string): string {
+        switch (networkName) {
+            case Network.Avalanche:
+                return AVALANCHE_MAINNET_CONTRACTS.GHOST_ERC721
+            case Network.AvalancheTestnet:
+                return AVALANCHE_TESTNET_CONTRACTS.GHOST_ERC721
+            case Network.EthereumTestnet:
+                return ETHEREUM_TESTNET_CONTRACTS.GHOST_ERC721
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.GHOST_ERC721
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.GHOST_ERC721
+            case Network.Polygon:
+                return POLYGON_MAINNET_CONTRACTS.GHOST_ERC721
+            case Network.PolygonTestnet:
+                return POLYGON_TESTNET_CONTRACTS.GHOST_ERC721
+            default:
+                throw new Error('Unsupported Network')
+        }
+    }
+
+    private _getERC1155GhostContractAddress(networkName: string): string {
+        switch (networkName) {
+            case Network.Avalanche:
+                return AVALANCHE_MAINNET_CONTRACTS.GHOST_ERC1155
+            case Network.AvalancheTestnet:
+                return AVALANCHE_TESTNET_CONTRACTS.GHOST_ERC1155
+            case Network.EthereumTestnet:
+                return ETHEREUM_TESTNET_CONTRACTS.GHOST_ERC1155
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.GHOST_ERC1155
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.GHOST_ERC1155
+            case Network.Polygon:
+                return POLYGON_MAINNET_CONTRACTS.GHOST_ERC1155
+            case Network.PolygonTestnet:
+                return POLYGON_TESTNET_CONTRACTS.GHOST_ERC1155
+            default:
+                throw new Error('Unsupported Network')
+        }
+    }
 
     private _getNFTProxyContractAddress(networkName: string): string {
         switch (networkName) {
