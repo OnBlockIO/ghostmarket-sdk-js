@@ -3,7 +3,7 @@ import Web3ProviderEngine from 'web3-provider-engine'
 import Web3 from 'web3'
 
 import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
-import { GhostMarketSDK } from '../../core/sdk'
+import { GhostMarketSDK } from '../../core/sdk.evm'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../../lib/api/ghostmarket'
 import { API_BASE_TESTNET, API_PATH, ORDERBOOK_VERSION } from '../../core/constants'
 
