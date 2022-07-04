@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { numberToByteString, getScriptHashFromAddress } from '../utils/n3/helpers'
+import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '../utils/n3/helpers'
 import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS } from './constants'
 
 export interface IBuyItem {
@@ -22,6 +22,17 @@ export interface IBidItem {
     quoteContractHash: string // starts with 0x
 }
 
+export interface ITransferItem {
+    contract: string // starts with 0x
+    destAddress: string
+    token_id: string
+}
+
+export interface IBurnItem {
+    contract: string // starts with 0x
+    token_id: string
+}
+
 export interface IAuctionItem {
     auctionType: number // classic (1) reserve (2) dutch (3) fixed (0)
     tokenId: string
@@ -34,6 +45,22 @@ export interface IAuctionItem {
     quoteContractHash: string // starts with 0x
 }
 
+export interface IMintItem {
+    quantity: number
+    attrT1: string
+    attrV1: string
+    attrT2: string
+    attrV2: string
+    attrT3: string
+    attrV3: string
+    name: string
+    description: string
+    imageURL: string
+    externalURI: string
+    royalties: number
+    type: string
+}
+
 export interface IArgs {
     type: string
     value: string
@@ -43,6 +70,11 @@ const METHOD_BID_TOKEN = 'bidToken'
 const METHOD_CANCEL_SALE = 'cancelSale'
 const METHOD_LIST_TOKEN = 'listToken'
 const METHOD_EDIT_SALE = 'editSale'
+const METHOD_TRANSFER = 'transfer'
+const METHOD_BURN = 'burn'
+const METHOD_MINT = 'mint'
+const METHOD_MULTI_MINT = 'multiMint'
+const METHOD_SET_COLLECTION_ROYALTIES = 'setRoyaltiesForContract'
 
 export class GhostMarketN3SDK {
     providerHint = ''
@@ -625,4 +657,189 @@ export class GhostMarketN3SDK {
 
         return this.invoke(invokeParams)
     }
+
+    transfer(items: ITransferItem[], currentAddress: string): Promise<string> {
+        const isTransferBatch = items.length > 1
+        console.log(
+            `transfer ${isTransferBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+                this.chainName
+            }`,
+        )
+
+        const argsTransferMultiple = []
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+
+            argsTransferMultiple.push({
+                scriptHash: item.contract,
+                operation: METHOD_TRANSFER,
+                args: [
+                    {
+                        type: 'Hash160',
+                        value: getScriptHashFromAddress(item.destAddress),
+                    },
+                    {
+                        type: 'ByteArray',
+                        value: numberToByteString(item.token_id),
+                    },
+                    {
+                        type: 'String', // data
+                        value: '',
+                    },
+                ] as IArgs[],
+            })
+        }
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 1,
+            },
+        ]
+        const invokeParamsMultiple = {
+            invokeArgs: argsTransferMultiple,
+            fee: (0.01 * items.length).toString(),
+            signers,
+        }
+
+        return this.invokeMultiple(invokeParamsMultiple)
+    }
+
+    mint(item: IMintItem, currentAddress: string): Promise<string> {
+        const isMintBatch = item.quantity > 1
+        console.log(
+            `minting ${isMintBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+                this.chainName
+            }`,
+        )
+
+        const isOnChainMetadata = true
+        const allowedContracts = [
+            this.isMainNet ? N3_MAINNET_CONTRACTS.GAS_TOKEN : N3_TESTNET_CONTRACTS.GAS_TOKEN,
+            this.isMainNet ? N3_MAINNET_CONTRACTS.GHOST_NEP11 : N3_TESTNET_CONTRACTS.GHOST_NEP11,
+        ]
+
+        const creator = currentAddress
+        const type = item.type
+        const hasLocked = false
+        const attributes: {
+            trait_type: string | number
+            value: string | number
+            display_type?: string
+        }[] = []
+
+        // display_type unused for now
+        if (item.attrT1 !== '') {
+            attributes.push({ trait_type: item.attrT1, value: item.attrV1 })
+        }
+        if (item.attrT2 !== '') {
+            attributes.push({ trait_type: item.attrT2, value: item.attrV2 })
+        }
+        if (item.attrT3 !== '') {
+            attributes.push({ trait_type: item.attrT3, value: item.attrV3 })
+        }
+
+        let jsonMetadata = JSON.stringify({
+            name: item.name,
+            description: item.description,
+            image: item.imageURL,
+            tokenURI: '',
+            attributes,
+            properties: {
+                has_locked: hasLocked,
+                type,
+            },
+        })
+
+        if (!isOnChainMetadata) {
+            jsonMetadata = JSON.stringify({
+                name: item.name,
+                tokenURI: item.externalURI,
+            })
+        }
+
+        const contractRoyalties = item.royalties
+            ? JSON.stringify([{ address: creator, value: (item.royalties * 100).toString() }])
+            : ''
+
+        let argsMint = [
+            {
+                type: 'Hash160', // account
+                value: getScriptHashFromAddress(creator),
+            },
+            {
+                type: 'ByteArray', // meta
+                value: b64EncodeUnicode(jsonMetadata),
+            },
+            {
+                type: 'ByteArray', // lockedContent
+                value: '', // lock content not available at the moment on SDK
+            },
+            {
+                type: 'ByteArray', // royalties
+                value: btoa(contractRoyalties.toString()),
+            },
+        ] as IArgs[]
+
+        if (isMintBatch) {
+            const tokensMeta = []
+            const tokensLock = []
+            const tokensRoya = []
+            for (let i = 0; i < item.quantity; i++) {
+                tokensMeta.push({
+                    type: 'ByteArray',
+                    value: b64EncodeUnicode(jsonMetadata),
+                })
+                tokensLock.push({
+                    type: 'ByteArray',
+                    value: '', // lock content not available at the moment on SDK
+                })
+                tokensRoya.push({
+                    type: 'ByteArray',
+                    value: btoa(contractRoyalties.toString()),
+                })
+            }
+            argsMint = [
+                {
+                    type: 'Hash160',
+                    value: getScriptHashFromAddress(creator),
+                },
+                {
+                    type: 'Array',
+                    value: tokensMeta,
+                },
+                {
+                    type: 'Array',
+                    value: '', // lock content not available at the moment on SDK
+                },
+                {
+                    type: 'Array',
+                    value: tokensRoya,
+                },
+            ] as IArgs[]
+        }
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 16,
+                allowedContracts,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: N3_MAINNET_CONTRACTS.GHOST_NEP11,
+            operation: isMintBatch ? METHOD_MULTI_MINT : METHOD_MINT,
+            args: argsMint,
+            fee: '0',
+            signers,
+        }
+
+        return this.invoke(invokeParams)
+    }
+
+    /* TO ADD
+    collectionEditRoyalties()
+    getTokenBalances / getOwnerships
+    */
 }
