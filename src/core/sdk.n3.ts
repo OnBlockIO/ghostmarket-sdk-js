@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import base58 from 'bs58'
-import { BigNumber } from '@ethersproject/bignumber'
+import { numberToByteString, getScriptHashFromAddress } from '../utils/n3/helpers'
+import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS } from './constants'
 
 export interface IBuyItem {
     contractAuctionId: string
@@ -34,49 +34,9 @@ export interface IAuctionItem {
     quoteContractHash: string // starts with 0x
 }
 
-function ab2hexstring(arr: any) {
-    if (typeof arr !== 'object') {
-        throw new TypeError(`ab2hexstring expects an array. Input was ${arr}`)
-    }
-    let result = ''
-    const intArray = new Uint8Array(arr)
-    for (const i of intArray) {
-        let str = i.toString(16)
-        str = str.length === 0 ? '00' : str.length === 1 ? '0' + str : str
-        result += str
-    }
-    return result
-}
-
-function reverseHex(hex: string) {
-    let out = ''
-    for (let i = hex.length - 2; i >= 0; i -= 2) {
-        out += hex.substr(i, 2)
-    }
-    return out
-}
-
-function getScriptHashFromAddress(address: any) {
-    const hash = ab2hexstring(base58.decode(address))
-    return reverseHex(hash.substr(2, 40))
-}
-
-function numberToByteString(num: string) {
-    const h = BigNumber.from(num).toHexString().substr(2)
-    let hex = h.length % 2 ? '0' + h : h
-    const fc = hex.charAt(0)
-
-    if ((fc > '7' && fc <= '9') || (fc >= 'a' && fc <= 'f')) {
-        hex = '00' + hex
-    }
-
-    return btoa(
-        hex
-            .match(/.{1,2}/g)!
-            .reverse()
-            .map((v: any) => String.fromCharCode(parseInt(v, 16)))
-            .join(''),
-    )
+export interface IArgs {
+    type: string
+    value: string
 }
 
 const METHOD_BID_TOKEN = 'bidToken'
@@ -98,8 +58,8 @@ export class GhostMarketN3SDK {
         this.isMainNet = isMainNet
         this.chainName = this.isMainNet ? 'n3' : 'n3t'
         this.contractExchangeAddress = isMainNet
-            ? '0xcc638d55d99fc81295daccbaf722b84f179fb9c4'
-            : '0xa4276772f429fc31032c4cd8bf3c98c806318f3e'
+            ? N3_MAINNET_CONTRACTS.EXCHANGE
+            : N3_TESTNET_CONTRACTS.EXCHANGE
     }
 
     getProvider(_initialize?: boolean) {
@@ -280,7 +240,7 @@ export class GhostMarketN3SDK {
         }
     }
 
-    buyMultiple(items: IBuyItem[], currentAddress: string): Promise<any> {
+    buyMultiple(items: IBuyItem[], currentAddress: string): Promise<string> {
         const isBuyBatch = items.length > 1
 
         console.log(
@@ -306,7 +266,7 @@ export class GhostMarketN3SDK {
                             type: 'ByteArray', // ByteString auctionId
                             value: numberToByteString(item.contractAuctionId.toString()),
                         },
-                    ],
+                    ] as IArgs[],
                 })
             } else {
                 const quoteContract = item.quoteContractHash.substring(2)
@@ -330,7 +290,7 @@ export class GhostMarketN3SDK {
                             type: 'Integer', // BigInteger price
                             value: priceNFTFormatted,
                         },
-                    ],
+                    ] as IArgs[],
                 })
             }
         }
@@ -356,7 +316,7 @@ export class GhostMarketN3SDK {
         currentAddress: string,
         startDate: Date,
         endDate: Date,
-    ): Promise<any> {
+    ): Promise<string> {
         const isListBatch = items.length > 1
 
         console.log(
@@ -425,7 +385,7 @@ export class GhostMarketN3SDK {
                         type: 'Integer', // BigInteger auctionType
                         value: 0, // auction type fixed listing
                     },
-                ],
+                ] as IArgs[],
             })
         }
 
@@ -444,12 +404,12 @@ export class GhostMarketN3SDK {
         return this.invokeMultiple(invokeParamsMultiple)
     }
 
-    buyAuction(item: IBidItem, currentAddress: string): Promise<any> {
+    buyAuction(item: IBidItem, currentAddress: string): Promise<string> {
         console.log(`bidding on nft with ${this.providerHint} on ${this.chainName}`)
 
         const currentBidFormatted = item.bidPrice || 0
 
-        const argsBidToken: any = [
+        const argsBidToken = [
             {
                 type: 'Hash160', // UInt160 from
                 value: getScriptHashFromAddress(currentAddress),
@@ -462,7 +422,7 @@ export class GhostMarketN3SDK {
                 type: 'Integer', // BigInteger price
                 value: currentBidFormatted,
             },
-        ]
+        ] as IArgs[]
 
         const allowedContracts = [this.contractExchangeAddress.substring(2)]
         const quoteContract = item.quoteContractHash.substring(2)
@@ -487,7 +447,7 @@ export class GhostMarketN3SDK {
         return this.invoke(invokeParams)
     }
 
-    listAuction(item: IAuctionItem, currentAddress: string): Promise<any> {
+    listAuction(item: IAuctionItem, currentAddress: string): Promise<string> {
         console.log(`auction nft with ${this.providerHint} on ${this.chainName}`)
 
         let extensionPeriod = item.extensionPeriod ? item.extensionPeriod * 60 : 0 // min 0 - max 1h (3600)
@@ -510,7 +470,7 @@ export class GhostMarketN3SDK {
         const startDateFormatted = new Date(item.startDate).getTime()
         const endDateFormatted = new Date(item.endDate).getTime()
 
-        const argsListToken: any = [
+        const argsListToken = [
             {
                 type: 'Hash160', // UInt160 baseScriptHash
                 value: item.baseContractHash,
@@ -551,7 +511,7 @@ export class GhostMarketN3SDK {
                 type: 'Integer', // BigInteger auctionType
                 value: item.auctionType,
             },
-        ]
+        ] as IArgs[]
 
         const allowedContracts = [this.contractExchangeAddress.substring(2)]
         const baseContract = item.baseContractHash.substring(2)
@@ -576,10 +536,10 @@ export class GhostMarketN3SDK {
         return this.invoke(invokeParams)
     }
 
-    claimAuction(contractAuctionId: string, currentAddress: string): Promise<any> {
+    claimAuction(contractAuctionId: string, currentAddress: string): Promise<string> {
         console.log(`claiming nft auction with ${this.providerHint} on ${this.chainName}`)
 
-        const argsBidToken: any = [
+        const argsBidToken = [
             {
                 type: 'Hash160', // UInt160 from
                 value: getScriptHashFromAddress(currentAddress),
@@ -592,7 +552,7 @@ export class GhostMarketN3SDK {
                 type: 'Integer', // BigInteger price
                 value: 0,
             },
-        ]
+        ] as IArgs[]
 
         const signers = [
             {
@@ -610,10 +570,14 @@ export class GhostMarketN3SDK {
         return this.invoke(invokeParams)
     }
 
-    editPrice(contractAuctionId: string, currentAddress: string, newPrice: string): Promise<any> {
+    editPrice(
+        contractAuctionId: string,
+        currentAddress: string,
+        newPrice: string,
+    ): Promise<string> {
         console.log(`edit listing price with ${this.providerHint} on ${this.chainName}`)
 
-        const argsEditSale: any = [
+        const argsEditSale = [
             {
                 type: 'Hash160', // UInt160 from
                 value: getScriptHashFromAddress(currentAddress),
@@ -642,7 +606,7 @@ export class GhostMarketN3SDK {
                 type: 'Integer', // BigInteger extensionPeriod
                 value: 0,
             },
-        ]
+        ] as IArgs[]
 
         let invokeParams = null
 
