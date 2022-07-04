@@ -7,7 +7,7 @@ import {
     RoyaltiesRegistryContract,
     ERC721Contract,
     ERC1155Contract,
-} from '../abis/'
+} from '../abis'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
     ETHEREUM_TESTNET_CONTRACTS,
@@ -21,8 +21,8 @@ import {
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
 } from './constants'
-import { Network, TxObject, Royalties } from '../types/types'
-import { IEVMOrder } from '../lib/api/ghostmarket/models/'
+import { Network, TxObject } from '../types/network'
+import { IEVMOrder } from '../lib/api/ghostmarket/models'
 import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
 import { hashKey } from '../utils/evm/hash'
 import { sign, Order, Asset } from '../utils/evm/order'
@@ -31,6 +31,17 @@ import {
     IGhostMarketApiOptions,
     PostCreateOrderRequest,
 } from '../lib/api/ghostmarket'
+
+// not included in main frontend lib yet
+export interface Royalties {
+    royaltiesRecipients: RoyaltyRecipient[]
+}
+
+// not included in main frontend lib yet
+export interface RoyaltyRecipient {
+    recipient: string
+    amount: number
+}
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
