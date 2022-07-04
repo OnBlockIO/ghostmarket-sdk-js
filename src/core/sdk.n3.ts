@@ -281,13 +281,11 @@ export class GhostMarketN3SDK {
     }
 
     buyMultiple(items: IBuyItem[], currentAddress: string): Promise<any> {
-        const providerHint = this.providerHint
-        const providerHintCapitalized = providerHint.charAt(0).toUpperCase() + providerHint.slice(1)
         const isBuyBatch = items.length > 1
 
         console.log(
-            `buying ${isBuyBatch ? 'bulk' : 'single'} nft with ${providerHintCapitalized} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
+            `buying ${isBuyBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+                this.chainName
             }`,
         )
 
@@ -359,13 +357,11 @@ export class GhostMarketN3SDK {
         startDate: Date,
         endDate: Date,
     ): Promise<any> {
-        const providerHint = this.providerHint
-        const providerHintCapitalized = providerHint.charAt(0).toUpperCase() + providerHint.slice(1)
         const isListBatch = items.length > 1
 
         console.log(
-            `selling ${isListBatch ? 'bulk' : 'single'} nft with ${providerHintCapitalized} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
+            `selling ${isListBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+                this.chainName
             }`,
         )
 
@@ -449,14 +445,7 @@ export class GhostMarketN3SDK {
     }
 
     buyAuction(item: IBidItem, currentAddress: string): Promise<any> {
-        const providerHint = this.providerHint
-        const providerHintCapitalized = providerHint.charAt(0).toUpperCase() + providerHint.slice(1)
-
-        console.log(
-            `bidding on nft with ${providerHintCapitalized} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
-            }`,
-        )
+        console.log(`bidding on nft with ${this.providerHint} on ${this.chainName}`)
 
         const currentBidFormatted = item.bidPrice || 0
 
@@ -499,14 +488,7 @@ export class GhostMarketN3SDK {
     }
 
     listAuction(item: IAuctionItem, currentAddress: string): Promise<any> {
-        const providerHint = this.providerHint
-        const providerHintCapitalized = providerHint.charAt(0).toUpperCase() + providerHint.slice(1)
-
-        console.log(
-            `auction nft with ${providerHintCapitalized} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
-            }`,
-        )
+        console.log(`auction nft with ${this.providerHint} on ${this.chainName}`)
 
         let extensionPeriod = item.extensionPeriod ? item.extensionPeriod * 60 : 0 // min 0 - max 1h (3600)
         switch (item.auctionType) {
@@ -595,14 +577,7 @@ export class GhostMarketN3SDK {
     }
 
     claimAuction(contractAuctionId: string, currentAddress: string): Promise<any> {
-        const providerHint = this.providerHint
-        const providerHintCapitalized = providerHint.charAt(0).toUpperCase() + providerHint.slice(1)
-
-        console.log(
-            `claiming nft auction with ${providerHintCapitalized} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
-            }`,
-        )
+        console.log(`claiming nft auction with ${this.providerHint} on ${this.chainName}`)
 
         const argsBidToken: any = [
             {
@@ -636,14 +611,7 @@ export class GhostMarketN3SDK {
     }
 
     editPrice(contractAuctionId: string, currentAddress: string, newPrice: string): Promise<any> {
-        const providerHint = this.providerHint
-        const providerHintCapitalized = providerHint.charAt(0).toUpperCase() + providerHint.slice(1)
-
-        console.log(
-            `edit listing price with ${providerHintCapitalized} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
-            }`,
-        )
+        console.log(`edit listing price with ${this.providerHint} on ${this.chainName}`)
 
         const argsEditSale: any = [
             {
