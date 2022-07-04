@@ -61,9 +61,15 @@ export interface IMintItem {
     type: string
 }
 
+export interface ICollectionRoyalties {
+    contract: string
+    royalties: number
+    royaltiesRecipient: string
+}
+
 export interface IArgs {
     type: string
-    value: string
+    value: string | any
 }
 
 const METHOD_BID_TOKEN = 'bidToken'
@@ -706,6 +712,46 @@ export class GhostMarketN3SDK {
         return this.invokeMultiple(invokeParamsMultiple)
     }
 
+    burn(items: IBurnItem[], currentAddress: string): Promise<string> {
+        const isBurnBatch = items.length > 1
+        console.log(
+            `burn ${isBurnBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+                this.chainName
+            }`,
+        )
+
+        const argsBurnMultiple = []
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+
+            argsBurnMultiple.push({
+                scriptHash: item.contract,
+                operation: METHOD_BURN,
+                args: [
+                    {
+                        type: 'ByteArray',
+                        value: numberToByteString(item.token_id),
+                    },
+                ] as IArgs[],
+            })
+        }
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 1,
+            },
+        ]
+        const invokeParamsMultiple = {
+            invokeArgs: argsBurnMultiple,
+            fee: (0.01 * items.length).toString(),
+            signers,
+        }
+
+        return this.invokeMultiple(invokeParamsMultiple)
+    }
+
     mint(item: IMintItem, currentAddress: string): Promise<string> {
         const isMintBatch = item.quantity > 1
         console.log(
@@ -838,8 +884,72 @@ export class GhostMarketN3SDK {
         return this.invoke(invokeParams)
     }
 
+    collectionEditRoyalties(item: ICollectionRoyalties, currentAddress: string): Promise<string> {
+        console.log(`edit collection royalties with ${this.providerHint} on ${this.chainName}`)
+
+        let argsSetCollectionRoyalties = [
+            {
+                type: 'Hash160', // UInt160 contract
+                value: item.contract,
+            },
+            {
+                type: 'Array', // Array
+                value: [],
+            },
+        ] as IArgs[]
+
+        if (item.royalties > 0) {
+            argsSetCollectionRoyalties = [
+                {
+                    type: 'Hash160', // UInt160 contract
+                    value: item.contract,
+                },
+                {
+                    type: 'Array', // Array
+                    value: [
+                        {
+                            type: 'Array', // Array
+                            value: [
+                                {
+                                    type: 'Hash160', // UInt160 address
+                                    value: getScriptHashFromAddress(item.royaltiesRecipient),
+                                },
+                                {
+                                    type: 'Integer', // BigInteger value
+                                    value: item.royalties,
+                                },
+                            ] as IArgs[],
+                        },
+                    ] as IArgs[],
+                },
+            ]
+        }
+
+        const allowedContracts = [item.contract.substring(2), this.contractExchangeAddress]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 16,
+                allowedContracts,
+            },
+            {
+                account: item.contract,
+                scopes: 16,
+                allowedContracts,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this.contractExchangeAddress,
+            operation: METHOD_SET_COLLECTION_ROYALTIES,
+            args: argsSetCollectionRoyalties,
+            signers,
+        }
+
+        return this.invoke(invokeParams)
+    }
+
     /* TO ADD
-    collectionEditRoyalties()
     getTokenBalances / getOwnerships
     */
 }
