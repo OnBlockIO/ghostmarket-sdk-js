@@ -2,71 +2,80 @@
 import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '../utils/n3/helpers'
 import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS } from './constants'
 
+// not included in main frontend lib yet
 export interface IBuyItem {
-    contractAuctionId: string
-    ownerAddress: string
-    price: string
-    quoteContractHash: string // starts with 0x
+    contractAuctionId: string // on chain contract auction ID.
+    ownerAddress: string // order owner.
+    price: string // order price.
+    quoteContractHash: string // order quote contract hash.
 }
 
+// not included in main frontend lib yet
 export interface ISellItem {
-    tokenId: string
-    baseContractHash: string // starts with 0x
-    price: string
-    quoteContractHash: string // starts with 0x
+    tokenId: string // NFT token id.
+    baseContractHash: string // order base contract hash.
+    price: string // order price.
+    quoteContractHash: string // order quote contract hash.
 }
 
+// not included in main frontend lib yet
 export interface IBidItem {
-    contractAuctionId: string
-    bidPrice?: string
-    quoteContractHash: string // starts with 0x
+    contractAuctionId: string // on chain contract auction ID.
+    bidPrice?: string // order bid price.
+    quoteContractHash: string // order quote contract hash.
 }
 
+// not included in main frontend lib yet
 export interface ITransferItem {
-    contract: string // starts with 0x
-    destAddress: string
-    token_id: string
+    contract: string // NFT contract hash.
+    destAddress: string // Transfer destination address.
+    tokenId: string // NFT token id.
 }
 
+// not included in main frontend lib yet
 export interface IBurnItem {
-    contract: string // starts with 0x
-    token_id: string
+    contract: string // NFT contract hash.
+    tokenId: string // NFT token id.
 }
 
+// not included in main frontend lib yet
 export interface IAuctionItem {
     auctionType: number // classic (1) reserve (2) dutch (3) fixed (0)
-    tokenId: string
-    baseContractHash: string // starts with 0x
-    extensionPeriod?: number
-    startDate: number
-    endDate: number
-    startPrice?: number
-    endPrice?: number
-    quoteContractHash: string // starts with 0x
+    tokenId: string // NFT token id.
+    baseContractHash: string // order base contract hash.
+    extensionPeriod?: number // extension period.
+    startDate: number // order start date.
+    endDate: number // order end date.
+    startPrice?: number // order start price.
+    endPrice?: number // order end price.
+    quoteContractHash: string // order quote contract hash.
 }
 
+// not included in main frontend lib yet
 export interface IMintItem {
-    quantity: number
-    attrT1: string
-    attrV1: string
-    attrT2: string
-    attrV2: string
-    attrT3: string
-    attrV3: string
-    name: string
-    description: string
-    imageURL: string
-    externalURI: string
-    royalties: number
-    type: string
+    quantity: number // NFT quantity.
+    attrT1: string // NFT Attr Type 1.
+    attrV1: string // NFT Attr Value 1.
+    attrT2: string // NFT Attr Type 2.
+    attrV2: string // NFT Attr Value 2.
+    attrT3: string // NFT Attr Type 3.
+    attrV3: string // NFT Attr Value 3.
+    name: string // NFT name.
+    description: string // NFT description.
+    imageURL: string // image URL.
+    externalURI: string // external URI.
+    royalties: number // Royalties value in BPS.
+    type: string // NFT Type.
 }
 
+// not included in main frontend lib yet
 export interface ICollectionRoyalties {
-    contract: string
-    royalties: number
-    royaltiesRecipient: string
+    contract: string // NFT contract hash.
+    royalties: number // Royalties value in BPS.
+    royaltiesRecipient: string // Royalties recipient.
 }
 
+// not included in main frontend lib yet
 export interface IArgs {
     type: string
     value: string | any
@@ -249,7 +258,10 @@ export class GhostMarketN3SDK {
         })
     }
 
-    async signData(dataToSign: string) {
+    /** Buy one or more NFT(s)
+     * @param {string} dataToSign data to sign.
+     */
+    public async signData(dataToSign: string) {
         const neo = this.getProvider(true)
         try {
             const signedMessage = await neo.signMessage({ message: dataToSign })
@@ -278,7 +290,11 @@ export class GhostMarketN3SDK {
         }
     }
 
-    buyMultiple(items: IBuyItem[], currentAddress: string): Promise<string> {
+    /** Buy one or more NFT(s)
+     * @param {IBuyItem[]} items details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async buyMultiple(items: IBuyItem[], currentAddress: string) {
         const isBuyBatch = items.length > 1
 
         console.log(
@@ -346,15 +362,28 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invokeMultiple(invokeParamsMultiple)
+        try {
+            return this.invokeMultiple(invokeParamsMultiple)
+        } catch (e) {
+            console.error(
+                `Failed to execute buyMultiple on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
-    sellMultiple(
+    /** Create one or more sell order(s)
+     * @param {ISellItem[]} items details.
+     * @param {string} currentAddress address used to sign transaction.
+     * @param {Date} currentAddress start date of listing.
+     * @param {Date} currentAddress end date of listing.
+     */
+    public async sellMultiple(
         items: ISellItem[],
         currentAddress: string,
         startDate: Date,
         endDate: Date,
-    ): Promise<string> {
+    ) {
         const isListBatch = items.length > 1
 
         console.log(
@@ -439,10 +468,22 @@ export class GhostMarketN3SDK {
             fee: (0.01 * items.length).toString(),
             signers,
         }
-        return this.invokeMultiple(invokeParamsMultiple)
+
+        try {
+            return this.invokeMultiple(invokeParamsMultiple)
+        } catch (e) {
+            console.error(
+                `Failed to execute sellMultiple on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
-    buyAuction(item: IBidItem, currentAddress: string): Promise<string> {
+    /** Place Bid on NFT Auction
+     * @param {IBidItem} item details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async buyAuction(item: IBidItem, currentAddress: string) {
         console.log(`bidding on nft with ${this.providerHint} on ${this.chainName}`)
 
         const currentBidFormatted = item.bidPrice || 0
@@ -482,10 +523,21 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invoke(invokeParams)
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute buyAuction on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
-    listAuction(item: IAuctionItem, currentAddress: string): Promise<string> {
+    /** Put NFT on Auction
+     * @param {IAuctionItem} item details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async listAuction(item: IAuctionItem, currentAddress: string) {
         console.log(`auction nft with ${this.providerHint} on ${this.chainName}`)
 
         let extensionPeriod = item.extensionPeriod ? item.extensionPeriod * 60 : 0 // min 0 - max 1h (3600)
@@ -571,10 +623,21 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invoke(invokeParams)
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute listAuction on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
-    claimAuction(contractAuctionId: string, currentAddress: string): Promise<string> {
+    /** Claim ended NFT Auction
+     * @param {string} contractAuctionId on chain contract auction ID.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async claimAuction(contractAuctionId: string, currentAddress: string) {
         console.log(`claiming nft auction with ${this.providerHint} on ${this.chainName}`)
 
         const argsBidToken = [
@@ -605,14 +668,22 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invoke(invokeParams)
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute claimAuction on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
-    editPrice(
-        contractAuctionId: string,
-        currentAddress: string,
-        newPrice: string,
-    ): Promise<string> {
+    /** Edit NFT Listing
+     * @param {string} contractAuctionId on chain contract auction ID.
+     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} newPrice new price to use for the listing.
+     */
+    public async editPrice(contractAuctionId: string, currentAddress: string, newPrice: string) {
         console.log(`edit listing price with ${this.providerHint} on ${this.chainName}`)
 
         const argsEditSale = [
@@ -661,10 +732,21 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invoke(invokeParams)
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute editPrice on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
-    transfer(items: ITransferItem[], currentAddress: string): Promise<string> {
+    /** Transfer NEP11 NFT
+     * @param {ITransferItem[]} items details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async transfer(items: ITransferItem[], currentAddress: string) {
         const isTransferBatch = items.length > 1
         console.log(
             `transfer ${isTransferBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
@@ -687,7 +769,7 @@ export class GhostMarketN3SDK {
                     },
                     {
                         type: 'ByteArray',
-                        value: numberToByteString(item.token_id),
+                        value: numberToByteString(item.tokenId),
                     },
                     {
                         type: 'String', // data
@@ -709,10 +791,18 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invokeMultiple(invokeParamsMultiple)
+        try {
+            return this.invokeMultiple(invokeParamsMultiple)
+        } catch (e) {
+            console.error(`Failed to execute transfer on ${items[0].contract} with error:`, e)
+        }
     }
 
-    burn(items: IBurnItem[], currentAddress: string): Promise<string> {
+    /** Burn NEP11 NFT
+     * @param {IBurnItem[]} items details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async burn(items: IBurnItem[], currentAddress: string) {
         const isBurnBatch = items.length > 1
         console.log(
             `burn ${isBurnBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
@@ -731,7 +821,7 @@ export class GhostMarketN3SDK {
                 args: [
                     {
                         type: 'ByteArray',
-                        value: numberToByteString(item.token_id),
+                        value: numberToByteString(item.tokenId),
                     },
                 ] as IArgs[],
             })
@@ -749,10 +839,18 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invokeMultiple(invokeParamsMultiple)
+        try {
+            return this.invokeMultiple(invokeParamsMultiple)
+        } catch (e) {
+            console.error(`Failed to execute burn on ${items[0].contract} with error:`, e)
+        }
     }
 
-    mint(item: IMintItem, currentAddress: string): Promise<string> {
+    /** Mint NEP11 NFT
+     * @param {IMintItem} item details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async mint(item: IMintItem, currentAddress: string) {
         const isMintBatch = item.quantity > 1
         console.log(
             `minting ${isMintBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
@@ -874,23 +972,40 @@ export class GhostMarketN3SDK {
             },
         ]
         const invokeParams = {
-            scriptHash: N3_MAINNET_CONTRACTS.GHOST_NEP11,
+            scriptHash: this.isMainNet
+                ? N3_MAINNET_CONTRACTS.GHOST_NEP11
+                : N3_TESTNET_CONTRACTS.GHOST_NEP11,
             operation: isMintBatch ? METHOD_MULTI_MINT : METHOD_MINT,
             args: argsMint,
             fee: '0',
             signers,
         }
 
-        return this.invoke(invokeParams)
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute mint on ${
+                    this.isMainNet
+                        ? N3_MAINNET_CONTRACTS.GHOST_NEP11
+                        : N3_TESTNET_CONTRACTS.GHOST_NEP11
+                } with error:`,
+                e,
+            )
+        }
     }
 
-    collectionEditRoyalties(item: ICollectionRoyalties, currentAddress: string): Promise<string> {
+    /** Set royalties for contract
+     * @param {ICollectionRoyalties} collection details.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async collectionEditRoyalties(collection: ICollectionRoyalties, currentAddress: string) {
         console.log(`edit collection royalties with ${this.providerHint} on ${this.chainName}`)
 
         let argsSetCollectionRoyalties = [
             {
                 type: 'Hash160', // UInt160 contract
-                value: item.contract,
+                value: collection.contract,
             },
             {
                 type: 'Array', // Array
@@ -898,11 +1013,11 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        if (item.royalties > 0) {
+        if (collection.royalties > 0) {
             argsSetCollectionRoyalties = [
                 {
                     type: 'Hash160', // UInt160 contract
-                    value: item.contract,
+                    value: collection.contract,
                 },
                 {
                     type: 'Array', // Array
@@ -912,11 +1027,11 @@ export class GhostMarketN3SDK {
                             value: [
                                 {
                                     type: 'Hash160', // UInt160 address
-                                    value: getScriptHashFromAddress(item.royaltiesRecipient),
+                                    value: getScriptHashFromAddress(collection.royaltiesRecipient),
                                 },
                                 {
                                     type: 'Integer', // BigInteger value
-                                    value: item.royalties,
+                                    value: collection.royalties,
                                 },
                             ] as IArgs[],
                         },
@@ -925,7 +1040,7 @@ export class GhostMarketN3SDK {
             ]
         }
 
-        const allowedContracts = [item.contract.substring(2), this.contractExchangeAddress]
+        const allowedContracts = [collection.contract.substring(2), this.contractExchangeAddress]
 
         const signers = [
             {
@@ -934,7 +1049,7 @@ export class GhostMarketN3SDK {
                 allowedContracts,
             },
             {
-                account: item.contract,
+                account: collection.contract,
                 scopes: 16,
                 allowedContracts,
             },
@@ -946,7 +1061,14 @@ export class GhostMarketN3SDK {
             signers,
         }
 
-        return this.invoke(invokeParams)
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute collectionEditRoyalties on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
     }
 
     /* TO ADD
