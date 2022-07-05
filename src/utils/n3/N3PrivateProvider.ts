@@ -25,7 +25,11 @@ export class N3PrivateProvider {
 
     constructor(rpcUrl: string, pk: string, isMainNet: boolean) {
         this.account = new wallet.Account(pk)
-        this.rpcClient = new rpc.RPCClient(rpcUrl ?? 'http://neo3.edgeofneo.com:10332')
+        this.rpcClient = new rpc.RPCClient(
+            rpcUrl ?? isMainNet
+                ? 'https://mainnet1.neo.coz.io:443/'
+                : 'https://testnet1.neo.coz.io:443/',
+        )
         this.isMainNet = isMainNet
     }
 
