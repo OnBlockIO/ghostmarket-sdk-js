@@ -100,8 +100,12 @@ export class GhostMarketN3SDK {
     chainName: string
     contractExchangeAddress: string
 
-    constructor(isMainNet: boolean) {
+    constructor(isMainNet: boolean, providerHint: string, provider?: any) {
         // setup constants
+        if (provider) {
+            this.provider = provider
+        }
+        this.providerHint = providerHint
         this.isMainNet = isMainNet
         this.chainName = this.isMainNet ? 'n3' : 'n3t'
         this.contractExchangeAddress = isMainNet
@@ -110,6 +114,7 @@ export class GhostMarketN3SDK {
     }
 
     getProvider(_initialize?: boolean) {
+        if (this.provider) return this.provider
         const win = window as any
 
         switch (this.providerHint) {
