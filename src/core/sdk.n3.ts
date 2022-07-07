@@ -52,6 +52,17 @@ export interface IAuctionItem {
 }
 
 // not included in main frontend lib yet
+export interface IOfferItem {
+    baseScriptHash: string // offer base contract hash.
+    quoteScriptHash: string // offer quote contract hash.
+    tokenId: string // offer token id.
+    price: number // offer price.
+    startDate: number // offer start date.
+    endDate: number // offer end date.
+    auctionId?: string // offer on chain auction id.
+}
+
+// not included in main frontend lib yet
 export interface IMintItem {
     quantity: number // NFT quantity.
     attrT1: string // NFT Attr Type 1.
@@ -90,6 +101,10 @@ const METHOD_BURN = 'burn'
 const METHOD_MINT = 'mint'
 const METHOD_MULTI_MINT = 'multiMint'
 const METHOD_SET_COLLECTION_ROYALTIES = 'setRoyaltiesForContract'
+const METHOD_APPROVE_TOKEN = 'approve'
+const METHOD_CHECK_ALLOWANCE = 'allowance'
+const METHOD_PLACE_OFFER = 'placeOffer'
+const METHOD_ACCEPT_OFFER = 'acceptOffer'
 
 export class GhostMarketN3SDK {
     providerHint = ''
@@ -683,6 +698,119 @@ export class GhostMarketN3SDK {
         }
     }
 
+    /** Create a single nft offer or a collection offer
+     * @param {IOfferItem} item details.
+     * @param {string} currentAddress used to sign transaction.
+     */
+    public async placeOffer(item: IOfferItem, currentAddress: string) {
+        console.log(`placing offer on nft with ${this.providerHint} on ${this.chainName}`)
+
+        const argsPlaceOffer = [
+            {
+                type: 'Hash160', // UInt160 baseScriptHash
+                value: item.baseScriptHash,
+            },
+            {
+                type: 'Hash160', // UInt160 from
+                value: getScriptHashFromAddress(currentAddress),
+            },
+            {
+                type: 'Hash160', // UInt160 quoteScriptHash
+                value: item.quoteScriptHash,
+            },
+            {
+                type: 'ByteArray', // ByteString tokenId
+                value: item.tokenId, // set to null for collection offer
+            },
+            {
+                type: 'Integer', // BigInteger price
+                value: item.price,
+            },
+            {
+                type: 'Integer', // BigInteger startDate
+                value: item.startDate,
+            },
+            {
+                type: 'Integer', // BigInteger endDate
+                value: item.endDate,
+            },
+        ]
+
+        const allowedContracts = [this.contractExchangeAddress]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 16,
+                allowedContracts,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this.contractExchangeAddress,
+            operation: METHOD_PLACE_OFFER,
+            args: argsPlaceOffer,
+            signers,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute placeOffer on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Accept a single nft offer or a collection offer
+     * @param {IOfferItem} item details.
+     * @param {string} currentAddress used to sign transaction.
+     */
+    public async processOffer(item: IOfferItem, currentAddress: string) {
+        console.log(`accept offer on nft with ${this.providerHint} on ${this.chainName}`)
+
+        const argsAcceptOffer = [
+            {
+                type: 'Hash160', // UInt160 from
+                value: getScriptHashFromAddress(currentAddress),
+            },
+            {
+                type: 'ByteArray', // ByteString auctionId
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                value: numberToByteString(item.auctionId!),
+            },
+            {
+                type: 'ByteArray', // ByteString tokenId
+                value: numberToByteString(item.tokenId),
+            },
+        ]
+
+        const allowedContracts = [this.contractExchangeAddress]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 16,
+                allowedContracts,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this.contractExchangeAddress,
+            operation: METHOD_ACCEPT_OFFER,
+            args: argsAcceptOffer,
+            signers,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute processOffer on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
+    }
+
     /** Edit NFT Listing
      * @param {string} contractAuctionId on chain contract auction ID.
      * @param {string} currentAddress address used to sign transaction.
@@ -744,6 +872,90 @@ export class GhostMarketN3SDK {
                 `Failed to execute editPrice on ${this.contractExchangeAddress} with error:`,
                 e,
             )
+        }
+    }
+
+    /** Approve Token Contract
+     * @param {contractHash} string contract to approve.
+     * @param {string} currentAddress address used to sign transaction.
+     */
+    public async approveToken(contractHash: string, currentAddress: string) {
+        console.log(`approve token with ${this.providerHint} on ${this.chainName}`)
+
+        const approve_unlimited_amount =
+            '115792089237316195423570985008687907853269984665640564039457584007913129639935' // (2^256 - 1 )
+
+        const argsApproveToken = [
+            {
+                type: 'Hash160', // UInt160 spender
+                value: this.contractExchangeAddress,
+            },
+            {
+                type: 'Integer', // BigInteger amount
+                value: approve_unlimited_amount,
+            },
+        ] as IArgs[]
+
+        let invokeParams = null
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 1,
+            },
+        ]
+        invokeParams = {
+            scriptHash: this.contractExchangeAddress,
+            operation: METHOD_APPROVE_TOKEN,
+            args: argsApproveToken,
+            signers,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute approveToken on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Check NEP17 Token Contract Approval
+     * @param {address} string address to check approval.
+     * @param {decimals} number decimals of contract to check approval.
+     * @param {contract} string address of contract to check approval.
+     */
+    public async checkTokenApproval(address: string, decimals: number, contract: string) {
+        console.log(`check token approval on ${this.chainName}`)
+        try {
+            /* const rpc = this.core.apis.getRpcByChain(this.chainName) as N3RPC
+            const args = [
+                {
+                    type: 'Hash160',
+                    value: getScriptHashFromAddress(address),
+                },
+                {
+                    type: 'Hash160',
+                    value: this.contractExchangeAddress,
+                },
+            ]
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const response = await rpc.invokeFunction(contract!, METHOD_CHECK_ALLOWANCE, args)
+            if (!response) {
+                // continue
+            }
+            if (response.result.exception) {
+                console.log(response.result.exception)
+                return
+            }
+            if (!response.error) {
+                // TODO - check if correctly decoded
+                const decoded = response.result.stack[0].value[4].value / Math.pow(10, decimals)
+                return decoded
+            } */
+        } catch (err) {
+            console.log(err)
         }
     }
 
