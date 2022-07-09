@@ -51,3 +51,5 @@ testing
 
 # Auto generated typechain contracts
 src/typechain/contracts/
+
+.nyc_output*

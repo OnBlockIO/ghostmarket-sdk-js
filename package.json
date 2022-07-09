@@ -7,6 +7,7 @@
   "scripts": {
     "test": "jest",
     "test:ci": "jest",
+    "coverage": "nyc --reporter=lcov npm test",
     "cacheClear": "jest --clearCache",
     "prepare": "npm run build",
     "build": "tsc -p tsconfig.build.json",
@@ -40,6 +41,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "jest": "^28.1.0",
     "jest-extended": "^2.0.0",
+    "nyc": "^15.1.0",
     "prettier": "^2.6.2",
     "ts-jest": "^28.0.2",
     "ts-node": "^10.7.0",
