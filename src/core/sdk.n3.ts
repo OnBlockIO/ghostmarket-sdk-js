@@ -883,7 +883,7 @@ export class GhostMarketN3SDK {
         console.log(`approve token with ${this.providerHint} on ${this.chainName}`)
 
         const approve_unlimited_amount =
-            '115792089237316195423570985008687907853269984665640564039457584007913129639935' // (2^256 - 1 )
+            '57896044618658097711785492504343953926634992332820282019728792003956564819967' // (2^255 - 1 )
 
         const argsApproveToken = [
             {
@@ -950,8 +950,7 @@ export class GhostMarketN3SDK {
                 return
             }
             if (!response.error) {
-                // TODO - check if correctly decoded
-                const decoded = response.result.stack[0].value[4].value / Math.pow(10, decimals)
+                const decoded = response.result.stack[0].value / Math.pow(10, decimals)
                 return decoded
             } */
         } catch (err) {
