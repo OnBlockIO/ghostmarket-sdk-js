@@ -7,6 +7,7 @@ import {
     RoyaltiesRegistryContract,
     ERC721Contract,
     ERC1155Contract,
+    IncentivesContract,
 } from '../abis'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
@@ -638,6 +639,51 @@ export class GhostMarketSDK {
         }
     }
 
+    /** Get incentives for address
+     * @param {string} currentAddress address used to check incentives.
+     */
+    public async readIncentives(currentAddress: string): Promise<any> {
+        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(
+            this._networkname,
+        )
+        const IncentivesContractInstance = new this.web3.eth.Contract(
+            IncentivesContract,
+            IncentivesContractAddressAddress,
+        )
+
+        try {
+            const txResult = await IncentivesContractInstance.methods.incentives(currentAddress)
+            return txResult
+        } catch (e) {
+            console.error(
+                `Failed to execute readIncentives on ${IncentivesContractAddressAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Claim incentives
+     */
+    public async claimIncentives() {
+        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(
+            this._networkname,
+        )
+        const IncentivesContractInstance = new this.web3.eth.Contract(
+            IncentivesContract,
+            IncentivesContractAddressAddress,
+        )
+
+        try {
+            const txResult = await IncentivesContractInstance.methods.claim()
+            return txResult
+        } catch (e) {
+            console.error(
+                `Failed to execute claimIncentives on ${IncentivesContractAddressAddress} with error:`,
+                e,
+            )
+        }
+    }
+
     /** Sign Data
      * @param {data} string data to sign.
      * @param {addresss} string address to sign message.
@@ -666,6 +712,27 @@ export class GhostMarketSDK {
     // -- END PHA METHODS -- //
 
     // -- COMMON METHODS -- //
+
+    private _getIncentivesContractAddress(networkName: string): string {
+        switch (networkName) {
+            case Network.Avalanche:
+                return AVALANCHE_MAINNET_CONTRACTS.INCENTIVES
+            case Network.AvalancheTestnet:
+                return AVALANCHE_TESTNET_CONTRACTS.INCENTIVES
+            case Network.EthereumTestnet:
+                return ETHEREUM_TESTNET_CONTRACTS.INCENTIVES
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.INCENTIVES
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.INCENTIVES
+            case Network.Polygon:
+                return POLYGON_MAINNET_CONTRACTS.INCENTIVES
+            case Network.PolygonTestnet:
+                return POLYGON_TESTNET_CONTRACTS.INCENTIVES
+            default:
+                throw new Error('Unsupported Network')
+        }
+    }
 
     private _getERC721GhostContractAddress(networkName: string): string {
         switch (networkName) {
