@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '../utils/n3/helpers'
-import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS } from './constants'
+import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS, MAX_INT_255 } from './constants'
 
 // not included in main frontend lib yet
 export interface IBuyItem {
@@ -101,6 +101,8 @@ const METHOD_BURN = 'burn'
 const METHOD_MINT = 'mint'
 const METHOD_MULTI_MINT = 'multiMint'
 const METHOD_SET_COLLECTION_ROYALTIES = 'setRoyaltiesForContract'
+const METHOD_CLAIM_INCENTIVES = 'claim'
+const METHOD_READ_INCENTIVES = 'getIncentive'
 const METHOD_APPROVE_TOKEN = 'approve'
 const METHOD_CHECK_ALLOWANCE = 'allowance'
 const METHOD_PLACE_OFFER = 'placeOffer'
@@ -114,6 +116,7 @@ export class GhostMarketN3SDK {
 
     chainName: string
     contractExchangeAddress: string
+    contractIncentivesAddress: string
 
     constructor(isMainNet: boolean, providerHint: string, provider?: any) {
         // setup constants
@@ -126,6 +129,9 @@ export class GhostMarketN3SDK {
         this.contractExchangeAddress = isMainNet
             ? N3_MAINNET_CONTRACTS.EXCHANGE
             : N3_TESTNET_CONTRACTS.EXCHANGE
+        this.contractIncentivesAddress = isMainNet
+            ? N3_MAINNET_CONTRACTS.INCENTIVES
+            : N3_TESTNET_CONTRACTS.INCENTIVES
     }
 
     getProvider(_initialize?: boolean) {
@@ -241,7 +247,7 @@ export class GhostMarketN3SDK {
         })
     }
 
-    invokeMultiple(invokeParams: any): Promise<string> {
+    async invokeMultiple(invokeParams: any): Promise<string> {
         return new Promise((resolve, reject) => {
             ;(this.providerHint === 'o3'
                 ? this.getProvider().invokeMulti(invokeParams)
@@ -271,6 +277,47 @@ export class GhostMarketN3SDK {
                         default:
                             if (description) {
                                 errMsg = description
+                            }
+                    }
+                    reject(new Error(errMsg))
+                })
+        })
+    }
+
+    async invokeRead(invokeParams: any): Promise<any> {
+        // console.log('invokeRead', invokeParams)
+        return new Promise((resolve, reject) => {
+            this.getProvider()
+                .invokeRead(invokeParams)
+                .then((result: any) => {
+                    console.log('InvokeRead success!')
+                    resolve(result)
+                })
+                .catch(({ type, description, data }: any) => {
+                    let errMsg = 'Unknown error'
+                    switch (type) {
+                        case 'NO_PROVIDER':
+                            errMsg = 'No provider available.'
+                            break
+                        case 'Remote rpc error':
+                        case 'RPC_ERROR':
+                            errMsg =
+                                'There was an error when broadcasting this transaction to the network.'
+                            if (description.exception) {
+                                errMsg = description.exception
+                            }
+                            break
+                        case 'User rejected':
+                        case 'CANCELLED':
+                        case 'CANCELED':
+                            errMsg = 'The user has cancelled this transaction.'
+                            break
+                        default:
+                            if (description) {
+                                errMsg = description
+                            }
+                            if (description && description.msg) {
+                                errMsg = description.msg
                             }
                     }
                     reject(new Error(errMsg))
@@ -882,9 +929,6 @@ export class GhostMarketN3SDK {
     public async approveToken(contractHash: string, currentAddress: string) {
         console.log(`approve token with ${this.providerHint} on ${this.chainName}`)
 
-        const approve_unlimited_amount =
-            '57896044618658097711785492504343953926634992332820282019728792003956564819967' // (2^255 - 1 )
-
         const argsApproveToken = [
             {
                 type: 'Hash160', // UInt160 spender
@@ -892,7 +936,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Integer', // BigInteger amount
-                value: approve_unlimited_amount,
+                value: MAX_INT_255,
             },
         ] as IArgs[]
 
@@ -927,34 +971,43 @@ export class GhostMarketN3SDK {
      * @param {contract} string address of contract to check approval.
      */
     public async checkTokenApproval(address: string, decimals: number, contract: string) {
-        console.log(`check token approval on ${this.chainName}`)
+        console.log(
+            `checking ${contract} approval with ${this.providerHint} on N3 ${
+                this.isMainNet ? 'MainNet' : 'TestNet'
+            }`,
+        )
+
+        const argsCheckAllowance = [
+            {
+                type: 'Hash160',
+                value: getScriptHashFromAddress(address),
+            },
+            {
+                type: 'Hash160',
+                value: this.contractExchangeAddress,
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+
+        const invokeParams = {
+            scriptHash: contract,
+            operation: METHOD_CHECK_ALLOWANCE,
+            args: argsCheckAllowance,
+            signers,
+        }
+
         try {
-            /* const rpc = this.core.apis.getRpcByChain(this.chainName) as N3RPC
-            const args = [
-                {
-                    type: 'Hash160',
-                    value: getScriptHashFromAddress(address),
-                },
-                {
-                    type: 'Hash160',
-                    value: this.contractExchangeAddress,
-                },
-            ]
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            const response = await rpc.invokeFunction(contract!, METHOD_CHECK_ALLOWANCE, args)
-            if (!response) {
-                // continue
-            }
-            if (response.result.exception) {
-                console.log(response.result.exception)
-                return
-            }
-            if (!response.error) {
-                const decoded = response.result.stack[0].value / Math.pow(10, decimals)
-                return decoded
-            } */
-        } catch (err) {
-            console.log(err)
+            const result = await this.invokeRead(invokeParams)
+            const decoded = result.stack[0].value / Math.pow(10, decimals)
+            return decoded
+        } catch (e) {
+            console.error(`Failed to execute checkTokenApproval on ${contract} with error:`, e)
         }
     }
 
@@ -1282,6 +1335,86 @@ export class GhostMarketN3SDK {
         } catch (e) {
             console.error(
                 `Failed to execute collectionEditRoyalties on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Get incentives for address
+     * @param {string} currentAddress address used to check incentives.
+     */
+    async readIncentives(currentAddress: string) {
+        console.log(`reading incentives with ${this.providerHint} on ${this.chainName}`)
+
+        const argsReadIncentives = [
+            {
+                type: 'Hash160',
+                value: getScriptHashFromAddress(currentAddress),
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 1,
+            },
+        ]
+
+        const invokeParams = {
+            scriptHash: this.contractIncentivesAddress,
+            operation: METHOD_READ_INCENTIVES,
+            args: argsReadIncentives,
+            signers,
+        }
+
+        try {
+            const response = await this.invokeRead(invokeParams)
+            const decoded = response.result.stack[0].value[4].value / Math.pow(10, 8)
+            return decoded
+        } catch (e) {
+            console.error(
+                `Failed to execute readIncentives on ${this.contractIncentivesAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Claim incentives for address
+     * @param {string} currentAddress address used to claim incentives.
+     */
+    async claimIncentives(currentAddress: string) {
+        console.log(
+            `claiming incentives with ${this.providerHint} on N3 ${
+                this.isMainNet ? 'MainNet' : 'TestNet'
+            }`,
+        )
+
+        const argsClaimIncentives = [
+            {
+                type: 'Hash160', // UInt160 from
+                value: getScriptHashFromAddress(currentAddress),
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(currentAddress),
+                scopes: 1,
+            },
+        ]
+
+        const invokeParams = {
+            scriptHash: this.contractIncentivesAddress,
+            operation: METHOD_CLAIM_INCENTIVES,
+            args: argsClaimIncentives,
+            signers,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            console.error(
+                `Failed to execute claimIncentives on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
         }
