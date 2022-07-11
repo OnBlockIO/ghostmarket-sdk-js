@@ -6,7 +6,7 @@ const config: Config.InitialOptions = {
     verbose: true,
     automock: false,
     clearMocks: true,
-    collectCoverage: true,
+    collectCoverage: false,
     coverageProvider: 'babel',
     // https://github.com/jest-community/jest-extended: Extended matchers
     setupFilesAfterEnv: ['jest-extended/all', './setEnvVar'],

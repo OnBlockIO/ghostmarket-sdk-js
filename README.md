@@ -1,7 +1,6 @@
 # ghostmarket-sdk-ts
 
 [![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT)
-[![Coverage Status](https://coveralls.io/repos/github/OnBlockIO/ghostmarket-sdk-ts/badge.svg?branch=master)](https://coveralls.io/github/OnBlockIO/ghostmarket-sdk-ts?branch=master)
 
 Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript. 
 
