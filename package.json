@@ -1,6 +1,6 @@
 {
   "name": "ghostmarket-sdk-ts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Typescript SDK for GhostMarket. Allow buyers, sellers, or projects to integrate with GhostMarket.",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

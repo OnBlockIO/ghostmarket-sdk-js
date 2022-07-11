@@ -35,6 +35,8 @@ or if using npm
 npm install --save ghostmarket-sdk-ts
 ```
 
+Install [web3](https://github.com/ethereum/web3.js) if you don't have it already.
+
 ## Getting started
 
 To get started, you can use either a read only provider, metamask provider, a private key or a mnemonic (last two are to be stored in `.env` file, see `.env.example` for a reference).
