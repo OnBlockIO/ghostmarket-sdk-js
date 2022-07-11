@@ -931,6 +931,10 @@ export class GhostMarketN3SDK {
 
         const argsApproveToken = [
             {
+                type: 'Hash160', // UInt160 from_address
+                value: getScriptHashFromAddress(currentAddress),
+            },
+            {
                 type: 'Hash160', // UInt160 spender
                 value: this.contractExchangeAddress,
             },
