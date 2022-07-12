@@ -1,18 +1,19 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-undef
-const ethUtil = require('ethereumjs-util')
+import web3 from 'Web3'
+const Web3 = new web3()
 
 export function id(str: string): string {
-    const hex = `0x${ethUtil.keccak256(Buffer.from(str)).toString('hex').substring(0, 8)}`
+    const hex = `0x${Web3.utils.keccak256(Buffer.from(str).toString()).substring(0, 8)}`
     return hex
 }
 
 export function enc(token: string, tokenId?: string): string {
     if (tokenId) {
-        return ethUtil.encodeParameters(['address', 'uint256'], [token, tokenId])
+        return Web3.eth.abi.encodeParameters(['address', 'uint256'], [token, tokenId])
     } else {
-        return ethUtil.encodeParameter('address', token)
+        return Web3.eth.abi.encodeParameter('address', token)
     }
 }
 

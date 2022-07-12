@@ -3,7 +3,9 @@
 // eslint-disable-next-line no-undef
 import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
 
-const ethUtil = require('ethereumjs-util')
+import web3 from 'Web3'
+const Web3 = new web3()
+
 const DOMAIN_TYPE = [
     {
         type: 'string',
@@ -63,8 +65,8 @@ export default {
                     s,
                 })
             }
-            if (ethUtil.currentProvider.isMetaMask) {
-                ethUtil.currentProvider.sendAsync(
+            if (Web3.givenProvider.currentProvider.isMetaMask) {
+                Web3.givenProvider.currentProvider.sendAsync(
                     {
                         jsonrpc: '2.0',
                         method: 'eth_signTypedData_v3',
@@ -74,9 +76,9 @@ export default {
                     cb,
                 )
             } else {
-                let send = ethUtil.currentProvider.sendAsync
-                if (!send) send = ethUtil.currentProvider.send
-                send.bind(ethUtil.currentProvider)(
+                let send = Web3.givenProvider.currentProvider.sendAsync
+                if (!send) send = Web3.givenProvider.currentProvider.send
+                send.bind(Web3.givenProvider.currentProvider)(
                     {
                         jsonrpc: '2.0',
                         method: 'eth_signTypedData',

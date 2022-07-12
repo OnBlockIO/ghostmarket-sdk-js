@@ -1,25 +1,25 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
-// eslint-disable-next-line no-undef
 import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
 import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
 import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
 
-const ethUtil = require('ethereumjs-util')
+import web3 from 'Web3'
+const Web3 = new web3()
 
-const ASSET_TYPE_TYPEHASH = ethUtil.sha3('AssetType(bytes4 assetClass,bytes data)')
+const ASSET_TYPE_TYPEHASH = Web3.utils.sha3('AssetType(bytes4 assetClass,bytes data)')
 
-const ASSET_TYPEHASH = ethUtil.sha3(
+const ASSET_TYPEHASH = Web3.utils.sha3(
     'Asset(AssetType assetType,uint256 value)AssetType(bytes4 assetClass,bytes data)',
 )
 
-const ORDER_TYPEHASH = ethUtil.sha3(
+const ORDER_TYPEHASH = Web3.utils.sha3(
     'Order(address maker,Asset makeAsset,address taker,Asset takeAsset,uint256 salt,uint256 start,uint256 end,bytes4 dataType,bytes data)Asset(AssetType assetType,uint256 value)AssetType(bytes4 assetClass,bytes data)',
 )
 
 export function hashKey(order: IEVMOrder) {
-    return ethUtil.soliditySha3(
-        ethUtil.eth.abi.encodeParameters(
+    return Web3.utils.soliditySha3(
+        Web3.eth.abi.encodeParameters(
             ['address', 'bytes32', 'bytes32', 'uint'],
             [
                 order.maker,
@@ -36,8 +36,8 @@ function bufferFromHex(hex: string) {
 }
 
 function hashAssetType(assetType: IEVMAssetType) {
-    return ethUtil.utils.soliditySha3(
-        ethUtil.eth.abi.encodeParameters(
+    return Web3.utils.soliditySha3(
+        Web3.eth.abi.encodeParameters(
             ['bytes32', 'bytes4', 'bytes32'],
             [
                 ASSET_TYPE_TYPEHASH,
@@ -47,15 +47,15 @@ function hashAssetType(assetType: IEVMAssetType) {
                           'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
                           'hex',
                       )
-                    : ethUtil.keccak256(bufferFromHex(assetType.data)),
+                    : Web3.utils.keccak256(bufferFromHex(assetType.data).toString()),
             ],
         ),
     )
 }
 
 function hashAsset(asset: IEVMAsset) {
-    return ethUtil.utils.soliditySha3(
-        ethUtil.eth.abi.encodeParameters(
+    return Web3.utils.soliditySha3(
+        Web3.eth.abi.encodeParameters(
             ['bytes32', 'bytes32', 'uint'],
             [ASSET_TYPEHASH, hashAssetType(asset.assetType), asset.value],
         ),
@@ -63,8 +63,8 @@ function hashAsset(asset: IEVMAsset) {
 }
 
 export function hashOrder(order: IEVMOrder) {
-    return ethUtil.utils.soliditySha3(
-        ethUtil.eth.abi.encodeParameters(
+    return Web3.utils.soliditySha3(
+        Web3.eth.abi.encodeParameters(
             [
                 'bytes32',
                 'address',
@@ -87,14 +87,14 @@ export function hashOrder(order: IEVMOrder) {
                 order.start,
                 order.end,
                 order.dataType,
-                ethUtil.keccak256(bufferFromHex(order.data)),
+                Web3.utils.keccak256(bufferFromHex(order.data).toString()),
             ],
         ),
     )
 }
 
 export function encode(data: string) {
-    const result = ethUtil.eth.abi.encodeParameter('tuple(address,uint256)[][]', data)
+    const result = Web3.eth.abi.encodeParameter('tuple(address,uint256)[][]', data)
     // compared to solidity abi.encode function, web3.eth.abi.encodeParameter adds an additional
     // 0000000000000000000000000000000000000000000000000000000000000002
     // its removed before the result is returned

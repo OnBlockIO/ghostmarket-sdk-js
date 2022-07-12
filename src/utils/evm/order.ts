@@ -1,12 +1,13 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-undef
-const ethUtil = require('ethereumjs-util')
-
 import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
 import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
 import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
 import EIP712 from './EIP712'
+
+import web3 from 'Web3'
+const Web3 = new web3()
 
 export function AssetType(assetClass: string, data: string): IEVMAssetType {
     return { assetClass, data }
@@ -53,7 +54,7 @@ const Types = {
 }
 
 export async function sign(order: IEVMOrder, account: string, verifyingContract: string) {
-    const chainId = Number(await ethUtil.eth.getChainId())
+    const chainId = Number(await Web3.eth.getChainId())
     const data = EIP712.createTypeData(
         {
             name: 'GhostMarket',
