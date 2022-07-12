@@ -131,7 +131,7 @@ export class GhostMarketN3SDK {
     /**
      * Your instance of GhostMarket.
      * Make API calls and GhostMarket Smart Contract method calls.
-     * @param  {string} provider To use for creating a Web3 instance. Can be also be `window.ethereum` for browser injected web3 providers.
+     * @param  {string} provider To use for creating an instance.
      * @param  {GhostMarketSDKConfig} options with options for accessing GhostMarket SDK.
      * @param  {(arg:string)=>void} logger? // Optional logger function for logging debug messages.
      */
