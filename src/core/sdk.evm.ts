@@ -22,8 +22,8 @@ import {
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
     MAINNET_API_URL,
+    Network,
 } from './constants'
-import { Network, TxObject } from '../types/network'
 import { IEVMOrder } from '../lib/api/ghostmarket/models'
 import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
 import { hashKey } from '../utils/evm/hash'
@@ -43,6 +43,14 @@ interface Royalties {
 interface RoyaltyRecipient {
     recipient: string
     amount: number
+}
+
+// not included in main frontend lib yet
+interface TxObject {
+    from: string
+    value: number | string
+    gasPrice?: number
+    chainId: string
 }
 
 export class GhostMarketSDK {

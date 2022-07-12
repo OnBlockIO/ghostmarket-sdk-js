@@ -6,9 +6,9 @@ import {
     N3_TESTNET_CONTRACTS,
     MAX_INT_255,
     MAINNET_API_URL,
+    Network,
 } from './constants'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
-import { Network } from '../types/network'
 
 // not included in main frontend lib yet
 interface IBuyItem {

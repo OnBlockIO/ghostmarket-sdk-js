@@ -134,3 +134,18 @@ export const PHA_TESTNET_CONTRACTS = {
     EXCHANGE: '',
     GM_TOKEN: ''
 }
+
+export enum Network {
+    Avalanche = 'Avalanche',
+    AvalancheTestnet = 'Avalanche Testnet',
+    BSC = 'BSC',
+    BSCTestnet = 'BSC Testnet',
+    Ethereum = 'Ethereum',
+    EthereumTestnet = 'Ethereum Testnet',
+    Polygon = 'Polygon',
+    PolygonTestnet = 'Polygon Testnet',
+    Neo3 = 'Neo3',
+    Neo3Testnet = 'Neo3 Testnet',
+    Phantasma = 'Phantasma',
+    PhantasmaTestnet = 'Phantasma Testnet',
+}
