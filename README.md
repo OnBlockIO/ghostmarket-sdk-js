@@ -1,12 +1,12 @@
-# ghostmarket-sdk-ts
+# ghostmarket-sdk-js
 
 [![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT)
 
-Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript. 
+Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript/Javascript. 
 
-Checkout the [Changelog](https://github.com/OnBlockIO/ghostmarket-sdk-ts/blob/master/CHANGELOG.md)
+Checkout the [Changelog](https://github.com/OnBlockIO/ghostmarket-sdk-js/blob/master/CHANGELOG.md)
 
-Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-ts) and [npm](https://www.npmjs.com/package/ghostmarket-sdk-ts)
+Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm](https://www.npmjs.com/package/ghostmarket-sdk-js)
 
 - [Installation](#installation)
 - [Getting Started](#getting-started)
@@ -28,11 +28,11 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-ts) and [npm]
 We recommend using Node.js version 16.
 
 ```bash
-yarn add ghostmarket-sdk-ts
+yarn add ghostmarket-sdk-js
 ```
 or if using npm
 ```bash
-npm install --save ghostmarket-sdk-ts
+npm install --save ghostmarket-sdk-js
 ```
 
 Install [web3](https://github.com/ethereum/web3.js) if you don't have it already.
@@ -43,7 +43,7 @@ To get started on EVM, you can use either a read only provider, a web3 provider 
 To get started on Neo N3, you can use either a NEP-12 provider (ex neoline) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
-const { GhostMarketSDK, Network, API_BASE_MAINNET, API_BASE_TESTNET } = require('ghostmarket-sdk-ts');
+const { GhostMarketSDK, Network, API_BASE_MAINNET, API_BASE_TESTNET } = require('ghostmarket-sdk-js');
 // if using EVM private key or mnemonic hdwallet-provider is required
 // const HDWalletProvider = require('@truffle/hdwallet-provider')
 // const privateKey = process.env.PRIVATE_KEY
@@ -102,6 +102,28 @@ const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 
 ## Usage
 
+### Making an offer
+
+```js
+// Token ID and smart contract address for a non-fungible token:
+const { tokenId, tokenContract } = YOUR_ASSET
+// Address placing offer
+const makerAddress = "0x..."
+
+const offer = await gmSDK.sdk.evm.placeOffer({
+    chain: string,
+    tokenContract: string,
+    tokenId: string,
+    tokenAmount: 1,
+    quoteContract: string,
+    quotePrice: 1111,
+    makerAddress,
+    type: number,
+    typeAsset: number,
+    startDate: number,
+    endDate: number,
+})
+```
 
 
 ## Development
@@ -110,12 +132,12 @@ const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 
 Clone this repo
 ```bash
-git clone https://github.com/OnBlockIO/ghostmarket-sdk-ts
+git clone https://github.com/OnBlockIO/ghostmarket-sdk-js
 ```
 
 Install 
 ```bash
-cd ghostmarket-sdk-ts/
+cd ghostmarket-sdk-js/
 yarn install
 ```
 
@@ -135,4 +157,4 @@ yarn test
 
 **Contributing**
 
-Contributions welcome! Please use [GitHub issues](https://github.com/OnBlockIO/ghostmarket-sdk-ts/issues) for suggestions/issues.
+Contributions welcome! Please use [GitHub issues](https://github.com/OnBlockIO/ghostmarket-sdk-js/issues) for suggestions/issues.
