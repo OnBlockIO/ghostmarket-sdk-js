@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '../utils/n3/helpers'
+import { N3PrivateProvider } from '../utils/n3/N3PrivateProvider'
 import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS, MAX_INT_255 } from './constants'
+import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
+import { Network } from '../types/network'
 
 // not included in main frontend lib yet
 export interface IBuyItem {
@@ -109,36 +112,67 @@ const METHOD_PLACE_OFFER = 'placeOffer'
 const METHOD_ACCEPT_OFFER = 'acceptOffer'
 
 export class GhostMarketN3SDK {
-    providerHint = ''
-    provider: any = null
-    curProviderHint = ''
-    isMainNet: boolean
+    private provider: 'neoline' | 'o3' | 'private' = 'private'
+    public readonly api: GhostMarketApi
+    // Logger function to use when debugging.
+    public logger: (arg: string) => void
+    private _providerRPCUrl: string
+    private _privateKey: string
+    private isMainNet: boolean
+    private chainName: string
+    private contractExchangeAddress: string
+    private contractIncentivesAddress: string
 
-    chainName: string
-    contractExchangeAddress: string
-    contractIncentivesAddress: string
-
-    constructor(isMainNet: boolean, providerHint: string, provider?: any) {
-        // setup constants
-        if (provider) {
-            this.provider = provider
-        }
-        this.providerHint = providerHint
-        this.isMainNet = isMainNet
+    /**
+     * Your instance of GhostMarket.
+     * Make API calls and GhostMarket Smart Contract method calls.
+     * @param  {string} provider To use for creating a Web3 instance. Can be also be `window.ethereum` for browser injected web3 providers.
+     * @param  {GhostMarketSDKConfig} options with options for accessing GhostMarket SDK.
+     * @param  {(arg:string)=>void} logger? // Optional logger function for logging debug messages.
+     */
+    constructor(
+        provider: 'neoline' | 'o3' | 'private',
+        options: {
+            apiKey?: string
+            baseUrl: string
+            useReadOnlyProvider?: boolean
+            rpcUrl?: string
+            chainName?: Network
+            privateKey?: string
+        },
+        logger?: (arg: string) => void,
+    ) {
+        this.provider = provider
+        options.chainName = options.chainName || Network.Neo3
+        this.isMainNet = options.chainName === Network.Neo3
         this.chainName = this.isMainNet ? 'n3' : 'n3t'
-        this.contractExchangeAddress = isMainNet
+        this.contractExchangeAddress = this.isMainNet
             ? N3_MAINNET_CONTRACTS.EXCHANGE
             : N3_TESTNET_CONTRACTS.EXCHANGE
-        this.contractIncentivesAddress = isMainNet
+        this.contractIncentivesAddress = this.isMainNet
             ? N3_MAINNET_CONTRACTS.INCENTIVES
             : N3_TESTNET_CONTRACTS.INCENTIVES
+        options.privateKey = options.privateKey || ''
+        options.rpcUrl = options.rpcUrl || 'https://n3seed1.ngd.network:10332'
+        this._providerRPCUrl = options.rpcUrl
+        this._privateKey = options.privateKey
+        const apiConfig = {
+            apiKey: options.apiKey,
+            baseUrl: options.baseUrl,
+        } as 
+        this.api = new GhostMarketApi(apiConfig) as IGhostMarketApiOptions
+        // Logger: Default to nothing.
+        this.logger = logger || ((arg: string) => arg)
     }
 
     getProvider(_initialize?: boolean) {
         if (this.provider) return this.provider
         const win = window as any
 
-        switch (this.providerHint) {
+        switch (this.provider) {
+            case 'private': {
+                return new N3PrivateProvider(this._providerRPCUrl, this._privateKey, this.isMainNet)
+            }
             case 'neoline': {
                 if (!win.NEOLineN3) {
                     throw new Error('Neoline not installed. Please install it and try again.')
@@ -176,7 +210,7 @@ export class GhostMarketN3SDK {
 
             const accountData = {
                 chain: this.chainName,
-                providerHint: this.providerHint,
+                providerHint: this.provider,
                 provider: provider.name.toLowerCase(),
                 version: provider.version,
                 label: account.label,
@@ -249,7 +283,7 @@ export class GhostMarketN3SDK {
 
     async invokeMultiple(invokeParams: any): Promise<string> {
         return new Promise((resolve, reject) => {
-            ;(this.providerHint === 'o3'
+            ;(this.provider === 'o3'
                 ? this.getProvider().invokeMulti(invokeParams)
                 : this.getProvider().invokeMultiple(invokeParams)
             )
@@ -325,7 +359,7 @@ export class GhostMarketN3SDK {
         })
     }
 
-    /** Buy one or more NFT(s)
+    /** Sign Data
      * @param {string} dataToSign data to sign.
      */
     public async signData(dataToSign: string) {
@@ -365,7 +399,7 @@ export class GhostMarketN3SDK {
         const isBuyBatch = items.length > 1
 
         console.log(
-            `buying ${isBuyBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+            `buying ${isBuyBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
             }`,
         )
@@ -454,7 +488,7 @@ export class GhostMarketN3SDK {
         const isListBatch = items.length > 1
 
         console.log(
-            `selling ${isListBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+            `selling ${isListBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
             }`,
         )
@@ -551,7 +585,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to sign transaction.
      */
     public async buyAuction(item: IBidItem, currentAddress: string) {
-        console.log(`bidding on nft with ${this.providerHint} on ${this.chainName}`)
+        console.log(`bidding on nft with ${this.provider} on ${this.chainName}`)
 
         const currentBidFormatted = item.bidPrice || 0
 
@@ -605,7 +639,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to sign transaction.
      */
     public async listAuction(item: IAuctionItem, currentAddress: string) {
-        console.log(`auction nft with ${this.providerHint} on ${this.chainName}`)
+        console.log(`auction nft with ${this.provider} on ${this.chainName}`)
 
         let extensionPeriod = item.extensionPeriod ? item.extensionPeriod * 60 : 0 // min 0 - max 1h (3600)
         switch (item.auctionType) {
@@ -705,7 +739,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to sign transaction.
      */
     public async claimAuction(contractAuctionId: string, currentAddress: string) {
-        console.log(`claiming nft auction with ${this.providerHint} on ${this.chainName}`)
+        console.log(`claiming nft auction with ${this.provider} on ${this.chainName}`)
 
         const argsBidToken = [
             {
@@ -750,7 +784,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress used to sign transaction.
      */
     public async placeOffer(item: IOfferItem, currentAddress: string) {
-        console.log(`placing offer on nft with ${this.providerHint} on ${this.chainName}`)
+        console.log(`placing offer on nft with ${this.provider} on ${this.chainName}`)
 
         const argsPlaceOffer = [
             {
@@ -814,7 +848,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress used to sign transaction.
      */
     public async processOffer(item: IOfferItem, currentAddress: string) {
-        console.log(`accept offer on nft with ${this.providerHint} on ${this.chainName}`)
+        console.log(`accept offer on nft with ${this.provider} on ${this.chainName}`)
 
         const argsAcceptOffer = [
             {
@@ -864,7 +898,7 @@ export class GhostMarketN3SDK {
      * @param {string} newPrice new price to use for the listing.
      */
     public async editPrice(contractAuctionId: string, currentAddress: string, newPrice: string) {
-        console.log(`edit listing price with ${this.providerHint} on ${this.chainName}`)
+        console.log(`edit listing price with ${this.provider} on ${this.chainName}`)
 
         const argsEditSale = [
             {
@@ -927,7 +961,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to sign transaction.
      */
     public async approveToken(contractHash: string, currentAddress: string) {
-        console.log(`approve token with ${this.providerHint} on ${this.chainName}`)
+        console.log(`approve token with ${this.provider} on ${this.chainName}`)
 
         const argsApproveToken = [
             {
@@ -976,7 +1010,7 @@ export class GhostMarketN3SDK {
      */
     public async checkTokenApproval(address: string, decimals: number, contract: string) {
         console.log(
-            `checking ${contract} approval with ${this.providerHint} on N3 ${
+            `checking ${contract} approval with ${this.provider} on N3 ${
                 this.isMainNet ? 'MainNet' : 'TestNet'
             }`,
         )
@@ -1022,7 +1056,7 @@ export class GhostMarketN3SDK {
     public async transfer(items: ITransferItem[], currentAddress: string) {
         const isTransferBatch = items.length > 1
         console.log(
-            `transfer ${isTransferBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+            `transfer ${isTransferBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
             }`,
         )
@@ -1078,7 +1112,7 @@ export class GhostMarketN3SDK {
     public async burn(items: IBurnItem[], currentAddress: string) {
         const isBurnBatch = items.length > 1
         console.log(
-            `burn ${isBurnBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+            `burn ${isBurnBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
             }`,
         )
@@ -1126,7 +1160,7 @@ export class GhostMarketN3SDK {
     public async mint(item: IMintItem, currentAddress: string) {
         const isMintBatch = item.quantity > 1
         console.log(
-            `minting ${isMintBatch ? 'bulk' : 'single'} nft with ${this.providerHint} on ${
+            `minting ${isMintBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
             }`,
         )
@@ -1273,7 +1307,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to sign transaction.
      */
     public async collectionEditRoyalties(collection: ICollectionRoyalties, currentAddress: string) {
-        console.log(`edit collection royalties with ${this.providerHint} on ${this.chainName}`)
+        console.log(`edit collection royalties with ${this.provider} on ${this.chainName}`)
 
         let argsSetCollectionRoyalties = [
             {
@@ -1348,7 +1382,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to check incentives.
      */
     async readIncentives(currentAddress: string) {
-        console.log(`reading incentives with ${this.providerHint} on ${this.chainName}`)
+        console.log(`reading incentives with ${this.provider} on ${this.chainName}`)
 
         const argsReadIncentives = [
             {
@@ -1388,7 +1422,7 @@ export class GhostMarketN3SDK {
      */
     async claimIncentives(currentAddress: string) {
         console.log(
-            `claiming incentives with ${this.providerHint} on N3 ${
+            `claiming incentives with ${this.provider} on N3 ${
                 this.isMainNet ? 'MainNet' : 'TestNet'
             }`,
         )

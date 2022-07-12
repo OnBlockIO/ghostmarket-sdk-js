@@ -21,6 +21,7 @@ import {
     MAX_UINT_256,
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
+    API_BASE_MAINNET,
 } from './constants'
 import { Network, TxObject } from '../types/network'
 import { IEVMOrder } from '../lib/api/ghostmarket/models'
@@ -44,6 +45,15 @@ export interface RoyaltyRecipient {
     amount: number
 }
 
+// not included in main frontend lib yet
+export interface GhostMarketSDKConfig {
+    apiKey?: string
+    baseUrl?: string
+    useReadOnlyProvider?: boolean
+    rpcUrl?: string
+    chainName?: Network
+}
+
 export class GhostMarketSDK {
     // Instance of Web3 to use.
     private web3: Web3
@@ -51,39 +61,44 @@ export class GhostMarketSDK {
     public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
-    private _networkname: Network
+    private _chainName: Network
     private _isReadonlyProvider: boolean
 
     /**
      * Your instance of GhostMarket.
      * Make API calls and GhostMarket Smart Contract method calls.
      * @param  {Web3['currentProvider']} provider To use for creating a Web3 instance. Can be also be `window.ethereum` for browser injected web3 providers.
-     * @param  {GhostMarketAPIConfig} apiConfig with options for accessing GhostMarket APIs.
+     * @param  {GhostMarketSDKConfig} options with options for accessing GhostMarket SDK.
      * @param  {(arg:string)=>void} logger? // Optional logger function for logging debug messages.
      */
     constructor(
         provider: Web3['currentProvider'],
         options: {
-            apiConfig: IGhostMarketApiOptions
+            apiKey?: string
+            baseUrl: string
             useReadOnlyProvider?: boolean
-            providerRPCUrl?: string
-            networkName?: Network
+            rpcUrl?: string
+            chainName?: Network
         },
         logger?: (arg: string) => void,
     ) {
+        options.apiKey = options.apiKey || ''
+        options.baseUrl = options.baseUrl || API_BASE_MAINNET
+        options.rpcUrl = options.rpcUrl || ''
+        options.chainName = options.chainName || Network.Ethereum
         const useReadOnlyProvider = options.useReadOnlyProvider ?? true
         this._isReadonlyProvider = useReadOnlyProvider
-        options.providerRPCUrl = options.providerRPCUrl || ''
-
         const readonlyProvider = useReadOnlyProvider
-            ? new Web3.providers.HttpProvider(options.providerRPCUrl)
+            ? new Web3.providers.HttpProvider(options.rpcUrl)
             : null
-
-        options.networkName = options.networkName || Network.EthereumTestnet
-        this._networkname = options.networkName
+        this._chainName = options.chainName
         this.web3 = new Web3(provider)
         this.web3Readonly = useReadOnlyProvider ? new Web3(readonlyProvider) : this.web3
-        this.api = new GhostMarketApi(options.apiConfig)
+        const apiConfig = {
+            apiKey: options.apiKey,
+            baseUrl: options.baseUrl,
+        }
+        this.api = new GhostMarketApi(apiConfig) as IGhostMarketApiOptions
         // Logger: Default to nothing.
         this.logger = logger || ((arg: string) => arg)
     }
@@ -143,7 +158,7 @@ export class GhostMarketSDK {
                 '0x',
             )
 
-            const verifyingContract = this._getExchangeV2ProxyContractAddress(this._networkname)
+            const verifyingContract = this._getExchangeV2ProxyContractAddress(this._chainName)
             const signature = await sign(order, makerAddress, verifyingContract)
             const orderKeyHash = hashKey(order)
 
@@ -276,7 +291,7 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
-        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._networkname)
+        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
             ExchangeV2Contract,
             exchangeV2ProxyAddress,
@@ -301,7 +316,7 @@ export class GhostMarketSDK {
      */
     public async cancelOrder(order: IEVMOrder, txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._networkname)
+        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
             ExchangeV2Contract,
             exchangeV2ProxyAddress,
@@ -326,7 +341,7 @@ export class GhostMarketSDK {
      */
     public async bulkCancelOrders(orders: IEVMOrder[], txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._networkname)
+        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
             ExchangeV2Contract,
             exchangeV2ProxyAddress,
@@ -357,7 +372,7 @@ export class GhostMarketSDK {
     ) {
         if (this._isReadonlyProvider) return
         const royaltiesRegistryProxyAddress = this._getRoyaltiesRegistryContractAddress(
-            this._networkname,
+            this._chainName,
         )
         const RoyaltiesRegistryContractInstance = new this.web3.eth.Contract(
             RoyaltiesRegistryContract,
@@ -384,7 +399,7 @@ export class GhostMarketSDK {
      */
     public async wrapToken(amount: number, isFromNativeToWrap: boolean, txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._networkname)
+        const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
         const WrappedTokenContractInstance = new this.web3.eth.Contract(
             ERC20WrappedContract,
             wrappedTokenAddress,
@@ -417,7 +432,7 @@ export class GhostMarketSDK {
      */
     public async approveContract(hash: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._networkname)
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
 
         try {
@@ -436,7 +451,7 @@ export class GhostMarketSDK {
      */
     public async approveToken(hash: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._networkname)
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
 
         try {
@@ -454,7 +469,7 @@ export class GhostMarketSDK {
      * @param {hash} string contract to check approval.
      */
     public async checkContractApproval(address: string, hash: string) {
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._networkname)
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
 
         try {
@@ -593,7 +608,7 @@ export class GhostMarketSDK {
         externalURI: string,
         txObject: TxObject,
     ) {
-        const ERC721GhostAddress = this._getERC721GhostContractAddress(this._networkname)
+        const ERC721GhostAddress = this._getERC721GhostContractAddress(this._chainName)
         const ERC721GhostAddressInstance = new this.web3.eth.Contract(
             ERC721Contract,
             ERC721GhostAddress,
@@ -623,7 +638,7 @@ export class GhostMarketSDK {
         externalURI: string,
         txObject: TxObject,
     ) {
-        const ERC1155GhostAddress = this._getERC1155GhostContractAddress(this._networkname)
+        const ERC1155GhostAddress = this._getERC1155GhostContractAddress(this._chainName)
         const ERC1155GhostAddressInstance = new this.web3.eth.Contract(
             ERC1155Contract,
             ERC1155GhostAddress,
@@ -643,9 +658,7 @@ export class GhostMarketSDK {
      * @param {string} currentAddress address used to check incentives.
      */
     public async readIncentives(currentAddress: string): Promise<any> {
-        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(
-            this._networkname,
-        )
+        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
             IncentivesContractAddressAddress,
@@ -665,9 +678,7 @@ export class GhostMarketSDK {
     /** Claim incentives
      */
     public async claimIncentives() {
-        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(
-            this._networkname,
-        )
+        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
             IncentivesContractAddressAddress,
