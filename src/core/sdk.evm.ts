@@ -75,7 +75,7 @@ export class GhostMarketSDK {
         provider: Web3['currentProvider'],
         options: {
             apiKey?: string
-            baseUrl: string
+            baseUrl?: string
             useReadOnlyProvider?: boolean
             rpcUrl?: string
             chainName?: Network
@@ -85,20 +85,20 @@ export class GhostMarketSDK {
         options.apiKey = options.apiKey || ''
         options.baseUrl = options.baseUrl || API_BASE_MAINNET
         options.rpcUrl = options.rpcUrl || ''
-        options.chainName = options.chainName || Network.Ethereum
         const useReadOnlyProvider = options.useReadOnlyProvider ?? true
         this._isReadonlyProvider = useReadOnlyProvider
         const readonlyProvider = useReadOnlyProvider
             ? new Web3.providers.HttpProvider(options.rpcUrl)
             : null
+        options.chainName = options.chainName || Network.Ethereum
         this._chainName = options.chainName
         this.web3 = new Web3(provider)
         this.web3Readonly = useReadOnlyProvider ? new Web3(readonlyProvider) : this.web3
         const apiConfig = {
             apiKey: options.apiKey,
             baseUrl: options.baseUrl,
-        }
-        this.api = new GhostMarketApi(apiConfig) as IGhostMarketApiOptions
+        } as IGhostMarketApiOptions
+        this.api = new GhostMarketApi(apiConfig)
         // Logger: Default to nothing.
         this.logger = logger || ((arg: string) => arg)
     }

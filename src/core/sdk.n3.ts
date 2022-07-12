@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '../utils/n3/helpers'
 import { N3PrivateProvider } from '../utils/n3/N3PrivateProvider'
-import { N3_MAINNET_CONTRACTS, N3_TESTNET_CONTRACTS, MAX_INT_255 } from './constants'
+import {
+    N3_MAINNET_CONTRACTS,
+    N3_TESTNET_CONTRACTS,
+    MAX_INT_255,
+    API_BASE_MAINNET,
+} from './constants'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 import { Network } from '../types/network'
 
@@ -134,18 +139,16 @@ export class GhostMarketN3SDK {
         provider: 'neoline' | 'o3' | 'private',
         options: {
             apiKey?: string
-            baseUrl: string
-            useReadOnlyProvider?: boolean
+            baseUrl?: string
             rpcUrl?: string
             chainName?: Network
             privateKey?: string
         },
         logger?: (arg: string) => void,
     ) {
-        this.provider = provider
-        options.chainName = options.chainName || Network.Neo3
+        options.apiKey = options.apiKey || ''
+        options.baseUrl = options.baseUrl || API_BASE_MAINNET
         this.isMainNet = options.chainName === Network.Neo3
-        this.chainName = this.isMainNet ? 'n3' : 'n3t'
         this.contractExchangeAddress = this.isMainNet
             ? N3_MAINNET_CONTRACTS.EXCHANGE
             : N3_TESTNET_CONTRACTS.EXCHANGE
@@ -155,12 +158,15 @@ export class GhostMarketN3SDK {
         options.privateKey = options.privateKey || ''
         options.rpcUrl = options.rpcUrl || 'https://n3seed1.ngd.network:10332'
         this._providerRPCUrl = options.rpcUrl
+        options.chainName = options.chainName || Network.Neo3
+        this.chainName = this.isMainNet ? 'n3' : 'n3t'
         this._privateKey = options.privateKey
+        this.provider = provider
         const apiConfig = {
             apiKey: options.apiKey,
             baseUrl: options.baseUrl,
-        } as 
-        this.api = new GhostMarketApi(apiConfig) as IGhostMarketApiOptions
+        } as IGhostMarketApiOptions
+        this.api = new GhostMarketApi(apiConfig)
         // Logger: Default to nothing.
         this.logger = logger || ((arg: string) => arg)
     }

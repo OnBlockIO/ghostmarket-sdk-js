@@ -56,9 +56,9 @@ const CUSTOM_RPC_URL = 'https://mainnet.infura.io'
 const sdkConfig = {
     apiKey: process.env.GM_API_KEY, // GhostMarket API KEY if you have one
     baseUrl: API_BASE_MAINNET, // GhostMarket API endpoint - API_BASE_TESTNET or API_BASE_MAINNET
-    rpcUrl = CUSTOM_RPC_URL,
-    chainName = 'Ethereum',
-    privateKey, // private key to use - Neo N3 private provider only
+    rpcUrl: CUSTOM_RPC_URL,
+    chainName: 'Ethereum',
+    privateKey, // private key to use - only for Neo N3 private provider
 }
 
 /* chainName values
