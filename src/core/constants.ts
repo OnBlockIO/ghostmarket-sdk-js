@@ -12,8 +12,8 @@ export const API_BASE_TESTNET = 'https://api-testnet.ghostmarket.io'
 export const SITE_HOST_MAINNET = 'https://ghostmarket.io'
 export const SITE_HOST_TESTNET = 'https://testnet.ghostmarket.io'
 export const API_PATH = `/api/v${ORDERBOOK_VERSION}`
-export const MAINNET_API_URL = `${API_BASE_MAINNET}/${API_PATH}`
-export const TESTNET_API_URL = `${API_BASE_TESTNET}/${API_PATH}`
+export const MAINNET_API_URL = `${API_BASE_MAINNET}${API_PATH}`
+export const TESTNET_API_URL = `${API_BASE_TESTNET}${API_PATH}`
 
 export const ETHEREUM_MAINNET_CONTRACTS = {
     PROXY_EXCHANGEV2: '0xfB2F452639cBB0850B46b20D24DE7b0a9cCb665f',
