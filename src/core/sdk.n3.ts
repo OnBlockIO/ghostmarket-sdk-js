@@ -5,7 +5,7 @@ import {
     N3_MAINNET_CONTRACTS,
     N3_TESTNET_CONTRACTS,
     MAX_INT_255,
-    API_BASE_MAINNET,
+    MAINNET_API_URL,
 } from './constants'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 import { Network } from '../types/network'
@@ -139,7 +139,7 @@ export class GhostMarketN3SDK {
         provider: 'neoline' | 'o3' | 'private',
         options: {
             apiKey?: string
-            baseUrl?: string
+            environment?: string
             privateKey?: string
             rpcUrl?: string
             chainName?: Network
@@ -147,7 +147,7 @@ export class GhostMarketN3SDK {
         logger?: (arg: string) => void,
     ) {
         options.apiKey = options.apiKey || ''
-        options.baseUrl = options.baseUrl || API_BASE_MAINNET
+        options.environment = options.environment || MAINNET_API_URL
         this.isMainNet = options.chainName === Network.Neo3
         this.contractExchangeAddress = this.isMainNet
             ? N3_MAINNET_CONTRACTS.EXCHANGE
@@ -164,7 +164,7 @@ export class GhostMarketN3SDK {
         this.provider = provider
         const apiConfig = {
             apiKey: options.apiKey,
-            baseUrl: options.baseUrl,
+            baseUrl: options.environment,
         } as IGhostMarketApiOptions
         this.api = new GhostMarketApi(apiConfig)
         // Logger: Default to nothing.

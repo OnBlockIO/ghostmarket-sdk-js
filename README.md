@@ -43,25 +43,18 @@ To get started on EVM, you can use either a read only provider, a web3 provider 
 To get started on Neo N3, you can use either a NEP-12 provider (ex neoline) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
-const { GhostMarketSDK, Network, API_BASE_MAINNET, API_BASE_TESTNET } = require('ghostmarket-sdk-js');
+import { GhostMarketSDK, GhostMarketN3SDK, Network, TEST_ENVIRONMENT, MAIN_ENVIRONMENT } from 'ghostmarket-sdk-js';
 // if using EVM private key or mnemonic hdwallet-provider is required
 // const HDWalletProvider = require('@truffle/hdwallet-provider')
-// const privateKey = process.env.PRIVATE_KEY
-// const mnemonic = process.env.MNEMONIC
 
-// Specify the RPC to use, ex: https://mainnet.infura.io for default read only ethereum mainnet
-const CUSTOM_RPC_URL = 'https://mainnet.infura.io'
+// Variables
+const API_KEY = '' // GhostMarket API KEY if you have one
+const CUSTOM_RPC_URL = 'https://mainnet.infura.io' // RPC to use
+const CHAIN = 'Ethereum'
+const KEY = '' // private key to use - only for Neo N3 private provider or EVM
+const MNEMONIC = '' // mnemonic to use - only for EVM
 
-// SDK config options.
-const sdkConfig = {
-    apiKey: process.env.GM_API_KEY, // GhostMarket API KEY if you have one
-    baseUrl: API_BASE_MAINNET, // GhostMarket API endpoint - API_BASE_TESTNET or API_BASE_MAINNET
-    rpcUrl: CUSTOM_RPC_URL,
-    chainName: 'Ethereum',
-    privateKey, // private key to use - only for Neo N3 private provider
-}
-
-/* chainName values
+/* CHAIN values
     Avalanche = 'Avalanche',
     AvalancheTestnet = 'Avalanche Testnet',
     BSC = 'BSC',
@@ -74,30 +67,44 @@ const sdkConfig = {
     Neo3Testnet = 'Neo3 Testnet',
     */
 
+// SDK config options.
+const sdkConfig = {
+    apiKey: API_KEY,
+    environment: MAIN_ENVIRONMENT, // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
+    rpcUrl: CUSTOM_RPC_URL,
+    chainName: CHAIN,
+    privateKey: KEY, // private key to use - only for Neo N3 private provider
+}
+
+//////// EVM provider options ////////
 // Option 1 - Readonly provider, only reads the network state. Can not sign transactions.
 const customProvider = new Web3.providers.HttpProvider(CUSTOM_RPC_URL)
 // Option 2 - metamask provider
 const customProvider = window.ethereum
 // Option 3 - private key - EVM
-const customProvider = new HDWalletProvider(privateKey, CUSTOM_RPC_URL)
+const customProvider = new HDWalletProvider(KEY, CUSTOM_RPC_URL)
 // Option 4 - mnemonic
-const customProvider = new HDWalletProvider(mnemonic, CUSTOM_RPC_URL)
-// Option 5 - Neo N3
-const customProvider = 'neoline' // neoline, o3, or private
-
-// Create instance of GhostMarketSDK
+const customProvider = new HDWalletProvider(MNEMONIC, CUSTOM_RPC_URL)
+// Create instance of GhostMarketSDK - EVM
 const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
+//////// EVM provider options ////////
 
-// Use the object to access GhostMarket:
-(async () => {
-  // Fetch 10 GhostMarket events.
-  const { events } = await gmSDK.api.getEvents({ limit: 10 });
-  console.info(events)
-  
-  // Fetch 10 GhostMarket collections.
-  const { collections } = await gmSDK.api.getCollections({ limit: 10 })
-  console.info(collections)
-})()
+
+//////// Neo N3 provider options ////////
+const customProvider = 'neoline' // neoline, o3, or private
+// Create instance of GhostMarketN3SDK - Neo N3
+const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
+//////// Neo N3 provider options ////////
+
+
+// All set - use the object to access GhostMarket SDK
+// Fetch 10 GhostMarket events.
+const { events } = await gmSDK.api.getEvents({ limit: 10 });
+console.info(events)
+
+// Fetch 10 GhostMarket collections.
+const { collections } = await gmSDK.api.getCollections({ limit: 10 })
+console.info(collections)
 ```
 
 ## Usage

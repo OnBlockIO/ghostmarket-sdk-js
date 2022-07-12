@@ -21,7 +21,7 @@ import {
     MAX_UINT_256,
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
-    API_BASE_MAINNET,
+    MAINNET_API_URL,
 } from './constants'
 import { Network, TxObject } from '../types/network'
 import { IEVMOrder } from '../lib/api/ghostmarket/models'
@@ -65,7 +65,7 @@ export class GhostMarketSDK {
         provider: Web3['currentProvider'],
         options: {
             apiKey?: string
-            baseUrl?: string
+            environment?: string
             useReadOnlyProvider?: boolean
             rpcUrl?: string
             chainName?: Network
@@ -73,7 +73,7 @@ export class GhostMarketSDK {
         logger?: (arg: string) => void,
     ) {
         options.apiKey = options.apiKey || ''
-        options.baseUrl = options.baseUrl || API_BASE_MAINNET
+        options.environment = options.environment || MAINNET_API_URL
         options.rpcUrl = options.rpcUrl || ''
         const useReadOnlyProvider = options.useReadOnlyProvider ?? true
         this._isReadonlyProvider = useReadOnlyProvider
@@ -82,7 +82,7 @@ export class GhostMarketSDK {
         this.web3 = new Web3(provider)
         const apiConfig = {
             apiKey: options.apiKey,
-            baseUrl: options.baseUrl,
+            baseUrl: options.environment,
         } as IGhostMarketApiOptions
         this.api = new GhostMarketApi(apiConfig)
         // Logger: Default to nothing.

@@ -28,6 +28,14 @@ export enum Network {
 }
 
 /**
+ * @param TEST_ENVIRONMENT Test Environment
+ * @param MAIN_ENVIRONMENT Main Environment
+ */
+import { TESTNET_API_URL, MAINNET_API_URL } from 'src/core/constants'
+export const TEST_ENVIRONMENT = TESTNET_API_URL
+export const MAIN_ENVIRONMENT = MAINNET_API_URL
+
+/**
  * Tx object
  * @param from Transaction sender address
  * @param value Value to send with the Transaction
