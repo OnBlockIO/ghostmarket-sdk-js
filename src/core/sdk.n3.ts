@@ -11,7 +11,7 @@ import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 import { Network } from '../types/network'
 
 // not included in main frontend lib yet
-export interface IBuyItem {
+interface IBuyItem {
     contractAuctionId: string // on chain contract auction ID.
     ownerAddress: string // order owner.
     price: string // order price.
@@ -19,7 +19,7 @@ export interface IBuyItem {
 }
 
 // not included in main frontend lib yet
-export interface ISellItem {
+interface ISellItem {
     tokenId: string // NFT token id.
     baseContractHash: string // order base contract hash.
     price: string // order price.
@@ -27,27 +27,27 @@ export interface ISellItem {
 }
 
 // not included in main frontend lib yet
-export interface IBidItem {
+interface IBidItem {
     contractAuctionId: string // on chain contract auction ID.
     bidPrice?: string // order bid price.
     quoteContractHash: string // order quote contract hash.
 }
 
 // not included in main frontend lib yet
-export interface ITransferItem {
+interface ITransferItem {
     contract: string // NFT contract hash.
     destAddress: string // Transfer destination address.
     tokenId: string // NFT token id.
 }
 
 // not included in main frontend lib yet
-export interface IBurnItem {
+interface IBurnItem {
     contract: string // NFT contract hash.
     tokenId: string // NFT token id.
 }
 
 // not included in main frontend lib yet
-export interface IAuctionItem {
+interface IAuctionItem {
     auctionType: number // classic (1) reserve (2) dutch (3) fixed (0)
     tokenId: string // NFT token id.
     baseContractHash: string // order base contract hash.
@@ -60,7 +60,7 @@ export interface IAuctionItem {
 }
 
 // not included in main frontend lib yet
-export interface IOfferItem {
+interface IOfferItem {
     baseScriptHash: string // offer base contract hash.
     quoteScriptHash: string // offer quote contract hash.
     tokenId: string // offer token id.
@@ -71,7 +71,7 @@ export interface IOfferItem {
 }
 
 // not included in main frontend lib yet
-export interface IMintItem {
+interface IMintItem {
     quantity: number // NFT quantity.
     attrT1: string // NFT Attr Type 1.
     attrV1: string // NFT Attr Value 1.
@@ -88,14 +88,14 @@ export interface IMintItem {
 }
 
 // not included in main frontend lib yet
-export interface ICollectionRoyalties {
+interface ICollectionRoyalties {
     contract: string // NFT contract hash.
     royalties: number // Royalties value in BPS.
     royaltiesRecipient: string // Royalties recipient.
 }
 
 // not included in main frontend lib yet
-export interface IArgs {
+interface IArgs {
     type: string
     value: string | any
 }
@@ -140,9 +140,9 @@ export class GhostMarketN3SDK {
         options: {
             apiKey?: string
             baseUrl?: string
+            privateKey?: string
             rpcUrl?: string
             chainName?: Network
-            privateKey?: string
         },
         logger?: (arg: string) => void,
     ) {

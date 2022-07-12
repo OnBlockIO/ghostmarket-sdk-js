@@ -35,23 +35,14 @@ import {
 } from '../lib/api/ghostmarket'
 
 // not included in main frontend lib yet
-export interface Royalties {
+interface Royalties {
     royaltiesRecipients: RoyaltyRecipient[]
 }
 
 // not included in main frontend lib yet
-export interface RoyaltyRecipient {
+interface RoyaltyRecipient {
     recipient: string
     amount: number
-}
-
-// not included in main frontend lib yet
-export interface GhostMarketSDKConfig {
-    apiKey?: string
-    baseUrl?: string
-    useReadOnlyProvider?: boolean
-    rpcUrl?: string
-    chainName?: Network
 }
 
 export class GhostMarketSDK {
