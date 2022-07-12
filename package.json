@@ -1,6 +1,6 @@
 {
   "name": "ghostmarket-sdk-js",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Javascript SDK for GhostMarket. Allow buyers, sellers, or projects to integrate with GhostMarket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -55,7 +55,6 @@
     "axios": "^0.27.2",
     "bs58": "^5.0.0",
     "dotenv": "^16.0.1",
-    "ethereumjs-util": "^7.1.4",
     "web3": "^1.7.3",
     "web3-utils": "^1.7.3"
   },
