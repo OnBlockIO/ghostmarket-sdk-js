@@ -1,7 +1,3 @@
-import { AbiItem } from 'web3-utils'
-
-export type PartialReadonlyContractAbi = AbiItem[]
-
 /**
  * @param Avalanche Avalanche mainnet
  * @param AvalancheTestnet Avalanche testnet
