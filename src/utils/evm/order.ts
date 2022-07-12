@@ -6,7 +6,7 @@ import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
 import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
 import EIP712 from './EIP712'
 
-import web3 from 'Web3'
+import web3 from 'web3'
 const Web3 = new web3()
 
 export function AssetType(assetClass: string, data: string): IEVMAssetType {

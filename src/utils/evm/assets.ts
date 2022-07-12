@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-undef
-import web3 from 'Web3'
+import web3 from 'web3'
 const Web3 = new web3()
 
 export function id(str: string): string {

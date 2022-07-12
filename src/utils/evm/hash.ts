@@ -4,7 +4,7 @@ import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
 import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
 import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
 
-import web3 from 'Web3'
+import web3 from 'web3'
 const Web3 = new web3()
 
 const ASSET_TYPE_TYPEHASH = Web3.utils.sha3('AssetType(bytes4 assetClass,bytes data)')

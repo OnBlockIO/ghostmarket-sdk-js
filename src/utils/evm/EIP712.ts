@@ -3,7 +3,7 @@
 // eslint-disable-next-line no-undef
 import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
 
-import web3 from 'Web3'
+import web3 from 'web3'
 const Web3 = new web3()
 
 const DOMAIN_TYPE = [
