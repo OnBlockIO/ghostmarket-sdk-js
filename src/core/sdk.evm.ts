@@ -452,7 +452,7 @@ export class GhostMarketSDK {
      */
     public async approveToken(hash: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
+        const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, hash)
 
         try {
@@ -687,6 +687,7 @@ export class GhostMarketSDK {
 
     /** Claim incentives
      * @param {string} currentAddress address claiming incentives.
+     * @param {TxObject} txObject transaction object to send when calling `claimIncentives`.
      */
     public async claimIncentives(currentAddress: string) {
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
@@ -798,6 +799,29 @@ export class GhostMarketSDK {
                 return POLYGON_MAINNET_CONTRACTS.GHOST_ERC1155
             case Network.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.GHOST_ERC1155
+            default:
+                throw new Error('Unsupported Network')
+        }
+    }
+
+    private _getERC20ProxyContractAddress(networkName: string): string {
+        switch (networkName) {
+            case Network.Avalanche:
+                return AVALANCHE_MAINNET_CONTRACTS.PROXY_ERC20
+            case Network.AvalancheTestnet:
+                return AVALANCHE_TESTNET_CONTRACTS.PROXY_ERC20
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.PROXY_ERC20
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.PROXY_ERC20
+            case Network.Ethereum:
+                return ETHEREUM_MAINNET_CONTRACTS.PROXY_ERC20
+            case Network.EthereumTestnet:
+                return ETHEREUM_TESTNET_CONTRACTS.PROXY_ERC20
+            case Network.Polygon:
+                return POLYGON_MAINNET_CONTRACTS.PROXY_ERC20
+            case Network.PolygonTestnet:
+                return POLYGON_TESTNET_CONTRACTS.PROXY_ERC20
             default:
                 throw new Error('Unsupported Network')
         }
