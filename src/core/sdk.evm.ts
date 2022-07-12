@@ -675,8 +675,8 @@ export class GhostMarketSDK {
         )
 
         try {
-            const txResult = await IncentivesContractInstance.methods.incentives(currentAddress)
-            return txResult
+            const data = await IncentivesContractInstance.methods.incentives(currentAddress)
+            return this.callMethod(data, currentAddress)
         } catch (e) {
             return console.error(
                 `Failed to execute readIncentives on ${IncentivesContractAddressAddress} with error:`,
@@ -686,8 +686,9 @@ export class GhostMarketSDK {
     }
 
     /** Claim incentives
+     * @param {string} currentAddress address claiming incentives.
      */
-    public async claimIncentives() {
+    public async claimIncentives(currentAddress: string) {
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
@@ -695,8 +696,13 @@ export class GhostMarketSDK {
         )
 
         try {
-            const txResult = await IncentivesContractInstance.methods.claim()
-            return txResult
+            const data = await IncentivesContractInstance.methods.claim()
+            return this.sendMethod(
+                data,
+                currentAddress,
+                IncentivesContractAddressAddress,
+                undefined,
+            )
         } catch (e) {
             return console.error(
                 `Failed to execute claimIncentives on ${IncentivesContractAddressAddress} with error:`,
@@ -887,6 +893,30 @@ export class GhostMarketSDK {
             default:
                 throw new Error('Unsupported Network')
         }
+    }
+
+    sendMethod(
+        dataOrMethod: any,
+        from: string,
+        value: any,
+        type = '', // 0x2
+    ): Promise<any> {
+        return new Promise((resolve, reject) =>
+            dataOrMethod
+                .send({ from, value, type })
+                // .then((res:any) => resolve(res.transactionHash)) // unused as this would mean waiting for the tx to be included in a block
+                .on('transactionHash', (hash: any) => resolve(hash)) // returns hash instantly
+                .catch((err: any) => reject(err)),
+        )
+    }
+
+    callMethod(dataOrMethod: any, from: string): Promise<any> {
+        return new Promise((resolve, reject) =>
+            dataOrMethod
+                .call({ from })
+                .then((res: any) => resolve(res))
+                .catch((err: any) => reject(err)),
+        )
     }
 
     // -- END COMMON METHODS -- //
