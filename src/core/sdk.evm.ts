@@ -8,7 +8,7 @@ import {
     ERC721Contract,
     ERC1155Contract,
     IncentivesContract,
-} from '../abis'
+} from '../abi'
 import {
     ETHEREUM_MAINNET_CONTRACTS,
     ETHEREUM_TESTNET_CONTRACTS,
@@ -57,7 +57,6 @@ export interface GhostMarketSDKConfig {
 export class GhostMarketSDK {
     // Instance of Web3 to use.
     private web3: Web3
-    private web3Readonly: Web3
     public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
@@ -87,13 +86,9 @@ export class GhostMarketSDK {
         options.rpcUrl = options.rpcUrl || ''
         const useReadOnlyProvider = options.useReadOnlyProvider ?? true
         this._isReadonlyProvider = useReadOnlyProvider
-        const readonlyProvider = useReadOnlyProvider
-            ? new Web3.providers.HttpProvider(options.rpcUrl)
-            : null
         options.chainName = options.chainName || Network.Ethereum
         this._chainName = options.chainName
         this.web3 = new Web3(provider)
-        this.web3Readonly = useReadOnlyProvider ? new Web3(readonlyProvider) : this.web3
         const apiConfig = {
             apiKey: options.apiKey,
             baseUrl: options.baseUrl,
@@ -181,7 +176,7 @@ export class GhostMarketSDK {
             } as PostCreateOrderRequest
             await this.api.postCreateOrder(new PostCreateOrderRequest(nftToList))
         } catch (e) {
-            console.error(`Failed to execute postCreateOrder with error:`, e)
+            return console.error(`Failed to execute postCreateOrder with error:`, e)
         }
     }
 
@@ -272,7 +267,7 @@ export class GhostMarketSDK {
 
             this.matchOrders(orderLeft, signatureLeft, orderRight, signatureRight, tx)
         } catch (e) {
-            console.error(`Failed to execute prepareMatchOrders with error:`, e)
+            return console.error(`Failed to execute prepareMatchOrders with error:`, e)
         }
     }
 
@@ -303,7 +298,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
@@ -328,7 +323,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute cancelOrder on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
@@ -353,7 +348,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute bulkCancelOrders on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
@@ -385,7 +380,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute setRoyaltiesByToken on ${royaltiesRegistryProxyAddress} with error:`,
                 e,
             )
@@ -412,7 +407,10 @@ export class GhostMarketSDK {
                     .send(amount, txObject)
                 return txResult
             } catch (e) {
-                console.error(`Failed to execute deposit on ${wrappedTokenAddress} with error:`, e)
+                return console.error(
+                    `Failed to execute deposit on ${wrappedTokenAddress} with error:`,
+                    e,
+                )
             }
         } else {
             try {
@@ -421,7 +419,10 @@ export class GhostMarketSDK {
                     .send(txObject)
                 return txResult
             } catch (e) {
-                console.error(`Failed to execute withdraw on ${wrappedTokenAddress} with error:`, e)
+                return console.error(
+                    `Failed to execute withdraw on ${wrappedTokenAddress} with error:`,
+                    e,
+                )
             }
         }
     }
@@ -441,7 +442,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute setApprovalForAll on ${hash} with error:`, e)
+            return console.error(`Failed to execute setApprovalForAll on ${hash} with error:`, e)
         }
     }
 
@@ -460,7 +461,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute approve on ${hash} with error:`, e)
+            return console.error(`Failed to execute approve on ${hash} with error:`, e)
         }
     }
 
@@ -479,7 +480,7 @@ export class GhostMarketSDK {
             )
             return txResult
         } catch (e) {
-            console.error(`Failed to execute isApprovedForAll on ${hash} with error:`, e)
+            return console.error(`Failed to execute isApprovedForAll on ${hash} with error:`, e)
         }
     }
 
@@ -494,7 +495,7 @@ export class GhostMarketSDK {
             const txResult = await ERC20ContractInstance.methods.allowance(address, hash)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute allowance on ${hash} with error:`, e)
+            return console.error(`Failed to execute allowance on ${hash} with error:`, e)
         }
     }
 
@@ -520,7 +521,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute safeTransferFrom on ${hash} with error:`, e)
+            return console.error(`Failed to execute safeTransferFrom on ${hash} with error:`, e)
         }
     }
 
@@ -548,7 +549,10 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute safeBatchTransferFrom on ${hash} with error:`, e)
+            return console.error(
+                `Failed to execute safeBatchTransferFrom on ${hash} with error:`,
+                e,
+            )
         }
     }
 
@@ -565,7 +569,7 @@ export class GhostMarketSDK {
             const txResult = await ContractInstance.methods.burn(address, tokenId).send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute burn on ${hash} with error:`, e)
+            return console.error(`Failed to execute burn on ${hash} with error:`, e)
         }
     }
 
@@ -591,7 +595,7 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute burn on ${hash} with error:`, e)
+            return console.error(`Failed to execute burn on ${hash} with error:`, e)
         }
     }
 
@@ -620,7 +624,10 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute mintGhost on ${ERC721GhostAddress} with error:`, e)
+            return console.error(
+                `Failed to execute mintGhost on ${ERC721GhostAddress} with error:`,
+                e,
+            )
         }
     }
 
@@ -650,14 +657,17 @@ export class GhostMarketSDK {
                 .send(txObject)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute mintGhost on ${ERC1155GhostAddress} with error:`, e)
+            return console.error(
+                `Failed to execute mintGhost on ${ERC1155GhostAddress} with error:`,
+                e,
+            )
         }
     }
 
     /** Get incentives for address
      * @param {string} currentAddress address used to check incentives.
      */
-    public async readIncentives(currentAddress: string): Promise<any> {
+    public async readIncentives(currentAddress: string) {
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
@@ -668,7 +678,7 @@ export class GhostMarketSDK {
             const txResult = await IncentivesContractInstance.methods.incentives(currentAddress)
             return txResult
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute readIncentives on ${IncentivesContractAddressAddress} with error:`,
                 e,
             )
@@ -688,7 +698,7 @@ export class GhostMarketSDK {
             const txResult = await IncentivesContractInstance.methods.claim()
             return txResult
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute claimIncentives on ${IncentivesContractAddressAddress} with error:`,
                 e,
             )
@@ -704,7 +714,7 @@ export class GhostMarketSDK {
             const txResult = this.web3.eth.sign(data, address)
             return txResult
         } catch (e) {
-            console.error(`Failed to execute signData with error:`, e)
+            return console.error(`Failed to execute signData with error:`, e)
         }
     }
 

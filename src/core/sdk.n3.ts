@@ -258,7 +258,7 @@ export class GhostMarketN3SDK {
                     console.log('Transaction ID: ' + result.txid)
                     resolve(result.txid)
                 })
-                .catch(({ type, description, data }: any) => {
+                .catch(({ type, description }: any) => {
                     let errMsg = 'Unknown error'
                     switch (type) {
                         case 'NO_PROVIDER':
@@ -298,7 +298,7 @@ export class GhostMarketN3SDK {
                     console.log('Transaction ID: ' + result.txid)
                     resolve(result.txid)
                 })
-                .catch(({ type, description, data }: any) => {
+                .catch(({ type, description }: any) => {
                     let errMsg = 'Unknown error'
                     switch (type) {
                         case 'NO_PROVIDER':
@@ -333,7 +333,7 @@ export class GhostMarketN3SDK {
                     console.log('InvokeRead success!')
                     resolve(result)
                 })
-                .catch(({ type, description, data }: any) => {
+                .catch(({ type, description }: any) => {
                     let errMsg = 'Unknown error'
                     switch (type) {
                         case 'NO_PROVIDER':
@@ -472,7 +472,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute buyMultiple on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -579,7 +579,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute sellMultiple on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -633,7 +633,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute buyAuction on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -733,7 +733,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute listAuction on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -778,7 +778,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute claimAuction on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -842,7 +842,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute placeOffer on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -891,7 +891,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute processOffer on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -955,7 +955,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute editPrice on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -967,7 +967,7 @@ export class GhostMarketN3SDK {
      * @param {string} currentAddress address used to sign transaction.
      */
     public async approveToken(contractHash: string, currentAddress: string) {
-        console.log(`approve token with ${this.provider} on ${this.chainName}`)
+        console.log(`approve ${contractHash} with ${this.provider} on ${this.chainName}`)
 
         const argsApproveToken = [
             {
@@ -993,7 +993,7 @@ export class GhostMarketN3SDK {
             },
         ]
         invokeParams = {
-            scriptHash: this.contractExchangeAddress,
+            scriptHash: contractHash,
             operation: METHOD_APPROVE_TOKEN,
             args: argsApproveToken,
             signers,
@@ -1002,7 +1002,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute approveToken on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -1051,7 +1051,10 @@ export class GhostMarketN3SDK {
             const decoded = result.stack[0].value / Math.pow(10, decimals)
             return decoded
         } catch (e) {
-            console.error(`Failed to execute checkTokenApproval on ${contract} with error:`, e)
+            return console.error(
+                `Failed to execute checkTokenApproval on ${contract} with error:`,
+                e,
+            )
         }
     }
 
@@ -1107,7 +1110,10 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            console.error(`Failed to execute transfer on ${items[0].contract} with error:`, e)
+            return console.error(
+                `Failed to execute transfer on ${items[0].contract} with error:`,
+                e,
+            )
         }
     }
 
@@ -1155,7 +1161,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            console.error(`Failed to execute burn on ${items[0].contract} with error:`, e)
+            return console.error(`Failed to execute burn on ${items[0].contract} with error:`, e)
         }
     }
 
@@ -1297,7 +1303,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute mint on ${
                     this.isMainNet
                         ? N3_MAINNET_CONTRACTS.GHOST_NEP11
@@ -1377,7 +1383,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute collectionEditRoyalties on ${this.contractExchangeAddress} with error:`,
                 e,
             )
@@ -1387,7 +1393,7 @@ export class GhostMarketN3SDK {
     /** Get incentives for address
      * @param {string} currentAddress address used to check incentives.
      */
-    async readIncentives(currentAddress: string) {
+    public async readIncentives(currentAddress: string) {
         console.log(`reading incentives with ${this.provider} on ${this.chainName}`)
 
         const argsReadIncentives = [
@@ -1416,7 +1422,7 @@ export class GhostMarketN3SDK {
             const decoded = response.result.stack[0].value[4].value / Math.pow(10, 8)
             return decoded
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute readIncentives on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
@@ -1426,7 +1432,7 @@ export class GhostMarketN3SDK {
     /** Claim incentives for address
      * @param {string} currentAddress address used to claim incentives.
      */
-    async claimIncentives(currentAddress: string) {
+    public async claimIncentives(currentAddress: string) {
         console.log(
             `claiming incentives with ${this.provider} on N3 ${
                 this.isMainNet ? 'MainNet' : 'TestNet'
@@ -1457,7 +1463,7 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            console.error(
+            return console.error(
                 `Failed to execute claimIncentives on ${this.contractIncentivesAddress} with error:`,
                 e,
             )

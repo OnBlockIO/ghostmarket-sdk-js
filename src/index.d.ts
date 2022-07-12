@@ -1,1 +1,1 @@
-declare module 'ghostmarket-sdk-ts'
+declare module 'ghostmarket-sdk-js'
