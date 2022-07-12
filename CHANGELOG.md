@@ -34,6 +34,7 @@ GhostMarket is constantly innovating. This means the underlying API that this SD
 * Asset Orders
 * Asset Offers
 * Asset Attributes
+* GM Incentives
 
 #### POST
 
@@ -46,7 +47,6 @@ GhostMarket is constantly innovating. This means the underlying API that this SD
 * CDN Management
 * Open Minting
 * GM Token Supply
-* GM Incentives
 * GM Staking
 * Referral Endpoint
 * Moderator Tools

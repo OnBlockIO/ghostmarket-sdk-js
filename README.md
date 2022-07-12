@@ -43,7 +43,7 @@ To get started on EVM, you can use either a read only provider, a web3 provider 
 To get started on Neo N3, you can use either a NEP-12 provider (ex neoline) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
-const { GhostMarketSDK, Network, API_BASE_TESTNET } = require('ghostmarket-sdk-ts');
+const { GhostMarketSDK, Network, API_BASE_MAINNET, API_BASE_TESTNET } = require('ghostmarket-sdk-ts');
 // if using EVM private key or mnemonic hdwallet-provider is required
 // const HDWalletProvider = require('@truffle/hdwallet-provider')
 // const privateKey = process.env.PRIVATE_KEY
