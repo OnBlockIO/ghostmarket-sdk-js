@@ -41,10 +41,10 @@ Thumbs.db
 dist*
 
 # Ignore yarn.lock
-yarn.lock
+# yarn.lock
 
 # Ignore package lock
-package-lock.json
+# package-lock.json
 
 # Testing directory
 testing
