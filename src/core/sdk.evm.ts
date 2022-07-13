@@ -488,13 +488,17 @@ export class GhostMarketSDK {
      * @param {hash} string contract to check approval.
      */
     public async checkTokenApproval(address: string, hash: string) {
+        const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
         const ERC20ContractInstance = new this.web3.eth.Contract(ERC20WrappedContract, hash)
 
         try {
-            const txResult = await ERC20ContractInstance.methods.allowance(address, hash)
-            return txResult
+            const data = await ERC20ContractInstance.methods.allowance(
+                address,
+                proxyContractAddress,
+            )
+            return await this.callMethod(data, hash)
         } catch (e) {
-            return console.error(`Failed to execute allowance on ${hash} with error:`, e)
+            return console.error(`Failed to execute checkTokenApproval on ${hash} with error:`, e)
         }
     }
 
@@ -675,7 +679,7 @@ export class GhostMarketSDK {
 
         try {
             const data = await IncentivesContractInstance.methods.incentives(currentAddress)
-            return this.callMethod(data, currentAddress)
+            return (await this.callMethod(data, currentAddress)) / Math.pow(10, 8)
         } catch (e) {
             return console.error(
                 `Failed to execute readIncentives on ${IncentivesContractAddressAddress} with error:`,
@@ -728,24 +732,14 @@ export class GhostMarketSDK {
     getTokenBalances / getOwnerships
     */
 
-    // -- END EVM METHODS -- //
-
-    // -- N3 METHODS -- //
-
-    // -- END N3 METHODS -- //
-
-    // -- PHA METHODS -- //
-
-    // -- END PHA METHODS -- //
-
-    // -- COMMON METHODS -- //
-
     private _getIncentivesContractAddress(networkName: string): string {
         switch (networkName) {
             case Network.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.INCENTIVES
             case Network.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.INCENTIVES
+            case Network.Ethereum:
+                return ETHEREUM_MAINNET_CONTRACTS.INCENTIVES
             case Network.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.INCENTIVES
             case Network.BSC:
@@ -809,14 +803,14 @@ export class GhostMarketSDK {
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_ERC20
             case Network.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_ERC20
-            case Network.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_ERC20
-            case Network.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_ERC20
             case Network.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_ERC20
             case Network.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_ERC20
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.PROXY_ERC20
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.PROXY_ERC20
             case Network.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_ERC20
             case Network.PolygonTestnet:
@@ -832,14 +826,14 @@ export class GhostMarketSDK {
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_NFT
             case Network.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_NFT
-            case Network.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_NFT
-            case Network.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_NFT
             case Network.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_NFT
             case Network.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_NFT
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.PROXY_NFT
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.PROXY_NFT
             case Network.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_NFT
             case Network.PolygonTestnet:
@@ -855,14 +849,14 @@ export class GhostMarketSDK {
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
             case Network.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
             case Network.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
             case Network.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
             case Network.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
             case Network.PolygonTestnet:
@@ -878,14 +872,14 @@ export class GhostMarketSDK {
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_ROYALTIES
             case Network.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_ROYALTIES
             case Network.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_ROYALTIES
             case Network.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_ROYALTIES
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.PROXY_ROYALTIES
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.PROXY_ROYALTIES
             case Network.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_ROYALTIES
             case Network.PolygonTestnet:
@@ -901,14 +895,14 @@ export class GhostMarketSDK {
                 return AVALANCHE_MAINNET_CONTRACTS.WRAPPED_TOKEN
             case Network.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.BSC:
-                return BSC_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.WRAPPED_TOKEN
             case Network.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.WRAPPED_TOKEN
             case Network.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.WRAPPED_TOKEN
+            case Network.BSC:
+                return BSC_MAINNET_CONTRACTS.WRAPPED_TOKEN
+            case Network.BSCTestnet:
+                return BSC_TESTNET_CONTRACTS.WRAPPED_TOKEN
             case Network.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.WRAPPED_TOKEN
             case Network.PolygonTestnet:
@@ -921,14 +915,14 @@ export class GhostMarketSDK {
     sendMethod(
         dataOrMethod: any,
         from: string,
-        value: any,
+        value: string,
         type = '', // 0x2
     ): Promise<any> {
         return new Promise((resolve, reject) =>
             dataOrMethod
                 .send({ from, value, type })
                 // .then((res:any) => resolve(res.transactionHash)) // unused as this would mean waiting for the tx to be included in a block
-                .on('transactionHash', (hash: any) => resolve(hash)) // returns hash instantly
+                .on('transactionHash', (hash: string) => resolve(hash)) // returns hash instantly
                 .catch((err: any) => reject(err)),
         )
     }
@@ -941,6 +935,4 @@ export class GhostMarketSDK {
                 .catch((err: any) => reject(err)),
         )
     }
-
-    // -- END COMMON METHODS -- //
 }

@@ -1047,8 +1047,8 @@ export class GhostMarketN3SDK {
         }
 
         try {
-            const result = await this.invokeRead(invokeParams)
-            const decoded = result.stack[0].value / Math.pow(10, decimals)
+            const response = await this.invokeRead(invokeParams)
+            const decoded = response.stack[0].value / Math.pow(10, decimals)
             return decoded
         } catch (e) {
             return console.error(

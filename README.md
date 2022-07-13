@@ -46,14 +46,16 @@ To get started on Neo N3, you can use either a NEP-12 provider (ex neoline) or a
 import Web3 from 'web3' // only for EVM
 import { GhostMarketSDK, GhostMarketN3SDK, Network, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
 // if using EVM private key or mnemonic hdwallet-provider is required
-// const HDWalletProvider = require('@truffle/hdwallet-provider')
+// import HDWalletProvider from '@truffle/hdwallet-provider'
+
 
 // Variables
-const API_KEY = '' // GhostMarket API KEY if you have one
-const CUSTOM_RPC_URL = 'https://mainnet.infura.io' // RPC to use
-const CHAIN = 'Ethereum'
-const KEY = '' // private key to use - only for Neo N3 private provider or EVM
-const MNEMONIC = '' // mnemonic to use - only for EVM
+const apiKey = process.env.GM_API_KEY ?? '' // GhostMarket API KEY if you have one
+const privateKey = process.env.PRIVATE_KEY ?? '' // private key to use - only for Neo N3 private provider or EVM
+const mnemonic = process.env.MNEMONIC ?? '' // mnemonic to use - only for EVM
+const rpcUrl = process.env.RPC_URL ?? 'https://mainnet.infura.io' // RPC to use
+const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
+const chainName = Network.Ethereum // see below for chain values
 
 /* CHAIN values
     Avalanche = 'Avalanche',
@@ -70,11 +72,11 @@ const MNEMONIC = '' // mnemonic to use - only for EVM
 
 // SDK config options.
 const sdkConfig = {
-    apiKey: API_KEY,
-    environment: MAINNET_API_URL, // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
-    rpcUrl: CUSTOM_RPC_URL,
-    chainName: CHAIN,
-    privateKey: KEY, // private key to use - only for Neo N3 private provider
+    apiKey,
+    privateKey,
+    rpcUrl,
+    environment,
+    chainName,
 }
 
 //////// EVM provider options ////////
@@ -99,16 +101,33 @@ const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
 
 
 // All set - use the object to access GhostMarket SDK
+```
+
+
+## Usage
+
+### Fetching assets
+
+```js
+// Fetch 1 GhostMarket asset.
+const { asset } = await gmSDK.api.getAssets({ limit: 1 });
+console.info(`One NFT found: ${getGhostMarketLink(asset}`))
+```
+
+### Fetching events
+
+```js
 // Fetch 10 GhostMarket events.
 const { events } = await gmSDK.api.getEvents({ limit: 10 });
 console.info(events)
+```
 
+### Fetching collections
+```js
 // Fetch 10 GhostMarket collections.
 const { collections } = await gmSDK.api.getCollections({ limit: 10 })
 console.info(collections)
 ```
-
-## Usage
 
 ### Making an offer
 
@@ -131,6 +150,21 @@ const offer = await gmSDK.sdk.evm.placeOffer({
     startDate: number,
     endDate: number,
 })
+```
+
+
+### Fetching incentives
+```js
+const address = '0x....'
+const incentives = await gmSDK.readIncentives(address)
+const availableIncentives = incentives.availableIncentives / Math.pow(10, 8)
+```
+
+### Claiming incentives
+```js
+const address = '0x....'
+const incentives = await gmSDK.claimIncentives(address)
+const availableIncentives = incentives.availableIncentives / Math.pow(10, 8)
 ```
 
 
