@@ -115,6 +115,7 @@ const METHOD_APPROVE_TOKEN = 'approve'
 const METHOD_CHECK_ALLOWANCE = 'allowance'
 const METHOD_PLACE_OFFER = 'placeOffer'
 const METHOD_ACCEPT_OFFER = 'acceptOffer'
+const METHOD_CANCEL_OFFER = 'cancelOffer'
 
 export class GhostMarketN3SDK {
     private provider: 'neoline' | 'o3' | 'private' = 'private'
@@ -849,11 +850,12 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Accept a single nft offer or a collection offer
+    /** Accept or cancel a single nft offer or a collection offer
      * @param {IOfferItem} item details.
      * @param {string} currentAddress used to sign transaction.
+     * @param {boolean} isCancellation used to sign transaction.
      */
-    public async processOffer(item: IOfferItem, currentAddress: string) {
+    public async processOffer(item: IOfferItem, currentAddress: string, isCancellation: boolean) {
         console.log(`accept offer on nft with ${this.provider} on ${this.chainName}`)
 
         const argsAcceptOffer = [
@@ -872,19 +874,34 @@ export class GhostMarketN3SDK {
             },
         ]
 
-        const allowedContracts = [this.contractExchangeAddress]
-
-        const signers = [
+        const argsCancelOffer = [
             {
-                account: getScriptHashFromAddress(currentAddress),
-                scopes: 16,
-                allowedContracts,
+                type: 'ByteArray', // ByteString auctionId
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                value: numberToByteString(item.auctionId!),
             },
         ]
+
+        const allowedContracts = [this.contractExchangeAddress, item.quoteScriptHash]
+
+        const signers = isCancellation
+            ? [
+                  {
+                      account: getScriptHashFromAddress(currentAddress),
+                      scopes: 1,
+                  },
+              ]
+            : [
+                  {
+                      account: getScriptHashFromAddress(currentAddress),
+                      scopes: 16,
+                      allowedContracts,
+                  },
+              ]
         const invokeParams = {
             scriptHash: this.contractExchangeAddress,
-            operation: METHOD_ACCEPT_OFFER,
-            args: argsAcceptOffer,
+            operation: isCancellation ? METHOD_CANCEL_OFFER : METHOD_ACCEPT_OFFER,
+            args: isCancellation ? argsCancelOffer : argsAcceptOffer,
             signers,
         }
 
