@@ -50,24 +50,17 @@ import { GhostMarketSDK, GhostMarketN3SDK, Network, TESTNET_API_URL, MAINNET_API
 
 
 // Variables
-const apiKey = process.env.GM_API_KEY ?? '' // GhostMarket API KEY if you have one
-const privateKey = process.env.PRIVATE_KEY ?? '' // private key to use - only for Neo N3 private provider or EVM
-const mnemonic = process.env.MNEMONIC ?? '' // mnemonic to use - only for EVM
-const rpcUrl = process.env.RPC_URL ?? 'https://mainnet.infura.io' // RPC to use
+const apiKey = process.env.GM_API_KEY // GhostMarket API KEY if you have one
+const privateKey = process.env.PRIVATE_KEY // private key to use - only for Neo N3 private provider or EVM
+const mnemonic = process.env.MNEMONIC // mnemonic to use - only for EVM
+const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
 const chainName = Network.Ethereum // see below for chain values
 
-/* CHAIN values
-    Avalanche = 'Avalanche',
-    AvalancheTestnet = 'Avalanche Testnet',
-    BSC = 'BSC',
-    BSCTestnet = 'BSC Testnet',
-    Ethereum = 'Ethereum',
-    EthereumTestnet = 'Ethereum Testnet',
-    Polygon = 'Polygon',
-    PolygonTestnet = 'Polygon Testnet',
-    Neo3 = 'Neo3',
-    Neo3Testnet = 'Neo3 Testnet',
+/* CHAIN values : 
+    Network.Ethereum / Network.EthereumTestnet / Network.Polygon / Network.PolygonTestnet
+    Network.BSC / Network.BSCTestnet / Network.Avalanche / Network.AvalancheTestnet
+    Network.Neo3 / Network.Neo3Testnet
     */
 
 // SDK config options.
@@ -81,13 +74,13 @@ const sdkConfig = {
 
 //////// EVM provider options ////////
 // Option 1 - Readonly provider, only reads the network state. Can not sign transactions.
-const customProvider = new Web3.providers.HttpProvider(CUSTOM_RPC_URL)
+const customProvider = new Web3.providers.HttpProvider(rpcUrl)
 // Option 2 - metamask provider
 const customProvider = window.ethereum
 // Option 3 - private key - EVM
-const customProvider = new HDWalletProvider(KEY, CUSTOM_RPC_URL)
+const customProvider = new HDWalletProvider(KEY, rpcUrl)
 // Option 4 - mnemonic
-const customProvider = new HDWalletProvider(MNEMONIC, CUSTOM_RPC_URL)
+const customProvider = new HDWalletProvider(MNEMONIC, rpcUrl)
 // Create instance of GhostMarketSDK - EVM
 const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 //////// EVM provider options ////////
@@ -111,7 +104,7 @@ const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
 ```js
 // Fetch 1 GhostMarket asset.
 const { asset } = await gmSDK.api.getAssets({ limit: 1 });
-console.info(`One NFT found: ${getGhostMarketLink(asset}`))
+console.info(asset)
 ```
 
 ### Fetching events
@@ -129,42 +122,18 @@ const { collections } = await gmSDK.api.getCollections({ limit: 10 })
 console.info(collections)
 ```
 
-### Making an offer
-
-```js
-// Token ID and smart contract address for a non-fungible token:
-const { tokenId, tokenContract } = YOUR_ASSET
-// Address placing offer
-const makerAddress = "0x..."
-
-const offer = await gmSDK.sdk.evm.placeOffer({
-    chain: string,
-    tokenContract: string,
-    tokenId: string,
-    tokenAmount: 1,
-    quoteContract: string,
-    quotePrice: 1111,
-    makerAddress,
-    type: number,
-    typeAsset: number,
-    startDate: number,
-    endDate: number,
-})
-```
-
-
 ### Fetching incentives
 ```js
 const address = '0x....'
 const incentives = await gmSDK.readIncentives(address)
 const availableIncentives = incentives.availableIncentives / Math.pow(10, 8)
+console.info(availableIncentives)
 ```
 
 ### Claiming incentives
 ```js
 const address = '0x....'
 const incentives = await gmSDK.claimIncentives(address)
-const availableIncentives = incentives.availableIncentives / Math.pow(10, 8)
 ```
 
 
