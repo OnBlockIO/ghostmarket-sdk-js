@@ -105,4 +105,21 @@ export class N3PrivateProvider {
 
         return result
     }
+
+    async invokeRead(params: {
+        scriptHash: string
+        operation: string
+        args?: Argument[]
+        signers?: Signer[]
+    }): Promise<any> {
+        const scArgs = this.convertArgs(params.args)
+        const result = await this.rpcClient.invokeFunction(
+            params.scriptHash,
+            params.operation,
+            scArgs,
+            params.signers,
+        )
+
+        return result
+    }
 }
