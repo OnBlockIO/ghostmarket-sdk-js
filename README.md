@@ -128,28 +128,67 @@ console.info(collections)
 ### Fetching offers 
 ```js
 // Fetch offers from asset.
-const chain = ''
-const contract = '0x....'
-const tokenId = ''
-const { offers } = await gmSDK.api.getAssetOffersV2({
-  chain,
-  contract,
-  tokenId
-})
+const chain = '' // filter by chain
+const contract = '0x....' // filter for one contract
+const tokenId = '' // filter for one tokenId
+const { offers } = await gmSDK.api.getAssetOffersV2({ chain, contract, tokenId })
+console.info(offers)
 ```
 
 ### Fetching orders 
 ```js
 // Fetch orders from asset.
-const chain = ''
-const contract = '0x....'
-const tokenId = ''
-const { orders } = await gmSDK.api.getAssetOrdersV2({
-  chain,
-  contract,
-  tokenId
-})
+const chain = '' // filter by chain
+const contract = '0x....' // filter for one contract
+const tokenId = '' // filter for one tokenId
+const { orders } = await gmSDK.api.getAssetOrdersV2({ chain, contract, tokenId })
+console.info(orders)
 ```
+
+### Checking Non Fungible Token (NFT) balances
+```js
+const chain = '' // filter by chain
+const contract =  '' // filter for one contract
+const owners = ['0x....'] // filter by one or more owner
+const balance = await gmSDK.api.getAssetsV2({ chain, contract, owners })
+console.info(balance)
+```
+
+### Checking Fungible Token balances
+```js
+const contract =  '' 
+const balance = await gmSDK.checkTokenBalance(contract, address)
+console.info(`balance: ` + balance)
+```
+
+### Fetching token approval
+```js
+const contract = '0x....'
+const approval = await gmSDK.checkTokenApproval(contract, address)
+console.info(`amount approved: ` + tokenApproval)
+```
+
+### Fetching contract approval
+```js
+const contract = '0x....'
+const approval = await gmSDK.checkContractApproval(contract, address)
+console.info(`is contract approved: ` + contractApproval)
+```
+
+### Fetching incentives
+```js
+const incentives = await gmSDK.checkIncentives(address)
+const availableIncentives = incentives ? incentives.availableIncentives / Math.pow(10, 8) : 0
+console.info(`available incentives: ${availableIncentives}`)
+```
+
+### Signing data
+```js
+const message = 'signing stuff'
+const signed = await gmSDK.signData(message, address)
+console.info(`signed data: ${signed}`)
+```
+
 
 prepareMatchOrders
 matchOrders
@@ -187,21 +226,7 @@ const approval = await gmSDK.approveContract(contract, {from: address})
 console.info(`tx hash: ${approval}`)
 ```
 
-### Fetching token approval
-```js
-const contract = '0x....'
-const approval = await gmSDK.checkTokenApproval(contract, address)
-console.info(`amount approved: ` + tokenApproval)
-```
-
-### Fetching contract approval
-```js
-const contract = '0x....'
-const approval = await gmSDK.checkContractApproval(contract, address)
-console.info(`is contract approved: ` + contractApproval)
-```
-
-### Transfer ERC20 NFT
+### Transfer ERC20
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -219,7 +244,7 @@ const transfer = await gmSDK.transferERC721(destination, contract, tokenId, {fro
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer ERC1155 GHOST NFT
+### Transfer ERC1155 NFT
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -229,7 +254,7 @@ const transfer = await gmSDK.transferERC1155(destination, contract, [tokenId], [
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Burn ERC721 GHOST NFT
+### Burn ERC721 NFT
 ```js
 const contract = '0x....'
 const tokenId = ''
@@ -237,7 +262,7 @@ const burn = await gmSDK.mintERC721(contract, tokenId, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Burn ERC1155 GHOST NFT
+### Burn ERC1155 NFT
 ```js
 const contract = '0x....'
 const tokenId = ''
@@ -261,15 +286,8 @@ const creator = '0x....'
 const amount = 1
 const royalties = []
 const externalURI = 'ipfs://xxx'
-const token = await gmSDK.mintERC1155((creator, amount, [], externalURI, {from: address}))
+const token = await gmSDK.mintERC1155(creator, amount, [], externalURI, {from: address})
 console.info(`tx hash: ${token}`)
-```
-
-### Fetching incentives
-```js
-const incentives = await gmSDK.checkIncentives(address)
-const availableIncentives = incentives ? incentives.availableIncentives / Math.pow(10, 8) : 0
-console.info(`available incentives: ${availableIncentives}`)
 ```
 
 ### Claiming incentives
@@ -277,16 +295,6 @@ console.info(`available incentives: ${availableIncentives}`)
 const claim = await gmSDK.claimIncentives({from: address})
 console.info(`tx hash: ${claim}`)
 ```
-
-### Signing data
-```js
-const message = 'signing stuff'
-const signed = await gmSDK.signData(message, address)
-console.info(`signed data: ${signed}`)
-```
-
-
-
 
 ## Development
 

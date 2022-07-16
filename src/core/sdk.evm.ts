@@ -98,6 +98,44 @@ export class GhostMarketSDK {
         this.logger = logger || ((arg: string) => arg)
     }
 
+    /** Prepare order based on asset
+     * @param {IAssetV2} asset left signature for the order match.
+     * @param {number} type type of order. // 1 - sell order, 2 - offer, 3 - collection offer
+     */
+    /* public async prepareOrder(asset: IAssetV2, type: number, accountAddress: string) {
+        try {
+            const tokenId = asset.auction.auction.tokenId
+            const tokenAmount = asset.auction.tokenAmount
+            const baseContract = asset.auction.baseContract.hash
+            const quoteContract = asset.auction.quoteContract.hash
+            const quotePrice = asset.auction.price
+            const encType = asset.nft.nftType.includes('ERC721') ? ERC721 : ERC1155
+            const order: IEVMOrder = Order(
+                accountAddress,
+                type === 2
+                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
+                    : type === 3
+                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(baseContract), quotePrice)
+                    : Asset(encType, enc(baseContract, tokenId), tokenAmount.toString()),
+                NULL_ADDRESS,
+                type === 2
+                    ? Asset(encType, enc(baseContract, tokenId), tokenAmount.toString())
+                    : type === 3
+                    ? Asset(COLLECTION, enc(quoteContract), quotePrice)
+                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
+                asset.auction.salt,
+                asset.auction.startDate,
+                asset.auction.endDate,
+                '0xffffffff',
+                '0x',
+            )
+
+            return order
+        } catch (e) {
+            return console.error(`prepareMatchOrders: failed to execute with error:`, e)
+        }
+    } */
+
     /** Create a sell order or a single nft offer or a collection offer
      * @param {string} chain for the order.
      * @param {string} tokenContract token contract for the order.
@@ -727,6 +765,25 @@ export class GhostMarketSDK {
         } catch (e) {
             return console.error(
                 `mintERC1155: failed to execute mintGhost on ${ERC1155GhostAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Check one token balance for address
+     * @param {string} contract token contract to check approval.
+     * @param {string} accountAddress address used to check.
+     */
+    public async checkTokenBalance(contract: string, accountAddress: string) {
+        const contractAddress = contract
+        const ERC20ContractInstance = new this.web3.eth.Contract(ERC20WrappedContract, contract)
+
+        try {
+            const data = await ERC20ContractInstance.methods.balanceOf(accountAddress)
+            return await this.callMethod(data, accountAddress)
+        } catch (e) {
+            return console.error(
+                `checkTokenBalance: failed to execute balanceOf on ${contractAddress} with error:`,
                 e,
             )
         }
