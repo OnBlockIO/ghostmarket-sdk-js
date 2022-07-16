@@ -66,7 +66,6 @@ const chainName = Network.Ethereum // see below for chain values
 // SDK config options.
 const sdkConfig = {
     apiKey,
-    privateKey,
     rpcUrl,
     environment,
     chainName,
@@ -126,15 +125,44 @@ console.info(collections)
 ```js
 const address = '0x....'
 const incentives = await gmSDK.readIncentives(address)
-const availableIncentives = incentives.availableIncentives / Math.pow(10, 8)
+const availableIncentives = incentives ? incentives.availableIncentives / Math.pow(10, 8) : 0
 console.info(availableIncentives)
 ```
 
 ### Claiming incentives
 ```js
 const address = '0x....'
-const incentives = await gmSDK.claimIncentives(address)
+const claim = await gmSDK.claimIncentives(address)
+console.info(claim)
 ```
+
+### Fetching token approval
+```js
+const address = '0x....'
+const contract = '0x....'
+const decimals = 18
+const tokenApproval = await gmSDK.checkTokenApproval(address, contract)
+console.info(`approval of: ` + tokenApproval / Math.pow(10, decimals))
+```
+
+### Fetching contract approval
+```js
+const address = '0x....'
+const contract = '0x....'
+const decimals = 18
+const contractApproval = await gmSDK.checkContractApproval(address, contract)
+console.info(`is approved: ` + contractApproval)
+```
+
+### Signing data
+```js
+const address = '0x....'
+const message = 'signing stuff'
+const signed = await gmSDK.signData(message, address)
+console.info(signed)
+```
+
+
 
 
 ## Development
