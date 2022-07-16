@@ -110,7 +110,7 @@ const METHOD_MINT = 'mint'
 const METHOD_MULTI_MINT = 'multiMint'
 const METHOD_SET_COLLECTION_ROYALTIES = 'setRoyaltiesForContract'
 const METHOD_CLAIM_INCENTIVES = 'claim'
-const METHOD_READ_INCENTIVES = 'getIncentive'
+const METHOD_CHECK_INCENTIVES = 'getIncentive'
 const METHOD_APPROVE_TOKEN = 'approve'
 const METHOD_CHECK_ALLOWANCE = 'allowance'
 const METHOD_PLACE_OFFER = 'placeOffer'
@@ -118,7 +118,7 @@ const METHOD_ACCEPT_OFFER = 'acceptOffer'
 const METHOD_CANCEL_OFFER = 'cancelOffer'
 
 export class GhostMarketN3SDK {
-    private provider: 'neoline' | 'o3' | 'private' = 'private'
+    private provider: string
     public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
@@ -137,7 +137,7 @@ export class GhostMarketN3SDK {
      * @param  {(arg:string)=>void} logger? // Optional logger function for logging debug messages.
      */
     constructor(
-        provider: 'neoline' | 'o3' | 'private',
+        provider: string,
         options: {
             apiKey?: string
             environment?: string
@@ -162,7 +162,7 @@ export class GhostMarketN3SDK {
         options.chainName = options.chainName || Network.Neo3
         this.chainName = this.isMainNet ? 'n3' : 'n3t'
         this._privateKey = options.privateKey
-        this.provider = provider
+        this.provider = provider || 'private'
         const apiConfig = {
             apiKey: options.apiKey,
             baseUrl: options.environment,
@@ -1410,10 +1410,10 @@ export class GhostMarketN3SDK {
     /** Get incentives for address
      * @param {string} currentAddress address used to check incentives.
      */
-    public async readIncentives(currentAddress: string) {
+    public async checkIncentives(currentAddress: string) {
         console.log(`reading incentives with ${this.provider} on ${this.chainName}`)
 
-        const argsReadIncentives = [
+        const argscheckIncentives = [
             {
                 type: 'Hash160',
                 value: getScriptHashFromAddress(currentAddress),
@@ -1429,8 +1429,8 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: this.contractIncentivesAddress,
-            operation: METHOD_READ_INCENTIVES,
-            args: argsReadIncentives,
+            operation: METHOD_CHECK_INCENTIVES,
+            args: argscheckIncentives,
             signers,
         }
 
@@ -1440,7 +1440,7 @@ export class GhostMarketN3SDK {
             return decoded
         } catch (e) {
             return console.error(
-                `Failed to execute readIncentives on ${this.contractIncentivesAddress} with error:`,
+                `Failed to execute checkIncentives on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
         }

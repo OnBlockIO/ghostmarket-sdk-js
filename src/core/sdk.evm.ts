@@ -2,11 +2,12 @@
 import Web3 from 'web3'
 import { BigNumber } from '@ethersproject/bignumber'
 import {
+    ERC20Contract,
     ERC20WrappedContract,
-    ExchangeV2Contract,
-    RoyaltiesRegistryContract,
     ERC721Contract,
     ERC1155Contract,
+    ExchangeV2Contract,
+    RoyaltiesRegistryContract,
     IncentivesContract,
 } from '../abi'
 import {
@@ -308,7 +309,7 @@ export class GhostMarketSDK {
 
     /** Cancel one order
      * @param {IEVMOrder} order order to cancel.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `cancelOrder`.
      */
     public async cancelOrder(order: IEVMOrder, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -331,7 +332,7 @@ export class GhostMarketSDK {
 
     /** Cancel multiple orders
      * @param {IEVMOrder[]} orders[] orders to cancel.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `bulkCancelOrders`.
      */
     public async bulkCancelOrders(orders: IEVMOrder[], txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -353,12 +354,12 @@ export class GhostMarketSDK {
     }
 
     /** Set royalties for contract
-     * @param {string} address contract address to set royalties for.
+     * @param {string} contract contract address to set royalties for.
      * @param {Royalties} royalties royalties settings to use for the contract.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `setRoyaltiesForContract`.
      */
     public async setRoyaltiesForContract(
-        address: string,
+        contract: string,
         royalties: Royalties,
         txObject: TxObject,
     ) {
@@ -373,7 +374,7 @@ export class GhostMarketSDK {
 
         try {
             const data = await RoyaltiesRegistryContractInstance.methods.setRoyaltiesByToken(
-                address,
+                contract,
                 royalties,
             )
             return this.sendMethod(data, txObject.from, royaltiesRegistryProxyAddress, undefined)
@@ -388,7 +389,7 @@ export class GhostMarketSDK {
     /** Wrap token or unwrap token
      * @param {string} amount value to wrap token from/to.
      * @param {boolean} isFromNativeToWrap true if native to wrap, or false from wrap to native
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `wrapToken`.
      */
     public async wrapToken(amount: string, isFromNativeToWrap: boolean, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -428,7 +429,7 @@ export class GhostMarketSDK {
 
     /** Approve NFT Contract
      * @param {string} contract nft contract to approve.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `approveContract`.
      */
     public async approveContract(contract: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -452,7 +453,7 @@ export class GhostMarketSDK {
 
     /** Approve Token Contract
      * @param {string} contract token contract to approve.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `approveToken`.
      */
     public async approveToken(contract: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -514,11 +515,38 @@ export class GhostMarketSDK {
         }
     }
 
+    /** Transfer ERC20
+     * @param {string} destination destination address .
+     * @param {string} contract contract of token to transfer.
+     * @param {string} amount amount to transfer.
+     * @param {TxObject} txObject transaction object to send when calling `transferERC20`.
+     */
+    public async transferERC20(
+        destination: string,
+        contract: string,
+        amount: string,
+        txObject: TxObject,
+    ) {
+        if (this._isReadonlyProvider) return
+        const contractAddress = contract
+        const ContractInstance = new this.web3.eth.Contract(ERC20Contract, contractAddress)
+
+        try {
+            const data = await ContractInstance.methods.transfer(destination, amount)
+            return this.sendMethod(data, txObject.from, contractAddress, undefined)
+        } catch (e) {
+            return console.error(
+                `transferERC20: failed to execute transfer on ${contractAddress} with error:`,
+                e,
+            )
+        }
+    }
+
     /** Transfer ERC721 NFT
      * @param {string} destination destination address of NFT.
      * @param {string} contract contract of NFT to transfer.
      * @param {string} tokenId token ID of NFT to transfer.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `transferERC721`.
      */
     public async transferERC721(
         destination: string,
@@ -548,15 +576,15 @@ export class GhostMarketSDK {
     /** Transfer Batch ERC1155 NFT
      * @param {string} destination destination address of NFT.
      * @param {string} contract contract of NFT to transfer.
-     * @param {string} tokenIds token ID of NFTs to transfer.
-     * @param {string} amounts amount of NFTs to transfer.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {string[]} tokenIds token ID of NFTs to transfer.
+     * @param {string[]} amounts amount of NFTs to transfer.
+     * @param {TxObject} txObject transaction object to send when calling `transferERC1155`.
      */
     public async transferERC1155(
         destination: string,
         contract: string,
-        tokenIds: string,
-        amounts: number,
+        tokenIds: string[],
+        amounts: number[],
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
@@ -583,7 +611,7 @@ export class GhostMarketSDK {
     /** Burn ERC721 NFT
      * @param {string} contract contract of NFT to transfer.
      * @param {string} tokenId token ID of NFTs to transfer.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `burnERC721`.
      */
     public async burnERC721(contract: string, tokenId: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -591,7 +619,7 @@ export class GhostMarketSDK {
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
-            const data = await ContractInstance.methods.burn(txObject.from, tokenId)
+            const data = await ContractInstance.methods.burn(tokenId)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             return console.error(
@@ -605,7 +633,7 @@ export class GhostMarketSDK {
      * @param {string} contract contract of NFT to transfer.
      * @param {string} tokenId token ID of NFTs to transfer.
      * @param {string} amount amount of NFTs to transfer.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `burnERC1155`.
      */
     public async burnERC1155(
         contract: string,
@@ -618,7 +646,7 @@ export class GhostMarketSDK {
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
         try {
-            const data = await ContractInstance.methods.burn(txObject.from, tokenId, amount)
+            const data = await ContractInstance.methods.burn(tokenId, amount)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             return console.error(
@@ -632,7 +660,7 @@ export class GhostMarketSDK {
      * @param {string} creator creator of the NFT.
      * @param {any} royalties royalties of the NFT.
      * @param {string} externalURI externalURI of the NFT.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `mintERC721`.
      */
     public async mintERC721(
         creator: string,
@@ -669,7 +697,7 @@ export class GhostMarketSDK {
      * @param {number} amount amount of NFT to mint.
      * @param {any} royalties royalties of the NFT.
      * @param {string} externalURI externalURI of the NFT.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `mintERC1155`.
      */
     public async mintERC1155(
         creator: string,
@@ -707,7 +735,7 @@ export class GhostMarketSDK {
     /** Check incentives for address
      * @param {string} accountAddress address used to check.
      */
-    public async readIncentives(accountAddress: string) {
+    public async checkIncentives(accountAddress: string) {
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
@@ -719,14 +747,14 @@ export class GhostMarketSDK {
             return this.callMethod(data, accountAddress)
         } catch (e) {
             return console.error(
-                `readIncentives: failed to execute incentives on ${IncentivesContractAddressAddress} with error:`,
+                `checkIncentives: failed to execute incentives on ${IncentivesContractAddressAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Claim incentives
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `claimIncentives`.
      */
     public async claimIncentives(txObject: TxObject) {
         if (this._isReadonlyProvider) return
@@ -950,17 +978,39 @@ export class GhostMarketSDK {
         }
     }
 
+    private _supportsEIP1559(networkName: string): boolean {
+        switch (networkName) {
+            case Network.Avalanche:
+                return true
+            case Network.AvalancheTestnet:
+                return true
+            case Network.Ethereum:
+                return true
+            case Network.EthereumTestnet:
+                return true
+            case Network.BSC:
+                return false
+            case Network.BSCTestnet:
+                return false
+            case Network.Polygon:
+                return true
+            case Network.PolygonTestnet:
+                return true
+            default:
+                return false
+        }
+    }
+
     sendMethod(
         dataOrMethod: any,
         from: string,
+        _to: string,
         value: string | undefined,
-        type = '', // 0x2
     ): Promise<any> {
-        console.log(from)
+        const type = this._supportsEIP1559(this._chainName) ? '0x2' : ''
         return new Promise((resolve, reject) =>
             dataOrMethod
-                //.send({ from, value, type })
-                .send({ from })
+                .send({ from, value, type })
                 // .then((res:any) => resolve(res.transactionHash)) // unused as this would mean waiting for the tx to be included in a block
                 .on('transactionHash', (hash: string) => resolve(hash)) // returns hash instantly
                 .catch((err: any) => reject(err)),

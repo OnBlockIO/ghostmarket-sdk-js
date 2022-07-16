@@ -82,6 +82,8 @@ const customProvider = new HDWalletProvider(KEY, rpcUrl)
 const customProvider = new HDWalletProvider(MNEMONIC, rpcUrl)
 // Create instance of GhostMarketSDK - EVM
 const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
+// Connected address
+const address = customProvider.addresses[0]
 //////// EVM provider options ////////
 
 
@@ -89,6 +91,8 @@ const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 const customProvider = 'neoline' // neoline, o3, or private
 // Create instance of GhostMarketN3SDK - Neo N3
 const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
+// Connected address
+const address = customProvider.addresses[0]
 //////// Neo N3 provider options ////////
 
 
@@ -102,7 +106,7 @@ const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
 
 ```js
 // Fetch 1 GhostMarket asset.
-const { asset } = await gmSDK.api.getAssets({ limit: 1 });
+const { asset } = await gmSDK.api.getAssetsV2({ limit: 1 });
 console.info(asset)
 ```
 
@@ -110,56 +114,175 @@ console.info(asset)
 
 ```js
 // Fetch 10 GhostMarket events.
-const { events } = await gmSDK.api.getEvents({ limit: 10 });
+const { events } = await gmSDK.api.getEventsV2({ limit: 10 });
 console.info(events)
 ```
 
 ### Fetching collections
 ```js
 // Fetch 10 GhostMarket collections.
-const { collections } = await gmSDK.api.getCollections({ limit: 10 })
+const { collections } = await gmSDK.api.getCollectionsV2({ limit: 10 })
 console.info(collections)
 ```
 
-### Fetching incentives
+### Fetching offers 
 ```js
-const address = '0x....'
-const incentives = await gmSDK.readIncentives(address)
-const availableIncentives = incentives ? incentives.availableIncentives / Math.pow(10, 8) : 0
-console.info(availableIncentives)
+// Fetch offers from asset.
+const chain = ''
+const contract = '0x....'
+const tokenId = ''
+const { offers } = await gmSDK.api.getAssetOffersV2({
+  chain,
+  contract,
+  tokenId
+})
 ```
 
-### Claiming incentives
+### Fetching orders 
 ```js
-const address = '0x....'
-const claim = await gmSDK.claimIncentives(address)
-console.info(claim)
+// Fetch orders from asset.
+const chain = ''
+const contract = '0x....'
+const tokenId = ''
+const { orders } = await gmSDK.api.getAssetOrdersV2({
+  chain,
+  contract,
+  tokenId
+})
+```
+
+prepareMatchOrders
+matchOrders
+cancelOrder
+bulkCancelOrders
+
+
+### Set contract royalties
+```js
+const contract = '0x....'
+const royalties = [['0x...','1000']] // array of recipient/value array (in bps)
+const royalties = await gmSDK.setRoyaltiesForContract(contract, royalties, {from: address})
+console.info(`tx hash: ${royalties}`)
+```
+
+### Wrap / Unwrap native token
+```js
+const amount = '1' // in wei
+const isWrap = true // set to false to unwrap
+const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})
+console.info(`tx hash: ${wrap}`)
+```
+
+### Approve token
+```js
+const contract = '0x....'
+const approval = await gmSDK.approveToken(contract, {from: address})
+console.info(`tx hash: ${approval}`)
+```
+
+### Approve contract
+```js
+const contract = '0x....'
+const approval = await gmSDK.approveContract(contract, {from: address})
+console.info(`tx hash: ${approval}`)
 ```
 
 ### Fetching token approval
 ```js
-const address = '0x....'
 const contract = '0x....'
-const decimals = 18
-const tokenApproval = await gmSDK.checkTokenApproval(address, contract)
-console.info(`approval of: ` + tokenApproval / Math.pow(10, decimals))
+const approval = await gmSDK.checkTokenApproval(contract, address)
+console.info(`amount approved: ` + tokenApproval)
 ```
 
 ### Fetching contract approval
 ```js
-const address = '0x....'
 const contract = '0x....'
-const decimals = 18
-const contractApproval = await gmSDK.checkContractApproval(address, contract)
-console.info(`is approved: ` + contractApproval)
+const approval = await gmSDK.checkContractApproval(contract, address)
+console.info(`is contract approved: ` + contractApproval)
+```
+
+### Transfer ERC20 NFT
+```js
+const destination = '0x....'
+const contract = '0x....'
+const amount = '1' // in wei
+const transfer = await gmSDK.transferERC20(destination, contract, amount, {from: address})
+console.info(`tx hash: ${transfer}`)
+```
+
+### Transfer ERC721 NFT
+```js
+const destination = '0x....'
+const contract = '0x....'
+const tokenId = ''
+const transfer = await gmSDK.transferERC721(destination, contract, tokenId, {from: address})
+console.info(`tx hash: ${transfer}`)
+```
+
+### Transfer ERC1155 GHOST NFT
+```js
+const destination = '0x....'
+const contract = '0x....'
+const tokenId = ''
+const amount = 1
+const transfer = await gmSDK.transferERC1155(destination, contract, [tokenId], [amount], {from: address})
+console.info(`tx hash: ${transfer}`)
+```
+
+### Burn ERC721 GHOST NFT
+```js
+const contract = '0x....'
+const tokenId = ''
+const burn = await gmSDK.mintERC721(contract, tokenId, {from: address})
+console.info(`tx hash: ${burn}`)
+```
+
+### Burn ERC1155 GHOST NFT
+```js
+const contract = '0x....'
+const tokenId = ''
+const amount = 1
+const burn = await gmSDK.mintERC721(contract, tokenId, amount, {from: address})
+console.info(`tx hash: ${burn}`)
+```
+
+### Minting ERC721 GHOST NFT
+```js
+const creator = '0x....'
+const royalties = []
+const externalURI = 'ipfs://xxx'
+const token = await gmSDK.mintERC721(creator, [], externalURI, {from: address})
+console.info(`tx hash: ${token}`)
+```
+
+### Minting ERC1155 GHOST NFT
+```js
+const creator = '0x....'
+const amount = 1
+const royalties = []
+const externalURI = 'ipfs://xxx'
+const token = await gmSDK.mintERC1155((creator, amount, [], externalURI, {from: address}))
+console.info(`tx hash: ${token}`)
+```
+
+### Fetching incentives
+```js
+const incentives = await gmSDK.checkIncentives(address)
+const availableIncentives = incentives ? incentives.availableIncentives / Math.pow(10, 8) : 0
+console.info(`available incentives: ${availableIncentives}`)
+```
+
+### Claiming incentives
+```js
+const claim = await gmSDK.claimIncentives({from: address})
+console.info(`tx hash: ${claim}`)
 ```
 
 ### Signing data
 ```js
-const address = '0x....'
 const message = 'signing stuff'
 const signed = await gmSDK.signData(message, address)
-console.info(signed)
+console.info(`signed data: ${signed}`)
 ```
 
 
