@@ -11,15 +11,30 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Usage](#getting-started)
-  - [Getting Assets](#getting-assets)
-  - [Getting Balances](#getting-balances)
-  - [Getting Orders](#getting-orders)
-  - [Selling Assets](#selling-assets)
-  - [Buying Assets](#buying-assets)
-  - [Making Offers](#making-offers)
-  - [Accepting Offers](#accepting-offers)
-  - [Transfers](#transfers)
-  - [Events](#events)
+    - [Getting Assets](#getting-assets)
+    - [Getting Events](#getting-events)
+    - [Getting Collections](#getting-collections)
+    - [Getting Offers](#getting-offers)
+    - [Getting Orders](#getting-orders)
+    - [Getting NFT balances](#getting-nft-balances)
+    - [Getting FT balances](#getting-ft-balances)
+    - [Getting Token Approval](#getting-token-approval)
+    - [Getting Contract Approval](#getting-contract-approval)
+    - [Getting Incentives](#getting-incentives)
+    - [Signing Data](#signing-data)
+    - [Setting Contract Royalties](#setting-contract-royalties)
+    - [Wrap/Unwrap Token](#wrap-unwrap-token)
+    - [Approve Token](#approve-token)
+    - [Approve Contract](#approve-contract)
+    - [Transfer ERC20](#transfer-erc20)
+    - [Transfer ERC721](#transfer-erc721)
+    - [Transfer ERC1155](#transfer-erc1155)
+    - [Burn ERC721](#burn-erc721)
+    - [Burn ERC1155](#burn-erc1155)
+    - [Mint ERC721](#mint-erc721)
+    - [Mint ERC1155](#mint-erc1155)
+    - [Claim Incentives](#claim-incentives)
+
 - [Development](#development)
 
 
@@ -57,9 +72,11 @@ const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
 const chainName = Network.Ethereum // see below for chain values
 
-/* CHAIN values : 
-    Network.Ethereum / Network.EthereumTestnet / Network.Polygon / Network.PolygonTestnet
-    Network.BSC / Network.BSCTestnet / Network.Avalanche / Network.AvalancheTestnet
+/* chainName values : 
+    Network.Ethereum / Network.EthereumTestnet
+    Network.Polygon / Network.PolygonTestnet
+    Network.BSC / Network.BSCTestnet
+    Network.Avalanche / Network.AvalancheTestnet
     Network.Neo3 / Network.Neo3Testnet
     */
 
