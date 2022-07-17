@@ -88,10 +88,14 @@ interface IMintItem {
 }
 
 // not included in main frontend lib yet
-interface ICollectionRoyalties {
-    contract: string // NFT contract hash.
-    royalties: number // Royalties value in BPS.
-    royaltiesRecipient: string // Royalties recipient.
+interface Royalties {
+    royaltiesRecipients: RoyaltyRecipient[]
+}
+
+// not included in main frontend lib yet
+interface RoyaltyRecipient {
+    recipient: string
+    amount: number
 }
 
 // not included in main frontend lib yet
@@ -111,6 +115,7 @@ const METHOD_MULTI_MINT = 'multiMint'
 const METHOD_SET_COLLECTION_ROYALTIES = 'setRoyaltiesForContract'
 const METHOD_CLAIM_INCENTIVES = 'claim'
 const METHOD_CHECK_INCENTIVES = 'getIncentive'
+const METHOD_CHECK_TOKEN_BALANCE = 'balanceOf'
 const METHOD_APPROVE_TOKEN = 'approve'
 const METHOD_CHECK_ALLOWANCE = 'allowance'
 const METHOD_PLACE_OFFER = 'placeOffer'
@@ -157,7 +162,7 @@ export class GhostMarketN3SDK {
             ? N3_MAINNET_CONTRACTS.INCENTIVES
             : N3_TESTNET_CONTRACTS.INCENTIVES
         options.privateKey = options.privateKey || ''
-        options.rpcUrl = options.rpcUrl || 'https://n3seed1.ngd.network:10332'
+        options.rpcUrl = options.rpcUrl || ''
         this._providerRPCUrl = options.rpcUrl
         options.chainName = options.chainName || Network.Neo3
         this.chainName = this.isMainNet ? 'n3' : 'n3t'
@@ -170,17 +175,23 @@ export class GhostMarketN3SDK {
         this.api = new GhostMarketApi(apiConfig)
         // Logger: Default to nothing.
         this.logger = logger || ((arg: string) => arg)
+        if (provider === 'private' && !options.privateKey) {
+            console.error('Please set a private key!')
+            return
+        }
     }
 
     getProvider(_initialize?: boolean) {
-        if (this.provider) return this.provider
-        const win = window as any
+        console.log(this.provider)
 
         switch (this.provider) {
             case 'private': {
+                console.log(this._providerRPCUrl, this._privateKey, this.isMainNet)
                 return new N3PrivateProvider(this._providerRPCUrl, this._privateKey, this.isMainNet)
             }
             case 'neoline': {
+                // eslint-disable-next-line no-case-declarations
+                const win = window as any
                 if (!win.NEOLineN3) {
                     throw new Error('Neoline not installed. Please install it and try again.')
                 }
@@ -188,65 +199,12 @@ export class GhostMarketN3SDK {
             }
             case 'o3':
             default:
+                // eslint-disable-next-line no-case-declarations
+                const win = window as any
                 if (!win.NEOLineN3) {
                     throw new Error('O3 not installed. Please install it and try again.')
                 }
                 return win.neo3Dapi
-        }
-    }
-
-    async login(): Promise<any> {
-        return await this.loginDapi()
-    }
-
-    async loginDapi() {
-        const dapi = this.getProvider()
-
-        try {
-            const provider = await dapi.getProvider()
-            const account = await dapi.getAccount()
-            const results = await dapi.getBalance({
-                params: [
-                    {
-                        address: account.address,
-                        contracts: [] as string[], // should be removed?,
-                    },
-                ],
-                // network: this.isMainNet ? 'N3MainNet' : 'TestNet'
-            } as any)
-
-            const accountData = {
-                chain: this.chainName,
-                providerHint: this.provider,
-                provider: provider.name.toLowerCase(),
-                version: provider.version,
-                label: account.label,
-                address: account.address,
-                balances: results[account.address].map((b: any) => {
-                    return {
-                        contract: b.contract,
-                        symbol: b.symbol.toUpperCase(), // uppercase to fix bNEO vs BNEO issue
-                        amount: parseFloat(b.amount),
-                    }
-                }),
-                theme: provider.extra.theme ? provider.extra.theme : 'dark',
-                currency: provider.extra.currency ? provider.extra.currency : 'USD',
-            }
-            // console.log('accountData', accountData)
-            return accountData
-        } catch ({ type, description, data }: any) {
-            switch (type) {
-                case 'NO_PROVIDER':
-                    throw new Error('No provider available.')
-                case 'RPC_ERROR':
-                    throw new Error(
-                        'There was an error when broadcasting this transaction to the network.',
-                    )
-                case 'CANCELED':
-                    throw new Error('The user has canceled this transaction.')
-                default:
-                    throw new Error(description as string)
-            }
         }
     }
 
@@ -366,43 +324,11 @@ export class GhostMarketN3SDK {
         })
     }
 
-    /** Sign Data
-     * @param {string} dataToSign data to sign.
-     */
-    public async signData(dataToSign: string) {
-        const neo = this.getProvider(true)
-        try {
-            const signedMessage = await neo.signMessage({ message: dataToSign })
-
-            const { publicKey, message, salt, data } = signedMessage
-
-            console.log('Public key used to sign:', publicKey)
-            console.log('Original message:', message)
-            console.log('Salt added to message:', salt)
-            console.log('Signed data:', data)
-
-            return { signature: data, random: salt, pub_key: publicKey }
-        } catch ({ type, description, data }: any) {
-            switch (type) {
-                case 'NO_PROVIDER':
-                    throw new Error('No provider available.')
-                case 'RPC_ERROR':
-                    throw new Error(
-                        'There was an error when broadcasting this transaction to the network.',
-                    )
-                case 'CANCELED':
-                    throw new Error('The user has canceled this transaction.')
-                default:
-                    throw new Error(description as string)
-            }
-        }
-    }
-
     /** Buy one or more NFT(s)
      * @param {IBuyItem[]} items details.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async buyMultiple(items: IBuyItem[], currentAddress: string) {
+    public async buyMultiple(items: IBuyItem[], accountAddress: string) {
         const isBuyBatch = items.length > 1
 
         console.log(
@@ -419,7 +345,7 @@ export class GhostMarketN3SDK {
             const owner = item.ownerAddress
             const priceNFTFormatted = item.price
 
-            if (currentAddress == owner) {
+            if (accountAddress == owner) {
                 argsBuyMultiple.push({
                     scriptHash: this.contractExchangeAddress,
                     operation: METHOD_CANCEL_SALE,
@@ -442,7 +368,7 @@ export class GhostMarketN3SDK {
                     args: [
                         {
                             type: 'Hash160', // UInt160 from
-                            value: getScriptHashFromAddress(currentAddress),
+                            value: getScriptHashFromAddress(accountAddress),
                         },
                         {
                             type: 'ByteArray', // ByteString auctionId
@@ -459,7 +385,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 16,
                 allowedContracts,
             },
@@ -474,7 +400,9 @@ export class GhostMarketN3SDK {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
             return console.error(
-                `Failed to execute buyMultiple on ${this.contractExchangeAddress} with error:`,
+                `buyMultiple: failed to execute ${
+                    accountAddress == items[0].ownerAddress ? METHOD_CANCEL_SALE : METHOD_BID_TOKEN
+                } on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -482,13 +410,13 @@ export class GhostMarketN3SDK {
 
     /** Create one or more sell order(s)
      * @param {ISellItem[]} items details.
-     * @param {string} currentAddress address used to sign transaction.
-     * @param {Date} currentAddress start date of listing.
-     * @param {Date} currentAddress end date of listing.
+     * @param {string} accountAddress address used to sign transaction.
+     * @param {Date} startDate start date of listing.
+     * @param {Date} endDate end date of listing.
      */
     public async sellMultiple(
         items: ISellItem[],
-        currentAddress: string,
+        accountAddress: string,
         startDate: Date,
         endDate: Date,
     ) {
@@ -526,7 +454,7 @@ export class GhostMarketN3SDK {
                     },
                     {
                         type: 'Hash160', // UInt160 from
-                        value: getScriptHashFromAddress(currentAddress),
+                        value: getScriptHashFromAddress(accountAddress),
                     },
                     {
                         type: 'Hash160', // UInt160 quoteScriptHash
@@ -566,7 +494,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 16,
                 allowedContracts,
             },
@@ -581,7 +509,7 @@ export class GhostMarketN3SDK {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
             return console.error(
-                `Failed to execute sellMultiple on ${this.contractExchangeAddress} with error:`,
+                `sellMultiple: failed to execute ${METHOD_LIST_TOKEN} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -589,9 +517,9 @@ export class GhostMarketN3SDK {
 
     /** Place Bid on NFT Auction
      * @param {IBidItem} item details.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async buyAuction(item: IBidItem, currentAddress: string) {
+    public async buyAuction(item: IBidItem, accountAddress: string) {
         console.log(`bidding on nft with ${this.provider} on ${this.chainName}`)
 
         const currentBidFormatted = item.bidPrice || 0
@@ -599,7 +527,7 @@ export class GhostMarketN3SDK {
         const argsBidToken = [
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'ByteArray', // ByteString auctionId
@@ -619,7 +547,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 16,
                 allowedContracts,
             },
@@ -635,7 +563,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute buyAuction on ${this.contractExchangeAddress} with error:`,
+                `buyAuction: failed to execute ${METHOD_BID_TOKEN} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -643,9 +571,9 @@ export class GhostMarketN3SDK {
 
     /** Put NFT on Auction
      * @param {IAuctionItem} item details.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async listAuction(item: IAuctionItem, currentAddress: string) {
+    public async listAuction(item: IAuctionItem, accountAddress: string) {
         console.log(`auction nft with ${this.provider} on ${this.chainName}`)
 
         let extensionPeriod = item.extensionPeriod ? item.extensionPeriod * 60 : 0 // min 0 - max 1h (3600)
@@ -675,7 +603,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'Hash160', // UInt160 quoteScriptHash
@@ -719,7 +647,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 16,
                 allowedContracts,
             },
@@ -735,7 +663,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute listAuction on ${this.contractExchangeAddress} with error:`,
+                `listAuction: failed to execute ${METHOD_LIST_TOKEN} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -743,15 +671,15 @@ export class GhostMarketN3SDK {
 
     /** Claim ended NFT Auction
      * @param {string} contractAuctionId on chain contract auction ID.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async claimAuction(contractAuctionId: string, currentAddress: string) {
+    public async claimAuction(contractAuctionId: string, accountAddress: string) {
         console.log(`claiming nft auction with ${this.provider} on ${this.chainName}`)
 
         const argsBidToken = [
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'ByteArray', // ByteString auctionId
@@ -765,7 +693,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
@@ -780,7 +708,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute claimAuction on ${this.contractExchangeAddress} with error:`,
+                `claimAuction: failed to execute ${METHOD_BID_TOKEN} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -788,9 +716,9 @@ export class GhostMarketN3SDK {
 
     /** Create a single nft offer or a collection offer
      * @param {IOfferItem} item details.
-     * @param {string} currentAddress used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async placeOffer(item: IOfferItem, currentAddress: string) {
+    public async placeOffer(item: IOfferItem, accountAddress: string) {
         console.log(`placing offer on nft with ${this.provider} on ${this.chainName}`)
 
         const argsPlaceOffer = [
@@ -800,7 +728,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'Hash160', // UInt160 quoteScriptHash
@@ -828,7 +756,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 16,
                 allowedContracts,
             },
@@ -844,33 +772,45 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute placeOffer on ${this.contractExchangeAddress} with error:`,
+                `placeOffer: failed to execute ${METHOD_PLACE_OFFER} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Accept or cancel a single nft offer or a collection offer
-     * @param {IOfferItem} item details.
-     * @param {string} currentAddress used to sign transaction.
+     * @param {auctionId} string auctionId of offer to accept or cancel.
+     * @param {quoteScriptHash} string contract of currency to use in offer.
+     * @param {tokenId} string tokenId of nft to use in offer. Only used for collection offer accept.
      * @param {boolean} isCancellation used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async processOffer(item: IOfferItem, currentAddress: string, isCancellation: boolean) {
-        console.log(`accept offer on nft with ${this.provider} on ${this.chainName}`)
+    public async processOffer(
+        auctionId: string,
+        quoteScriptHash: string,
+        tokenId: string,
+        isCancellation: boolean,
+        accountAddress: string,
+    ) {
+        console.log(
+            `${isCancellation ? 'cancel offer' : 'accept offer'} on nft with ${this.provider} on ${
+                this.chainName
+            }`,
+        )
 
         const argsAcceptOffer = [
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'ByteArray', // ByteString auctionId
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                value: numberToByteString(item.auctionId!),
+                value: numberToByteString(auctionId),
             },
             {
                 type: 'ByteArray', // ByteString tokenId
-                value: numberToByteString(item.tokenId),
+                value: tokenId ? numberToByteString(tokenId) : '',
             },
         ]
 
@@ -878,22 +818,22 @@ export class GhostMarketN3SDK {
             {
                 type: 'ByteArray', // ByteString auctionId
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                value: numberToByteString(item.auctionId!),
+                value: numberToByteString(auctionId),
             },
         ]
 
-        const allowedContracts = [this.contractExchangeAddress, item.quoteScriptHash]
+        const allowedContracts = [this.contractExchangeAddress, quoteScriptHash]
 
         const signers = isCancellation
             ? [
                   {
-                      account: getScriptHashFromAddress(currentAddress),
+                      account: getScriptHashFromAddress(accountAddress),
                       scopes: 1,
                   },
               ]
             : [
                   {
-                      account: getScriptHashFromAddress(currentAddress),
+                      account: getScriptHashFromAddress(accountAddress),
                       scopes: 16,
                       allowedContracts,
                   },
@@ -909,7 +849,9 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute processOffer on ${this.contractExchangeAddress} with error:`,
+                `processOffer: failed to execute ${
+                    isCancellation ? METHOD_CANCEL_OFFER : METHOD_ACCEPT_OFFER
+                } on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -917,16 +859,18 @@ export class GhostMarketN3SDK {
 
     /** Edit NFT Listing
      * @param {string} contractAuctionId on chain contract auction ID.
-     * @param {string} currentAddress address used to sign transaction.
      * @param {string} newPrice new price to use for the listing.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async editPrice(contractAuctionId: string, currentAddress: string, newPrice: string) {
-        console.log(`edit listing price with ${this.provider} on ${this.chainName}`)
+    public async editPrice(contractAuctionId: string, newPrice: string, accountAddress: string) {
+        console.log(
+            `edit auction ${contractAuctionId} listing price with ${this.provider} on ${this.chainName}`,
+        )
 
         const argsEditSale = [
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'ByteArray', // ByteString auctionId
@@ -958,7 +902,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
@@ -973,23 +917,108 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute editPrice on ${this.contractExchangeAddress} with error:`,
+                `editPrice: failed to execute ${METHOD_EDIT_SALE} on ${this.contractExchangeAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    // cancel multiple order
+
+    /** Set royalties for contract
+     * @param {string} contract contract address to set royalties for.
+     * @param {Royalties} royalties royalties settings to use for the contract.
+     * @param {string} accountAddress address used to sign transaction.
+     */
+    public async setRoyaltiesForContract(
+        contract: string,
+        royalties: Royalties,
+        accountAddress: string,
+    ) {
+        console.log(`edit collection royalties with ${this.provider} on ${this.chainName}`)
+
+        let argsSetCollectionRoyalties = [
+            {
+                type: 'Hash160', // UInt160 contract
+                value: contract,
+            },
+            {
+                type: 'Array', // Array
+                value: [],
+            },
+        ] as IArgs[]
+
+        if (royalties.royaltiesRecipients[0].amount > 0) {
+            argsSetCollectionRoyalties = [
+                {
+                    type: 'Hash160', // UInt160 contract
+                    value: contract,
+                },
+                {
+                    type: 'Array', // Array
+                    value: [
+                        {
+                            type: 'Array', // Array
+                            value: [
+                                {
+                                    type: 'Hash160', // UInt160 address
+                                    value: getScriptHashFromAddress(
+                                        royalties.royaltiesRecipients[0].recipient,
+                                    ),
+                                },
+                                {
+                                    type: 'Integer', // BigInteger value
+                                    value: royalties.royaltiesRecipients[0].amount,
+                                },
+                            ] as IArgs[],
+                        },
+                    ] as IArgs[],
+                },
+            ]
+        }
+
+        const allowedContracts = [contract.substring(2), this.contractExchangeAddress]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(accountAddress),
+                scopes: 16,
+                allowedContracts,
+            },
+            {
+                account: contract,
+                scopes: 16,
+                allowedContracts,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this.contractExchangeAddress,
+            operation: METHOD_SET_COLLECTION_ROYALTIES,
+            args: argsSetCollectionRoyalties,
+            signers,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            return console.error(
+                `setRoyaltiesForContract: Failed to execute ${METHOD_SET_COLLECTION_ROYALTIES} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Approve Token Contract
-     * @param {contractHash} string contract to approve.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} contract contract to approve.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async approveToken(contractHash: string, currentAddress: string) {
-        console.log(`approve ${contractHash} with ${this.provider} on ${this.chainName}`)
+    public async approveToken(contract: string, accountAddress: string) {
+        console.log(`approve ${contract} with ${this.provider} on ${this.chainName}`)
 
         const argsApproveToken = [
             {
                 type: 'Hash160', // UInt160 from_address
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'Hash160', // UInt160 spender
@@ -1001,16 +1030,14 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        let invokeParams = null
-
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
-        invokeParams = {
-            scriptHash: contractHash,
+        const invokeParams = {
+            scriptHash: contract,
             operation: METHOD_APPROVE_TOKEN,
             args: argsApproveToken,
             signers,
@@ -1020,28 +1047,23 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute approveToken on ${this.contractExchangeAddress} with error:`,
+                `approveToken: failed to execute ${METHOD_APPROVE_TOKEN} on ${contract} with error:`,
                 e,
             )
         }
     }
 
     /** Check NEP17 Token Contract Approval
-     * @param {address} string address to check approval.
-     * @param {decimals} number decimals of contract to check approval.
-     * @param {contract} string address of contract to check approval.
+     * @param {string} contract token contract to check approval.
+     * @param {string} accountAddress address used to check.
      */
-    public async checkTokenApproval(address: string, decimals: number, contract: string) {
-        console.log(
-            `checking ${contract} approval with ${this.provider} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
-            }`,
-        )
+    public async checkTokenApproval(contract: string, accountAddress: string) {
+        console.log(`reading ${contract} approval with ${this.provider} on N3 ${this.chainName}`)
 
         const argsCheckAllowance = [
             {
                 type: 'Hash160',
-                value: getScriptHashFromAddress(address),
+                value: getScriptHashFromAddress(accountAddress),
             },
             {
                 type: 'Hash160',
@@ -1051,7 +1073,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(address),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
@@ -1065,22 +1087,81 @@ export class GhostMarketN3SDK {
 
         try {
             const response = await this.invokeRead(invokeParams)
-            const decoded = response.stack[0].value / Math.pow(10, decimals)
+            if (response.exception) return `Exception: ${response.exception}`
+            const decoded = response.stack[0].value
             return decoded
         } catch (e) {
             return console.error(
-                `Failed to execute checkTokenApproval on ${contract} with error:`,
+                `checkTokenApproval: failed to execute ${METHOD_CHECK_ALLOWANCE} on ${contract} with error:`,
                 e,
             )
         }
     }
 
-    /** Transfer NEP11 NFT
-     * @param {ITransferItem[]} items details.
-     * @param {string} currentAddress address used to sign transaction.
+    /** Transfer NEP17 Token
+     * @param {string} destination destination address .
+     * @param {string} contract contract of token to transfer.
+     * @param {string} amount amount to transfer.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async transfer(items: ITransferItem[], currentAddress: string) {
+    public async transferNEP17(
+        destination: string,
+        contract: string,
+        amount: string,
+        accountAddress: string,
+    ) {
+        console.log(`transfer token with ${this.provider} on ${this.chainName}`)
+
+        const argsTransfer = [
+            {
+                type: 'Hash160', // frm
+                value: getScriptHashFromAddress(accountAddress),
+            },
+            {
+                type: 'Hash160', // to
+                value: getScriptHashFromAddress(destination),
+            },
+            {
+                type: 'Integer', // amount
+                value: amount,
+            },
+            {
+                type: 'String', // data
+                value: '',
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(accountAddress),
+                scopes: 1,
+            },
+        ]
+
+        const invokeParams = {
+            scriptHash: contract,
+            operation: METHOD_TRANSFER,
+            args: argsTransfer,
+            signers,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            return console.error(
+                `transferNEP17: failed to execute ${METHOD_TRANSFER} on ${contract} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Transfer one or more NEP11 NFT
+     * @param {ITransferItem[]} items details.
+     * @param {string} accountAddress address used to sign transaction.
+     */
+    public async transferNEP11(items: ITransferItem[], accountAddress: string) {
         const isTransferBatch = items.length > 1
+
         console.log(
             `transfer ${isTransferBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
@@ -1114,10 +1195,11 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
+
         const invokeParamsMultiple = {
             invokeArgs: argsTransferMultiple,
             fee: (0.01 * items.length).toString(),
@@ -1128,18 +1210,19 @@ export class GhostMarketN3SDK {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
             return console.error(
-                `Failed to execute transfer on ${items[0].contract} with error:`,
+                `transferNEP11: failed to execute ${METHOD_TRANSFER} on ${items[0].contract} with error:`,
                 e,
             )
         }
     }
 
-    /** Burn NEP11 NFT
+    /** Burn one or more NEP11 NFT
      * @param {IBurnItem[]} items details.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async burn(items: IBurnItem[], currentAddress: string) {
+    public async burnNEP11(items: IBurnItem[], accountAddress: string) {
         const isBurnBatch = items.length > 1
+
         console.log(
             `burn ${isBurnBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
                 this.chainName
@@ -1165,7 +1248,7 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
@@ -1178,15 +1261,18 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            return console.error(`Failed to execute burn on ${items[0].contract} with error:`, e)
+            return console.error(
+                `burnNEP11: failed to execute ${METHOD_BURN} on ${items[0].contract} with error:`,
+                e,
+            )
         }
     }
 
-    /** Mint NEP11 NFT
+    /** Mint one or more NEP11 NFT
      * @param {IMintItem} item details.
-     * @param {string} currentAddress address used to sign transaction.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async mint(item: IMintItem, currentAddress: string) {
+    public async mintNEP11(item: IMintItem, accountAddress: string) {
         const isMintBatch = item.quantity > 1
         console.log(
             `minting ${isMintBatch ? 'bulk' : 'single'} nft with ${this.provider} on ${
@@ -1200,7 +1286,7 @@ export class GhostMarketN3SDK {
             this.isMainNet ? N3_MAINNET_CONTRACTS.GHOST_NEP11 : N3_TESTNET_CONTRACTS.GHOST_NEP11,
         ]
 
-        const creator = currentAddress
+        const creator = accountAddress
         const type = item.type
         const hasLocked = false
         const attributes: {
@@ -1302,18 +1388,19 @@ export class GhostMarketN3SDK {
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 16,
                 allowedContracts,
             },
         ]
+
         const invokeParams = {
             scriptHash: this.isMainNet
                 ? N3_MAINNET_CONTRACTS.GHOST_NEP11
                 : N3_TESTNET_CONTRACTS.GHOST_NEP11,
             operation: isMintBatch ? METHOD_MULTI_MINT : METHOD_MINT,
             args: argsMint,
-            fee: '0',
+            fee: (0.01 * item.quantity).toString(),
             signers,
         }
 
@@ -1321,7 +1408,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute mint on ${
+                `mintNEP11: failed to execute ${isMintBatch ? METHOD_MULTI_MINT : METHOD_MINT} on ${
                     this.isMainNet
                         ? N3_MAINNET_CONTRACTS.GHOST_NEP11
                         : N3_TESTNET_CONTRACTS.GHOST_NEP11
@@ -1331,98 +1418,63 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Set royalties for contract
-     * @param {ICollectionRoyalties} collection details.
-     * @param {string} currentAddress address used to sign transaction.
+    /** Check one token balance for address
+     * @param {string} contract token contract to check approval.
+     * @param {string} accountAddress address used to check.
      */
-    public async collectionEditRoyalties(collection: ICollectionRoyalties, currentAddress: string) {
-        console.log(`edit collection royalties with ${this.provider} on ${this.chainName}`)
+    public async checkTokenBalance(contract: string, accountAddress: string) {
+        console.log(`checking ${contract} balance with ${this.provider} on ${this.chainName}`)
 
-        let argsSetCollectionRoyalties = [
+        const argsCheckTokenBalance = [
             {
-                type: 'Hash160', // UInt160 contract
-                value: collection.contract,
-            },
-            {
-                type: 'Array', // Array
-                value: [],
+                type: 'Hash160',
+                value: getScriptHashFromAddress(accountAddress),
             },
         ] as IArgs[]
 
-        if (collection.royalties > 0) {
-            argsSetCollectionRoyalties = [
-                {
-                    type: 'Hash160', // UInt160 contract
-                    value: collection.contract,
-                },
-                {
-                    type: 'Array', // Array
-                    value: [
-                        {
-                            type: 'Array', // Array
-                            value: [
-                                {
-                                    type: 'Hash160', // UInt160 address
-                                    value: getScriptHashFromAddress(collection.royaltiesRecipient),
-                                },
-                                {
-                                    type: 'Integer', // BigInteger value
-                                    value: collection.royalties,
-                                },
-                            ] as IArgs[],
-                        },
-                    ] as IArgs[],
-                },
-            ]
-        }
-
-        const allowedContracts = [collection.contract.substring(2), this.contractExchangeAddress]
-
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
-                scopes: 16,
-                allowedContracts,
-            },
-            {
-                account: collection.contract,
-                scopes: 16,
-                allowedContracts,
+                account: getScriptHashFromAddress(accountAddress),
+                scopes: 1,
             },
         ]
+
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: METHOD_SET_COLLECTION_ROYALTIES,
-            args: argsSetCollectionRoyalties,
+            scriptHash: contract,
+            operation: METHOD_CHECK_TOKEN_BALANCE,
+            args: argsCheckTokenBalance,
             signers,
         }
 
         try {
-            return this.invoke(invokeParams)
+            const response = await this.invokeRead(invokeParams)
+            if (response.exception) return `Exception: ${response.exception}`
+            const decoded = response.result.stack[0].value
+            return decoded
         } catch (e) {
             return console.error(
-                `Failed to execute collectionEditRoyalties on ${this.contractExchangeAddress} with error:`,
+                `checkTokenBalance: failed to execute ${METHOD_CHECK_TOKEN_BALANCE} on ${contract} with error:`,
                 e,
             )
         }
     }
 
-    /** Get incentives for address
-     * @param {string} currentAddress address used to check incentives.
+    /** Check incentives for address
+     * @param {string} accountAddress address used to check.
      */
-    public async checkIncentives(currentAddress: string) {
+    public async checkIncentives(accountAddress: string) {
         console.log(`reading incentives with ${this.provider} on ${this.chainName}`)
 
-        const argscheckIncentives = [
+        const argsCheckIncentives = [
             {
                 type: 'Hash160',
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
         ] as IArgs[]
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
@@ -1430,42 +1482,39 @@ export class GhostMarketN3SDK {
         const invokeParams = {
             scriptHash: this.contractIncentivesAddress,
             operation: METHOD_CHECK_INCENTIVES,
-            args: argscheckIncentives,
+            args: argsCheckIncentives,
             signers,
         }
 
         try {
             const response = await this.invokeRead(invokeParams)
-            const decoded = response.result.stack[0].value[5].value / Math.pow(10, 8)
+            if (response.exception) return `Exception: ${response.exception}`
+            const decoded = response.result.stack[0]
             return decoded
         } catch (e) {
             return console.error(
-                `Failed to execute checkIncentives on ${this.contractIncentivesAddress} with error:`,
+                `checkIncentives: failed to execute ${METHOD_CHECK_INCENTIVES} on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Claim incentives for address
-     * @param {string} currentAddress address used to claim incentives.
+     * @param {string} accountAddress address used to sign transaction.
      */
-    public async claimIncentives(currentAddress: string) {
-        console.log(
-            `claiming incentives with ${this.provider} on N3 ${
-                this.isMainNet ? 'MainNet' : 'TestNet'
-            }`,
-        )
+    public async claimIncentives(accountAddress: string) {
+        console.log(`claiming incentives with ${this.provider} on N3 ${this.chainName}`)
 
         const argsClaimIncentives = [
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(currentAddress),
+                value: getScriptHashFromAddress(accountAddress),
             },
         ] as IArgs[]
 
         const signers = [
             {
-                account: getScriptHashFromAddress(currentAddress),
+                account: getScriptHashFromAddress(accountAddress),
                 scopes: 1,
             },
         ]
@@ -1481,13 +1530,46 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `Failed to execute claimIncentives on ${this.contractIncentivesAddress} with error:`,
+                `claimIncentives: failed to execute ${METHOD_CLAIM_INCENTIVES} on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
         }
     }
 
+    /** Sign Data
+     * @param {string} dataToSign data to sign.
+     */
+    public async signData(dataToSign: string) {
+        const neo = this.getProvider(true)
+        try {
+            const signedMessage = await neo.signMessage({ message: dataToSign })
+
+            const { publicKey, message, salt, data } = signedMessage
+
+            console.log('Public key used to sign:', publicKey)
+            console.log('Original message:', message)
+            console.log('Salt added to message:', salt)
+            console.log('Signed data:', data)
+
+            return { signature: data, random: salt, pub_key: publicKey }
+        } catch ({ type, description, data }: any) {
+            switch (type) {
+                case 'NO_PROVIDER':
+                    throw new Error('No provider available.')
+                case 'RPC_ERROR':
+                    throw new Error(
+                        'There was an error when broadcasting this transaction to the network.',
+                    )
+                case 'CANCELED':
+                    throw new Error('The user has canceled this transaction.')
+                default:
+                    throw new Error(description as string)
+            }
+        }
+    }
+
     /* TO ADD
     getTokenBalances / getOwnerships
+    transfer nep17
     */
 }
