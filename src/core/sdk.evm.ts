@@ -345,30 +345,7 @@ export class GhostMarketSDK {
         }
     }
 
-    /** Cancel one order
-     * @param {IEVMOrder} order order to cancel.
-     * @param {TxObject} txObject transaction object to send when calling `cancelOrder`.
-     */
-    public async cancelOrder(order: IEVMOrder, txObject: TxObject) {
-        if (this._isReadonlyProvider) return
-        const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
-        const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
-            ExchangeV2Contract,
-            exchangeV2ProxyAddress,
-        )
-
-        try {
-            const data = await ExchangeV2CoreContractInstance.methods.cancel(order)
-            return this.sendMethod(data, txObject.from, exchangeV2ProxyAddress, undefined)
-        } catch (e) {
-            return console.error(
-                `cancelOrder: Failed to execute cancel on ${exchangeV2ProxyAddress} with error:`,
-                e,
-            )
-        }
-    }
-
-    /** Cancel multiple orders
+    /** Cancel one or more orders
      * @param {IEVMOrder[]} orders[] orders to cancel.
      * @param {TxObject} txObject transaction object to send when calling `bulkCancelOrders`.
      */
@@ -612,7 +589,7 @@ export class GhostMarketSDK {
     }
 
     /** Transfer Batch ERC1155 NFT
-     * @param {string} destination destination address of NFT.
+     * @param {string} destination destination address of transfer.
      * @param {string} contract contract of NFT to transfer.
      * @param {string[]} tokenIds token ID of NFTs to transfer.
      * @param {string[]} amounts amount of NFTs to transfer.
@@ -844,10 +821,6 @@ export class GhostMarketSDK {
             return console.error(`signData: Failed to execute sign with error:`, e)
         }
     }
-
-    /* TO ADD
-    getTokenBalances / getOwnerships
-    */
 
     private _getIncentivesContractAddress(networkName: string): string {
         switch (networkName) {
