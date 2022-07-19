@@ -33,13 +33,13 @@ export class N3PrivateProvider {
         this.isMainNet = isMainNet
     }
 
-    private convertArgs(args?: Argument[]) {
+    private convertArgs(args?: Argument[]): any {
         if (!args) return []
         return args.map(a => {
             if (a.type == 'Hash160') return sc.ContractParam.hash160(a.value)
             if (a.type == 'ByteArray') return sc.ContractParam.byteArray(a.value)
             if (a.type == 'Integer') return sc.ContractParam.integer(a.value)
-            if (a.type == 'Array') return sc.ContractParam.array(a.value)
+            if (a.type == 'Array') return sc.ContractParam.array(...(a.value as any[]).map(v => this.convertArgs(v)))
             return sc.ContractParam.any(a.value)
         })
     }
