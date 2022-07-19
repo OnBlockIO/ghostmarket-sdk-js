@@ -35,18 +35,17 @@ import {
     PostCreateOrderRequest,
 } from '../lib/api/ghostmarket'
 
-// not included in main frontend lib yet
+interface IMintItem {
+    creatorAddress: string
+    royalties: Royalties[]
+    externalURI: string
+}
+
 interface Royalties {
-    royaltiesRecipients: RoyaltyRecipient[]
+    address: string
+    value: number
 }
 
-// not included in main frontend lib yet
-interface RoyaltyRecipient {
-    recipient: string
-    amount: number
-}
-
-// not included in main frontend lib yet
 interface TxObject {
     from: string
     value?: string
@@ -369,13 +368,13 @@ export class GhostMarketSDK {
     }
 
     /** Set royalties for contract
-     * @param {string} contract contract address to set royalties for.
-     * @param {Royalties} royalties royalties settings to use for the contract.
+     * @param {string} contractAddress contract address to set royalties for.
+     * @param {Royalties[]} royalties royalties settings to use for the contract.
      * @param {TxObject} txObject transaction object to send when calling `setRoyaltiesForContract`.
      */
     public async setRoyaltiesForContract(
-        contract: string,
-        royalties: Royalties,
+        contractAddress: string,
+        royalties: Royalties[],
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
@@ -387,10 +386,18 @@ export class GhostMarketSDK {
             royaltiesRegistryProxyAddress,
         )
 
+        const contractRoyalties = ''
+        if (royalties) {
+            const arrayRoyalties = []
+            for (let i = 0; i < royalties.length; i++) {
+                arrayRoyalties.push([royalties[i].address, (royalties[i].value * 100).toString()])
+            }
+        }
+
         try {
             const data = await RoyaltiesRegistryContractInstance.methods.setRoyaltiesByToken(
-                contract,
-                royalties,
+                contractAddress,
+                contractRoyalties,
             )
             return this.sendMethod(data, txObject.from, royaltiesRegistryProxyAddress, undefined)
         } catch (e) {
@@ -443,14 +450,13 @@ export class GhostMarketSDK {
     }
 
     /** Approve NFT Contract
-     * @param {string} contract nft contract to approve.
+     * @param {string} contractAddress nft contract to approve.
      * @param {TxObject} txObject transaction object to send when calling `approveContract`.
      */
-    public async approveContract(contract: string, txObject: TxObject) {
+    public async approveContract(contractAddress: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
-        const contractAddress = contract
-        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contract)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
             const data = await ContractInstance.methods.setApprovalForAll(
@@ -467,14 +473,13 @@ export class GhostMarketSDK {
     }
 
     /** Approve Token Contract
-     * @param {string} contract token contract to approve.
+     * @param {string} contractAddress token contract to approve.
      * @param {TxObject} txObject transaction object to send when calling `approveToken`.
      */
-    public async approveToken(contract: string, txObject: TxObject) {
+    public async approveToken(contractAddress: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
-        const contractAddress = contract
-        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contract)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
             const data = await ContractInstance.methods.approve(proxyContractAddress, MAX_UINT_256)
@@ -485,13 +490,12 @@ export class GhostMarketSDK {
     }
 
     /** Check NFT Contract Approval
-     * @param {string} contract nft contract to check approval.
+     * @param {string} contractAddress nft contract to check approval.
      * @param {string} accountAddress address used to check.
      */
-    public async checkContractApproval(contract: string, accountAddress: string) {
+    public async checkContractApproval(contractAddress: string, accountAddress: string) {
         const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
-        const contractAddress = contract
-        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contract)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
             const data = await ContractInstance.methods.isApprovedForAll(
@@ -508,13 +512,15 @@ export class GhostMarketSDK {
     }
 
     /** Check ERC20 Token Contract Approval
-     * @param {string} contract token contract to check approval.
+     * @param {string} contractAddress token contract to check approval.
      * @param {string} accountAddress address used to check.
      */
-    public async checkTokenApproval(contract: string, accountAddress: string) {
+    public async checkTokenApproval(contractAddress: string, accountAddress: string) {
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
-        const contractAddress = contract
-        const ERC20ContractInstance = new this.web3.eth.Contract(ERC20WrappedContract, contract)
+        const ERC20ContractInstance = new this.web3.eth.Contract(
+            ERC20WrappedContract,
+            contractAddress,
+        )
 
         try {
             const data = await ERC20ContractInstance.methods.allowance(
@@ -531,23 +537,22 @@ export class GhostMarketSDK {
     }
 
     /** Transfer ERC20
-     * @param {string} destination destination address .
-     * @param {string} contract contract of token to transfer.
+     * @param {string} destinationAddress destination address .
+     * @param {string} contractAddress contract of token to transfer.
      * @param {string} amount amount to transfer.
      * @param {TxObject} txObject transaction object to send when calling `transferERC20`.
      */
     public async transferERC20(
-        destination: string,
-        contract: string,
+        destinationAddress: string,
+        contractAddress: string,
         amount: string,
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
-        const contractAddress = contract
         const ContractInstance = new this.web3.eth.Contract(ERC20Contract, contractAddress)
 
         try {
-            const data = await ContractInstance.methods.transfer(destination, amount)
+            const data = await ContractInstance.methods.transfer(destinationAddress, amount)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             return console.error(
@@ -558,25 +563,24 @@ export class GhostMarketSDK {
     }
 
     /** Transfer ERC721 NFT
-     * @param {string} destination destination address of NFT.
-     * @param {string} contract contract of NFT to transfer.
+     * @param {string} destinationAddress destination address of NFT.
+     * @param {string} contractAddress contract of NFT to transfer.
      * @param {string} tokenId token ID of NFT to transfer.
      * @param {TxObject} txObject transaction object to send when calling `transferERC721`.
      */
     public async transferERC721(
-        destination: string,
-        contract: string,
+        destinationAddress: string,
+        contractAddress: string,
         tokenId: string,
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
-        const contractAddress = contract
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
             const data = await ContractInstance.methods.safeTransferFrom(
                 txObject.from,
-                destination,
+                destinationAddress,
                 tokenId,
             )
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
@@ -589,27 +593,26 @@ export class GhostMarketSDK {
     }
 
     /** Transfer Batch ERC1155 NFT
-     * @param {string} destination destination address of transfer.
-     * @param {string} contract contract of NFT to transfer.
+     * @param {string} destinationAddress destination address of transfer.
+     * @param {string} contractAddress contract of NFT to transfer.
      * @param {string[]} tokenIds token ID of NFTs to transfer.
      * @param {string[]} amounts amount of NFTs to transfer.
      * @param {TxObject} txObject transaction object to send when calling `transferERC1155`.
      */
     public async transferERC1155(
-        destination: string,
-        contract: string,
+        destinationAddress: string,
+        contractAddress: string,
         tokenIds: string[],
         amounts: number[],
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
-        const contractAddress = contract
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
         try {
             const data = await ContractInstance.methods.safeBatchTransferFrom(
                 txObject.from,
-                destination,
+                destinationAddress,
                 tokenIds,
                 amounts,
                 '0x',
@@ -624,13 +627,12 @@ export class GhostMarketSDK {
     }
 
     /** Burn ERC721 NFT
-     * @param {string} contract contract of NFT to transfer.
+     * @param {string} contractAddress contract of NFT to transfer.
      * @param {string} tokenId token ID of NFTs to transfer.
      * @param {TxObject} txObject transaction object to send when calling `burnERC721`.
      */
-    public async burnERC721(contract: string, tokenId: string, txObject: TxObject) {
+    public async burnERC721(contractAddress: string, tokenId: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
-        const contractAddress = contract
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -645,19 +647,18 @@ export class GhostMarketSDK {
     }
 
     /** Burn ERC1155 NFT
-     * @param {string} contract contract of NFT to transfer.
+     * @param {string} contractAddress contract of NFT to transfer.
      * @param {string} tokenId token ID of NFTs to transfer.
      * @param {string} amount amount of NFTs to transfer.
      * @param {TxObject} txObject transaction object to send when calling `burnERC1155`.
      */
     public async burnERC1155(
-        contract: string,
+        contractAddress: string,
         tokenId: string,
         amount: number,
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
-        const contractAddress = contract
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
         try {
@@ -671,18 +672,11 @@ export class GhostMarketSDK {
         }
     }
 
-    /** Mint ERC1155 GHOST NFT
-     * @param {string} creator creator of the NFT.
-     * @param {any} royalties royalties of the NFT.
-     * @param {string} externalURI externalURI of the NFT.
+    /** Mint ERC721 GHOST NFT
+     * @param {IMintItem} item details.
      * @param {TxObject} txObject transaction object to send when calling `mintERC721`.
      */
-    public async mintERC721(
-        creator: string,
-        royalties: any,
-        externalURI: string,
-        txObject: TxObject,
-    ) {
+    public async mintERC721(item: IMintItem, txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const ERC721GhostAddress = this._getERC721GhostContractAddress(this._chainName)
         const ERC721GhostAddressInstance = new this.web3.eth.Contract(
@@ -690,11 +684,19 @@ export class GhostMarketSDK {
             ERC721GhostAddress,
         )
 
+        const contractRoyalties = ''
+        if (item.royalties) {
+            const arrayRoyalties = []
+            for (let i = 0; i < item.royalties.length; i++) {
+                arrayRoyalties.push([item.royalties[i].address, item.royalties[i].value.toString()])
+            }
+        }
+
         try {
             const data = await ERC721GhostAddressInstance.methods.mintGhost(
-                creator,
-                royalties,
-                externalURI,
+                item.creatorAddress,
+                contractRoyalties,
+                item.externalURI,
                 '',
                 '',
             ) // lock content & onchain metadata not available at the moment on SDK
@@ -708,19 +710,11 @@ export class GhostMarketSDK {
     }
 
     /** Mint ERC1155 GHOST NFT
-     * @param {string} creator creator of the NFT.
+     * @param {IMintItem} item details.
      * @param {number} amount amount of NFT to mint.
-     * @param {any} royalties royalties of the NFT.
-     * @param {string} externalURI externalURI of the NFT.
      * @param {TxObject} txObject transaction object to send when calling `mintERC1155`.
      */
-    public async mintERC1155(
-        creator: string,
-        amount: number,
-        royalties: any,
-        externalURI: string,
-        txObject: TxObject,
-    ) {
+    public async mintERC1155(item: IMintItem, amount: number, txObject: TxObject) {
         if (this._isReadonlyProvider) return
         const ERC1155GhostAddress = this._getERC1155GhostContractAddress(this._chainName)
         const ERC1155GhostAddressInstance = new this.web3.eth.Contract(
@@ -728,13 +722,21 @@ export class GhostMarketSDK {
             ERC1155GhostAddress,
         )
 
+        const contractRoyalties = ''
+        if (item.royalties) {
+            const arrayRoyalties = []
+            for (let i = 0; i < item.royalties.length; i++) {
+                arrayRoyalties.push([item.royalties[i].address, item.royalties[i].value.toString()])
+            }
+        }
+
         try {
             const data = await ERC1155GhostAddressInstance.methods.mintGhost(
-                creator,
+                item.creatorAddress,
                 amount,
                 [],
-                royalties,
-                externalURI,
+                contractRoyalties,
+                item.externalURI,
                 '',
                 '',
             ) // data && lock content & onchain metadata not available at the moment on SDK
@@ -748,12 +750,14 @@ export class GhostMarketSDK {
     }
 
     /** Check one token balance for address
-     * @param {string} contract token contract to check approval.
+     * @param {string} contractAddress token contract to check approval.
      * @param {string} accountAddress address used to check.
      */
-    public async checkTokenBalance(contract: string, accountAddress: string) {
-        const contractAddress = contract
-        const ERC20ContractInstance = new this.web3.eth.Contract(ERC20WrappedContract, contract)
+    public async checkTokenBalance(contractAddress: string, accountAddress: string) {
+        const ERC20ContractInstance = new this.web3.eth.Contract(
+            ERC20WrappedContract,
+            contractAddress,
+        )
 
         try {
             const data = await ERC20ContractInstance.methods.balanceOf(accountAddress)
