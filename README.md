@@ -109,7 +109,7 @@ const customProvider = 'neoline' // neoline, o3, or private
 // Create instance of GhostMarketN3SDK - Neo N3
 const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
 // Connected address
-const address = customProvider.addresses[0]
+// const address = customProvider.addresses[0]
 //////// Neo N3 provider options ////////
 
 
@@ -208,6 +208,7 @@ console.info(`signed data: ${signed}`)
 
 
 prepareMatchOrders
+createOpenOrder
 matchOrders
 cancelOrder
 bulkCancelOrders
@@ -275,7 +276,7 @@ console.info(`tx hash: ${transfer}`)
 ```js
 const contract = '0x....'
 const tokenId = ''
-const burn = await gmSDK.mintERC721(contract, tokenId, {from: address})
+const burn = await gmSDK.burnERC721(contract, tokenId, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
@@ -284,26 +285,30 @@ console.info(`tx hash: ${burn}`)
 const contract = '0x....'
 const tokenId = ''
 const amount = 1
-const burn = await gmSDK.mintERC721(contract, tokenId, amount, {from: address})
+const burn = await gmSDK.burnERC721(contract, tokenId, amount, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
 ### Minting ERC721 GHOST NFT
 ```js
-const creator = '0x....'
-const royalties = []
-const externalURI = 'ipfs://xxx'
-const token = await gmSDK.mintERC721(creator, [], externalURI, {from: address})
+const mintDetails = {
+    creatorAddress: '0x...',
+    royalties:  [{address: creatorAddress, value: 100}], // use bps
+    externalURI: 'ipfs://xxx'
+}
+const token = await gmSDK.mintERC721(mintDetails, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
 ### Minting ERC1155 GHOST NFT
 ```js
-const creator = '0x....'
+const mintDetails = {
+    creatorAddress: '0x...',
+    royalties:  [{address: creatorAddress, value: 100}], // use bps
+    externalURI: 'ipfs://xxx'
+}
 const amount = 1
-const royalties = []
-const externalURI = 'ipfs://xxx'
-const token = await gmSDK.mintERC1155(creator, amount, [], externalURI, {from: address})
+const token = await gmSDK.mintERC1155(mintDetails, amount, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
@@ -312,6 +317,177 @@ console.info(`tx hash: ${token}`)
 const claim = await gmSDK.claimIncentives({from: address})
 console.info(`tx hash: ${claim}`)
 ```
+
+
+// N3 READ
+
+
+
+### Checking Non Fungible Token (NFT) balances
+```js
+const chain = '' // filter by chain
+const contract =  '' // filter for one contract
+const owners = ['0x....'] // filter by one or more owner
+const balance = await gmSDK.api.getAssetsV2({ chain, contract, owners })
+console.info(balance)
+```
+
+### Checking Fungible Token balances
+```js
+const contract =  '' 
+const balance = await gmSDK.checkTokenBalance(contract, address)
+console.info(`balance: ` + balance.stack[0].value / Math.pow(10, 8))
+```
+
+### Fetching token approval
+```js
+const contract = '0x....'
+const approval = await gmSDK.checkTokenApproval(contract, address)
+console.info(`amount approved: ` + approval.stack[0].value)
+```
+
+### Fetching incentives
+```js
+const incentives = await gmSDK.checkIncentives(address)
+const availableIncentives = incentives ? incentives.stack[0]value[5].value / Math.pow(10, 8) : 0
+console.info(`available incentives: ${availableIncentives}`)
+```
+
+
+
+// N3 WRITE
+
+### Buying NFT (or cancel listing)
+```js
+const buyingDetails = { 
+    contractAuctionId: '', // on chain contract auction ID.
+    price: '', // order price - unused for cancellation
+    quoteContractAddress: '0x....', // order quote contract address.
+    isCancellation: false, // is it a cancellation.
+}
+const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})
+console.info(`tx hash: ${buying}`)
+```
+
+### Listing NFT
+```js
+const startDate = new Date().getTime()
+const listingDetails = { 
+    tokenId: '', // order NFT tokenId - token id for listing
+    baseContractAddress: '0x....', // order base contract address - nft contract for listing
+    price: '1', // order price - in biginteger format
+    quoteContractAddress: '0x....', // order quote contract address - currency accepted for listing
+    startDate, // order start date - set to custom one or it will default to right now
+    endDate: 0, // order end date - set to 0 for unexpiring
+}
+const listing = await gmSDK.sellMultiple(listingDetails, {from: address})
+console.info(`tx hash: ${listing}`)
+```
+
+### Edit listing price NFT
+```js
+const contractAuctionId = '' // on chain contract auction ID.
+const price = '' // new price
+const edit = await gmSDK.editPrice(contractAuctionId, price, {from: address})
+console.info(`tx hash: ${edit}`)
+```
+### Place offer (or collection offer) on NFT
+```js
+const startDate = new Date().getTime()
+const offerDetails = { 
+    baseContractAddress: '0x....', // offer base contract address - nft contract for offer
+    quoteContractAddress: '0x....', // offer quote contract address - currency for ofer
+    tokenId: '', // offer NFT tokenId - token id for listing
+    price: '1', // offer price - in biginteger format
+    startDate, // offer start date - set to custom one or it will default to right now
+    endDate: 0, // offer end date - set to 0 for unexpiring
+}
+const offer = await gmSDK.placeOffer(offerDetails, {from: address})
+console.info(`tx hash: ${offer}`)
+```
+
+
+
+interface IOfferItem {
+    baseContractAddress: string // offer base contract address.
+    quoteContractAddress: string // offer quote contract address.
+    tokenId: string // offer tokenId.
+    price: number // offer price.
+    startDate: number // offer start date.
+    endDate: number // offer end date.
+    auctionId?: string // offer on chain auction id.
+}
+
+
+### Set contract royalties
+```js
+const contract = '0x....'
+const royalties = [{address: 'N...', value: '1000'}] // array of recipient/value array (in bps)
+const royalties = await gmSDK.setRoyaltiesForContract(contract, royalties, {from: address})
+console.info(`tx hash: ${royalties}`)
+```
+
+### Approve token
+```js
+const contract = '0x....'
+const approval = await gmSDK.approveToken(contract, {from: address})
+console.info(`tx hash: ${approval}`)
+```
+
+### Transfer NEP17
+```js
+const destination = 'N....'
+const contract = '0x....'
+const amount = ''
+const transfer = await gmSDK.transferNEP17(destination, contract, amount, {from: address})
+console.info(`tx hash: ${transfer}`)
+```
+
+### Transfer NEP11 NFT
+```js
+const transferDetails = [{ 
+    destinationAddress: 'N....', // destination address
+    contractAddress: '0x....', // contract address
+    tokenId: '', // tokenId.
+}]
+const transfer = await gmSDK.transferNEP11(transferDetails, {from: address})
+console.info(`tx hash: ${transfer}`)
+```
+
+### Burn NEP11 NFT
+```js
+const burnDetails = [{ 
+    contractAddress: '0x....', // contract address
+    tokenId: '', // tokenId.
+}]
+const burn = await gmSDK.burnNEP11(burnDetails, {from: address})
+console.info(`tx hash: ${burn}`)
+```
+
+### Minting NEP11 GHOST NFT
+```js
+const royaltyRecipient = 'NLp9MRxBHH2YJrsF1D1VMXg3mvze3WSTqn'
+const mintDetails = { 
+    quantity: 1, // NFT quantity.
+    name: 'test name', // NFT name.
+    description: 'test description', // NFT description.
+    imageURL: 'ipfs://xxx', // image URL.
+    externalURI: 'ipfs://yyy', // external URI.
+    royalties: [{address: royaltyRecipient, value: 100}], // royalties - use bps.
+    type: '1', // NFT Type.
+}
+const token = await gmSDK.mintNEP11(mintDetails, {from: address})
+console.info(`tx hash: ${token}`)
+```
+
+### Claiming incentives
+```js
+const claim = await gmSDK.claimIncentives({from: address})
+console.info(`tx hash: ${claim}`)
+```
+
+
+
 
 ## Development
 
