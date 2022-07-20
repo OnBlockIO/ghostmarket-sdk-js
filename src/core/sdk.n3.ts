@@ -385,29 +385,13 @@ export class GhostMarketN3SDK {
                         },
                     ] as IArgs[],
                 })
-                console.log([
-                    {
-                        type: 'Hash160', // UInt160 from
-                        value: getScriptHashFromAddress(txObject.from),
-                    },
-                    {
-                        type: 'ByteArray', // ByteString auctionId
-                        value: numberToByteString(item.contractAuctionId.toString()),
-                    },
-                    {
-                        type: 'Integer', // BigInteger price
-                        value: priceNFTFormatted,
-                    },
-                ])
             }
         }
-
-        console.log(argsBuyMultiple)
 
         const signers = [
             {
                 account: getScriptHashFromAddress(txObject.from),
-                scopes: 16,
+                scopes: this.provider === 'private' ? 128 : 16,
                 allowedContracts,
             },
         ]
@@ -507,17 +491,15 @@ export class GhostMarketN3SDK {
             })
         }
 
-        console.log(argsListTokenMultiple)
-
         const signers = [
             {
                 account: getScriptHashFromAddress(txObject.from),
-                scopes: 128,
+                scopes: this.provider === 'private' ? 128 : 16,
+                allowedContracts,
             },
         ]
         const invokeParamsMultiple = {
             invokeArgs: argsListTokenMultiple,
-            fee: (0.01 * items.length).toString(),
             signers,
             networkFee: txObject.networkFee,
             systemFee: txObject.systemFee,
@@ -566,7 +548,7 @@ export class GhostMarketN3SDK {
         const signers = [
             {
                 account: getScriptHashFromAddress(txObject.from),
-                scopes: 16,
+                scopes: this.provider === 'private' ? 128 : 16,
                 allowedContracts,
             },
         ]
@@ -596,7 +578,7 @@ export class GhostMarketN3SDK {
     public async listAuction(item: IAuctionItem, txObject: TxObject) {
         console.log(`listAuction: auction nft with ${this.provider} on ${this.chainName}`)
 
-        let extensionPeriod = item.extensionPeriod ? item.extensionPeriod * 60 : 0 // min 0 - max 1h (3600)
+        let extensionPeriod = item.extensionPeriod ? item.extensionPeriod : 0 // min 0 - max 1h (3600)
         switch (item.auctionType) {
             case 1: // classic
                 break
@@ -668,7 +650,7 @@ export class GhostMarketN3SDK {
         const signers = [
             {
                 account: getScriptHashFromAddress(txObject.from),
-                scopes: 16,
+                scopes: this.provider === 'private' ? 128 : 16,
                 allowedContracts,
             },
         ]
@@ -852,7 +834,7 @@ export class GhostMarketN3SDK {
             : [
                   {
                       account: getScriptHashFromAddress(txObject.from),
-                      scopes: 16,
+                      scopes: this.provider === 'private' ? 128 : 16,
                       allowedContracts,
                   },
               ]
@@ -959,6 +941,8 @@ export class GhostMarketN3SDK {
             `setRoyaltiesForContract: edit collection royalties with ${this.provider} on ${this.chainName}`,
         )
 
+        throw new Error('Not implemented yet.')
+
         // force empty if no royalties
         let argsSetCollectionRoyalties = [
             {
@@ -1003,12 +987,12 @@ export class GhostMarketN3SDK {
         const signers = [
             {
                 account: getScriptHashFromAddress(txObject.from),
-                scopes: 16,
+                scopes: this.provider === 'private' ? 128 : 16,
                 allowedContracts,
             },
             {
                 account: contractAddress,
-                scopes: 16,
+                scopes: this.provider === 'private' ? 128 : 16,
                 allowedContracts,
             },
         ]

@@ -386,11 +386,10 @@ export class GhostMarketSDK {
             royaltiesRegistryProxyAddress,
         )
 
-        const contractRoyalties = ''
+        const contractRoyalties = []
         if (royalties) {
-            const arrayRoyalties = []
             for (let i = 0; i < royalties.length; i++) {
-                arrayRoyalties.push([royalties[i].address, (royalties[i].value * 100).toString()])
+                contractRoyalties.push([royalties[i].address, royalties[i].value.toString()])
             }
         }
 
@@ -684,11 +683,13 @@ export class GhostMarketSDK {
             ERC721GhostAddress,
         )
 
-        const contractRoyalties = ''
+        const contractRoyalties = []
         if (item.royalties) {
-            const arrayRoyalties = []
             for (let i = 0; i < item.royalties.length; i++) {
-                arrayRoyalties.push([item.royalties[i].address, item.royalties[i].value.toString()])
+                contractRoyalties.push([
+                    item.royalties[i].address,
+                    item.royalties[i].value.toString(),
+                ])
             }
         }
 
@@ -722,11 +723,13 @@ export class GhostMarketSDK {
             ERC1155GhostAddress,
         )
 
-        const contractRoyalties = ''
+        const contractRoyalties = []
         if (item.royalties) {
-            const arrayRoyalties = []
             for (let i = 0; i < item.royalties.length; i++) {
-                arrayRoyalties.push([item.royalties[i].address, item.royalties[i].value.toString()])
+                contractRoyalties.push([
+                    item.royalties[i].address,
+                    item.royalties[i].value.toString(),
+                ])
             }
         }
 

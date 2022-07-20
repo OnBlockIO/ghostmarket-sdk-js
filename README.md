@@ -217,7 +217,7 @@ bulkCancelOrders
 ### Set contract royalties
 ```js
 const contract = '0x....'
-const royalties = [['0x...','1000']] // array of recipient/value array (in bps)
+const royalties = [{address, value: 1000}] // array of recipient/value array (in bps)
 const royalties = await gmSDK.setRoyaltiesForContract(contract, royalties, {from: address})
 console.info(`tx hash: ${royalties}`)
 ```
@@ -292,8 +292,8 @@ console.info(`tx hash: ${burn}`)
 ### Minting ERC721 GHOST NFT
 ```js
 const mintDetails = {
-    creatorAddress: '0x...',
-    royalties:  [{address: creatorAddress, value: 100}], // use bps
+    creatorAddress: creator,
+    royalties: [{address: creator, value: 1000}], // use bps
     externalURI: 'ipfs://xxx'
 }
 const token = await gmSDK.mintERC721(mintDetails, {from: address})
@@ -302,9 +302,10 @@ console.info(`tx hash: ${token}`)
 
 ### Minting ERC1155 GHOST NFT
 ```js
+const creator = '0x...'
 const mintDetails = {
-    creatorAddress: '0x...',
-    royalties:  [{address: creatorAddress, value: 100}], // use bps
+    creatorAddress: creator,
+    royalties: [{address: creator, value: 1000}], // use bps
     externalURI: 'ipfs://xxx'
 }
 const amount = 1
@@ -357,9 +358,9 @@ console.info(`available incentives: ${availableIncentives}`)
 
 // N3 WRITE
 
-### Buying NFT (or cancel listing)
+### Buying one or more NFT (or cancel listing)
 ```js
-const buyingDetails = { 
+const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
     price: '', // order price - unused for cancellation
     quoteContractAddress: '0x....', // order quote contract address.
@@ -369,35 +370,54 @@ const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})
 console.info(`tx hash: ${buying}`)
 ```
 
-### Listing NFT
+### Listing one or more NFT - fixed price
 ```js
 const startDate = new Date().getTime()
-const listingDetails = { 
+const listingDetails = [{ 
     tokenId: '', // order NFT tokenId - token id for listing
     baseContractAddress: '0x....', // order base contract address - nft contract for listing
     price: '1', // order price - in biginteger format
     quoteContractAddress: '0x....', // order quote contract address - currency accepted for listing
     startDate, // order start date - set to custom one or it will default to right now
     endDate: 0, // order end date - set to 0 for unexpiring
-}
+}]
 const listing = await gmSDK.sellMultiple(listingDetails, {from: address})
 console.info(`tx hash: ${listing}`)
 ```
 
-### Edit listing price NFT
+### Listing NFT - auction
+```js
+const startDate = new Date().getTime()
+const auctionDetails = { 
+    auctionType: 1, // classic (1) reserve (2) dutch (3)
+    tokenId: '', // auction NFT tokenId.
+    baseContractAddress: '0x....', // auction base contract address.
+    extensionPeriod: 600, // auction extension period - 600 for 10 min
+    startDate, // auction start date.
+    endDate: startDate + 604800 // auction end date. - startDate + 604800 for one week
+    startPrice: '', // auction start price.
+    endPrice: 0, // auction end price - only used for dutch auctions.
+    quoteContractAddress: '0x....', // auction quote contract address.
+}
+const auction = await gmSDK.listAuction(auctionDetails, {from: address})
+console.info(`tx hash: ${auction}`)
+```
+
+### Edit listing price NFT - fixed price only
 ```js
 const contractAuctionId = '' // on chain contract auction ID.
 const price = '' // new price
 const edit = await gmSDK.editPrice(contractAuctionId, price, {from: address})
 console.info(`tx hash: ${edit}`)
 ```
+
 ### Place offer (or collection offer) on NFT
 ```js
 const startDate = new Date().getTime()
 const offerDetails = { 
     baseContractAddress: '0x....', // offer base contract address - nft contract for offer
     quoteContractAddress: '0x....', // offer quote contract address - currency for ofer
-    tokenId: '', // offer NFT tokenId - token id for listing
+    tokenId: '', // offer NFT tokenId - token id for listing - leave empty for collection offer
     price: '1', // offer price - in biginteger format
     startDate, // offer start date - set to custom one or it will default to right now
     endDate: 0, // offer end date - set to 0 for unexpiring
@@ -405,19 +425,6 @@ const offerDetails = {
 const offer = await gmSDK.placeOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
-
-
-
-interface IOfferItem {
-    baseContractAddress: string // offer base contract address.
-    quoteContractAddress: string // offer quote contract address.
-    tokenId: string // offer tokenId.
-    price: number // offer price.
-    startDate: number // offer start date.
-    endDate: number // offer end date.
-    auctionId?: string // offer on chain auction id.
-}
-
 
 ### Set contract royalties
 ```js
