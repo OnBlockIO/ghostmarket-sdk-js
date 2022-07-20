@@ -67,7 +67,7 @@ interface IOfferItem {
 interface IProcessOfferItem {
     auctionId: string // auctionId of offer to accept or cancel.
     quoteContractAddress: string // quote contract address to use in offer.
-    tokenId: string //tokenId of nft to use in offer.
+    tokenId: string // tokenId of nft to use in offer.
     isCancellation: boolean // is it an offer (true) or a cancellation (false).
 }
 
@@ -746,7 +746,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'ByteArray', // ByteString tokenId
-                value: item.tokenId, // set to null for collection offer
+                value: item.tokenId ? numberToByteString(item.tokenId) : '', // set to null for collection offer
             },
             {
                 type: 'Integer', // BigInteger price
@@ -1101,7 +1101,7 @@ export class GhostMarketN3SDK {
         try {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `checkTokenApproval exception: ${response.exception}`
-            return response
+            return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
                 `checkTokenApproval: failed to execute ${METHOD_CHECK_ALLOWANCE} on ${contractAddress} with error:`,
@@ -1472,7 +1472,7 @@ export class GhostMarketN3SDK {
         try {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `checkTokenBalance exception: ${response.exception}`
-            return response
+            return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
                 `checkTokenBalance: failed to execute ${METHOD_CHECK_TOKEN_BALANCE} on ${contractAddress} with error:`,
@@ -1513,7 +1513,7 @@ export class GhostMarketN3SDK {
         try {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `checkIncentives exception: ${response.exception}`
-            return response
+            return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
                 `checkIncentives: failed to execute ${METHOD_CHECK_INCENTIVES} on ${this.contractIncentivesAddress} with error:`,
