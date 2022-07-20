@@ -10,30 +10,45 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
 
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Usage](#getting-started)
-    - [Getting Assets](#getting-assets)
-    - [Getting Events](#getting-events)
-    - [Getting Collections](#getting-collections)
-    - [Getting Offers](#getting-offers)
-    - [Getting Orders](#getting-orders)
-    - [Getting NFT balances](#getting-nft-balances)
-    - [Getting FT balances](#getting-ft-balances)
-    - [Getting Token Approval](#getting-token-approval)
-    - [Getting Contract Approval](#getting-contract-approval)
-    - [Getting Incentives](#getting-incentives)
+- [Usage - Common](#usage-common)
+    - [Fetching assets](#fetching-assets)
+    - [Fetching events](#fetching-events)
+    - [Fetching collections](#fetching-collections)
+    - [Fetching offers](#fetching-offers)
+    - [Fetching orders](#fetching-orders)
+    - [Fetching NFT balances](#fetching-nft-balances)
+    - [Checking FT balances](#getting-ft-balances)
+    - [Set contract royalties](#set-contract-royalties)
+    - [Approve token](#approve-token)
+    - [Checking token approval](#checking-token-approval)
+    - [Claiming Incentives](#claiming-incentives)
+    - [Checking Incentives](#checking-incentives)
     - [Signing Data](#signing-data)
-    - [Setting Contract Royalties](#setting-contract-royalties)
-    - [Wrap/Unwrap Token](#wrap-unwrap-token)
-    - [Approve Token](#approve-token)
-    - [Approve Contract](#approve-contract)
-    - [Transfer ERC20](#transfer-erc20)
-    - [Transfer ERC721](#transfer-erc721)
-    - [Transfer ERC1155](#transfer-erc1155)
-    - [Burn ERC721](#burn-erc721)
-    - [Burn ERC1155](#burn-erc1155)
-    - [Mint ERC721](#mint-erc721)
-    - [Mint ERC1155](#mint-erc1155)
-    - [Claim Incentives](#claim-incentives)
+- [Usage - EVM](#usage-evm)
+    - [Getting contract approval](#getting-contract-approval)
+    - [Wrap token](#wrap-token)
+    - [Approve contract](#approve-contract)
+    - [Transfer ERC20](#transfer-ERC20)
+    - [Transfer ERC721 NFT](#transfer-ERC721-nft)
+    - [Transfer ERC1155 NFT](#transfer-ERC1155-nft)
+    - [Burn ERC721 NFT](#burn-erc721-nft)
+    - [Burn ERC1155 NFT](#burn-erc1155-nft)
+    - [Mint ERC721 NFT](#mint-erc721-nft)
+    - [Mint ERC1155 NFT](#mint-erc1155-nft)
+- [Usage - Neo N3](#usage-neo-n3)
+    - [Buying one or more NFT](#buying-one-or-more-nft)
+    - [Listing NFT fixed price](#listing-nft-fixed-price)
+    - [Listing NFT auction](#listing-nft-auction)
+    - [Cancel one or more NFT](#buying-one-or-more-nft)
+    - [Edit listing price](#edit-listing-price)
+    - [Place offer](#place-offer)
+    - [Accept offer](#accept-offer)
+    - [Cancel offer](#cancel-offer)
+    - [Transfer NEP17](#transfer-nep17)
+    - [Transfer NEP11](#transfer-nep11)
+    - [Burn NEP11](#burn-nep11)
+    - [Mint NEP11](#mint-nep11)
+
 
 - [Development](#development)
 
@@ -162,7 +177,7 @@ const { orders } = await gmSDK.api.getAssetOrdersV2({ chain, contractAddress, to
 console.info(orders)
 ```
 
-### Fetching Non Fungible Token (NFT) balances
+### Fetching NFT balances
 ```js
 const chain = '' // filter by chain
 const contractAddress =  '' // filter for one contract
@@ -171,7 +186,7 @@ const balance = await gmSDK.api.getAssetsV2({ chain, contractAddress, owners })
 console.info(balance)
 ```
 
-### Checking Fungible Token balances
+### Checking FT balances
 ```js
 const contract =  '' 
 const balance = await gmSDK.checkTokenBalance(contract, address)
@@ -234,14 +249,14 @@ Example when wrapping a token:
 
 instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})` simply do `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address, gasPrice: 50000})` if you want to override gas price to `50000`.
 
-### Fetching contract approval
+### Getting contract approval
 ```js
 const contract = '0x....'
 const approval = await gmSDK.checkContractApproval(contract, address)
 console.info(`is contract approved: ` + contractApproval)
 ```
 
-### Wrap / Unwrap native token
+### Wrap token
 ```js
 const amount = '1' // in wei
 const isWrap = true // set to false to unwrap
@@ -301,7 +316,7 @@ const burn = await gmSDK.burnERC721(contract, tokenId, amount, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Minting ERC721 GHOST NFT
+### Minting ERC721 NFT
 ```js
 const mintDetails = {
     creatorAddress: creator,
@@ -312,7 +327,7 @@ const token = await gmSDK.mintERC721(mintDetails, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
-### Minting ERC1155 GHOST NFT
+### Minting ERC1155 NFT
 ```js
 const creator = '0x...'
 const mintDetails = {
@@ -336,7 +351,7 @@ Example when buying a NFT:
 instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address, systemFee: 0.2, networkFee: 0.2})` if you want to override both with 0.2 GAS
 
 
-### Buying one or more NFT (or cancel listing)
+### Buying one or more NFT
 ```js
 const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
@@ -348,7 +363,7 @@ const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})
 console.info(`tx hash: ${buying}`)
 ```
 
-### Listing one or more NFT - fixed price
+### Listing NFT fixed price
 ```js
 const startDate = new Date().getTime()
 const listingDetails = [{ 
@@ -363,7 +378,7 @@ const listing = await gmSDK.sellMultiple(listingDetails, {from: address})
 console.info(`tx hash: ${listing}`)
 ```
 
-### Listing NFT - auction
+### Listing NFT auction
 ```js
 const startDate = new Date().getTime()
 const auctionDetails = { 
@@ -381,7 +396,19 @@ const auction = await gmSDK.listAuction(auctionDetails, {from: address})
 console.info(`tx hash: ${auction}`)
 ```
 
-### Edit listing price NFT - fixed price only
+### Cancel one or more NFT
+```js
+const buyingDetails = [{ 
+    contractAuctionId: '', // on chain contract auction ID.
+    price: '', // order price - unused for cancellation
+    quoteContractAddress: '0x....', // order quote contract address.
+    isCancellation: true, // is it a cancellation.
+}]
+const cancel = await gmSDK.buyMultiple(buyingDetails, {from: address})
+console.info(`tx hash: ${cancel}`)
+```
+
+### Edit listing price
 ```js
 const contractAuctionId = '' // on chain contract auction ID.
 const price = '' // new price
@@ -389,7 +416,7 @@ const edit = await gmSDK.editPrice(contractAuctionId, price, {from: address})
 console.info(`tx hash: ${edit}`)
 ```
 
-### Place offer (or collection offer) on NFT
+### Place offer
 ```js
 const startDate = new Date().getTime()
 const offerDetails = { 
@@ -404,7 +431,7 @@ const offer = await gmSDK.placeOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
 
-### Accept offer (or collection offer) on NFT
+### Accept offer
 ```js
 const offerDetails = { 
     auctionId: '', // on chain contract auction ID.
@@ -416,7 +443,7 @@ const offer = await gmSDK.processOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
 
-### Cancel offer (or collection offer) on NFT
+### Cancel offer
 ```js
 const offerDetails = { 
     auctionId: '', // on chain contract auction ID.
@@ -436,7 +463,7 @@ const transfer = await gmSDK.transferNEP17(destination, contract, amount, {from:
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer NEP11 NFT
+### Transfer NEP11
 ```js
 const transferDetails = [{ 
     destinationAddress: 'N....', // destination address
@@ -447,7 +474,7 @@ const transfer = await gmSDK.transferNEP11(transferDetails, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Burn NEP11 NFT
+### Burn NEP11
 ```js
 const burnDetails = [{ 
     contractAddress: '0x....', // contract address
@@ -457,7 +484,7 @@ const burn = await gmSDK.burnNEP11(burnDetails, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Minting NEP11 GHOST NFT
+### Mint NEP11
 ```js
 const royaltyRecipient = 'NLp9MRxBHH2YJrsF1D1VMXg3mvze3WSTqn'
 const mintDetails = { 
