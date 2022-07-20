@@ -42,10 +42,12 @@ export class N3PrivateProvider {
             if (a.type == 'ByteArray') return sc.ContractParam.byteArray(a.value)
             if (a.type == 'Integer') return sc.ContractParam.integer(a.value)
             if (a.type == 'Array')
-                return sc.ContractParam.array(...(a.value as Argument[]).map(v => {
-                    const r: sc.ContractParamLike = { type: v.type, value: v.value }
-                    return r
-                }))
+                return sc.ContractParam.array(
+                    ...(a.value as Argument[]).map(v => {
+                        const r: sc.ContractParamLike = { type: v.type, value: v.value }
+                        return r
+                    }),
+                )
             return sc.ContractParam.any(a.value)
         })
     }
