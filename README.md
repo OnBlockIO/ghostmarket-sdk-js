@@ -125,9 +125,9 @@ const address = customProvider.addresses[0]
 //////// Neo N3 provider options ////////
 // Option 1 - Neoline
 const customProvider = 'neoline'
-// Option 1 - Oo
+// Option 2 - o3
 const customProvider = 'o3'
-// Option 1 - private key
+// Option 3 - private key
 const customProvider = 'private'
 // Create instance of GhostMarketN3SDK - Neo N3
 const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
