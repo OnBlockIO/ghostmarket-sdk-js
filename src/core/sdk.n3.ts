@@ -211,7 +211,7 @@ export class GhostMarketN3SDK {
         if (invokeParams.systemFee && this.provider === 'neoline') {
             invokeParams.overrideSystemFee = invokeParams.systemFee
         }
-        if (invokeParams.systemFee && this.provider === '03') {
+        if (invokeParams.systemFee && this.provider === 'o3') {
             invokeParams.extraSystemFee = invokeParams.systemFee
         }
         return new Promise((resolve, reject) => {
@@ -259,7 +259,7 @@ export class GhostMarketN3SDK {
         if (invokeParams.systemFee && this.provider === 'neoline') {
             invokeParams.overrideSystemFee = invokeParams.systemFee
         }
-        if (invokeParams.systemFee && this.provider === '03') {
+        if (invokeParams.systemFee && this.provider === 'o3') {
             invokeParams.extraSystemFee = invokeParams.systemFee
         }
         return new Promise((resolve, reject) => {
