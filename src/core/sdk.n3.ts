@@ -988,7 +988,12 @@ export class GhostMarketN3SDK {
                 },
                 {
                     type: 'Array', // Array
-                    value: royaltyArray as IArgs[],
+                    value: [
+                        {
+                            type: 'Array',
+                            value: royaltyArray as IArgs[],
+                        },
+                    ],
                 },
             ]
         }
