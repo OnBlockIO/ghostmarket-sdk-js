@@ -519,8 +519,8 @@ export class GhostMarketN3SDK {
      * @param {IBidItem} item details.
      * @param {TxObject} txObject transaction object to send when calling `buyAuction`.
      */
-    public async buyAuction(item: IBidItem, txObject: TxObject) {
-        console.log(`buyAuction: bidding on nft with ${this.provider} on ${this.chainName}`)
+    public async bidAuction(item: IBidItem, txObject: TxObject) {
+        console.log(`bidAuction: bidding on nft with ${this.provider} on ${this.chainName}`)
 
         const currentBidFormatted = item.bidPrice || 0
 
@@ -565,7 +565,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `buyAuction: failed to execute ${METHOD_BID_TOKEN} on ${this.contractExchangeAddress} with error:`,
+                `bidAuction: failed to execute ${METHOD_BID_TOKEN} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -1216,7 +1216,6 @@ export class GhostMarketN3SDK {
 
         const invokeParamsMultiple = {
             invokeArgs: argsTransferMultiple,
-            fee: (0.01 * items.length).toString(),
             signers,
             networkFee: txObject.networkFee,
             systemFee: txObject.systemFee,
