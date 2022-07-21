@@ -47,11 +47,11 @@ interface IAuctionItem {
     auctionType: number // classic (1) reserve (2) dutch (3) fixed (0)
     tokenId: string // auction NFT tokenId.
     baseContractAddress: string // auction base contract address.
-    extensionPeriod?: number // auction extension period.
+    extensionPeriod: number // auction extension period.
     startDate: number // auction start date.
     endDate: number // auction end date
-    startPrice: number // auction start price.
-    endPrice: number // auction end price.
+    startPrice: string // auction start price.
+    endPrice: string // auction end price.
     quoteContractAddress: string // auction quote contract address.
 }
 
@@ -59,7 +59,7 @@ interface IOfferItem {
     baseContractAddress: string // offer base contract address.
     quoteContractAddress: string // offer quote contract address.
     tokenId: string // offer tokenId.
-    price: number // offer price.
+    price: string // offer price.
     startDate: number // offer start date.
     endDate: number // offer end date.
 }
@@ -73,23 +73,18 @@ interface IProcessOfferItem {
 
 interface IMintItem {
     quantity: number // NFT quantity.
-    attrT1: string // NFT Attr Type 1.
-    attrV1: string // NFT Attr Value 1.
-    attrT2: string // NFT Attr Type 2.
-    attrV2: string // NFT Attr Value 2.
-    attrT3: string // NFT Attr Type 3.
-    attrV3: string // NFT Attr Value 3.
+    attrT1?: string // NFT Attr Type 1.
+    attrV1?: string // NFT Attr Value 1.
+    attrT2?: string // NFT Attr Type 2.
+    attrV2?: string // NFT Attr Value 2.
+    attrT3?: string // NFT Attr Type 3.
+    attrV3?: string // NFT Attr Value 3.
     name: string // NFT name.
     description: string // NFT description.
     imageURL: string // image URL.
     externalURI: string // external URI.
-    royalties: NFTRoyalties[] // royalties.
+    royalties: Royalties[] // royalties.
     type: string // NFT Type.
-}
-
-interface NFTRoyalties {
-    address: string
-    value: number
 }
 
 interface Royalties {
@@ -181,7 +176,7 @@ export class GhostMarketN3SDK {
         this.logger = logger || ((arg: string) => arg)
         if (provider === 'private' && !options.privateKey) {
             console.error('Please set a private key!')
-            return
+            throw new Error('Please set a private key!')
         }
     }
 
@@ -210,6 +205,12 @@ export class GhostMarketN3SDK {
     }
 
     async invoke(invokeParams: any): Promise<string> {
+        if (invokeParams.networkFee && this.provider === 'neoline') {
+            invokeParams.fee = invokeParams.networkFee
+        }
+        if (invokeParams.systemFee && this.provider === 'neoline') {
+            invokeParams.overrideSystemFee = invokeParams.systemFee
+        }
         return new Promise((resolve, reject) => {
             this.getProvider()
                 .invoke(invokeParams)
@@ -249,6 +250,12 @@ export class GhostMarketN3SDK {
     }
 
     async invokeMultiple(invokeParams: any): Promise<string> {
+        if (invokeParams.networkFee && this.provider === 'neoline') {
+            invokeParams.fee = invokeParams.networkFee
+        }
+        if (invokeParams.systemFee && this.provider === 'neoline') {
+            invokeParams.overrideSystemFee = invokeParams.systemFee
+        }
         return new Promise((resolve, reject) => {
             ;(this.provider === 'o3'
                 ? this.getProvider().invokeMulti(invokeParams)
@@ -941,8 +948,6 @@ export class GhostMarketN3SDK {
             `setRoyaltiesForContract: edit collection royalties with ${this.provider} on ${this.chainName}`,
         )
 
-        throw new Error('Not implemented yet.')
-
         // force empty if no royalties
         let argsSetCollectionRoyalties = [
             {
@@ -1302,8 +1307,8 @@ export class GhostMarketN3SDK {
         const type = item.type
         const hasLocked = false
         const attributes: {
-            trait_type: string | number
-            value: string | number
+            trait_type: string | number | undefined
+            value: string | number | undefined
             display_type?: string
         }[] = []
 
