@@ -954,6 +954,8 @@ export class GhostMarketN3SDK {
             `setRoyaltiesForContract: edit collection royalties with ${this.provider} on ${this.chainName}`,
         )
 
+        if (this.provider === 'private') throw new Error('Only supported on Neoline / O3 for now.')
+
         // force empty if no royalties
         let argsSetCollectionRoyalties = [
             {
