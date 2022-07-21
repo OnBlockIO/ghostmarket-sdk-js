@@ -131,8 +131,8 @@ const customProvider = 'o3'
 const customProvider = 'private'
 // Create instance of GhostMarketN3SDK - Neo N3
 const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
-// Connected address
-// const address = 'N...'
+// Connected address (neoline / o3)
+const address = (await gmSDK.getProvider().getAccount()).address
 //////// Neo N3 provider options ////////
 
 
@@ -146,22 +146,22 @@ const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
 
 ```js
 // Fetch 1 GhostMarket asset.
-const { asset } = await gmSDK.api.getAssetsV2({ limit: 1 });
-console.info(asset)
+const { assets } = await gmSDK.api.getAssetsV2(new AssetsRequest({ size: 1 }))
+console.info(assets)
 ```
 
 ### Fetching events
 
 ```js
 // Fetch 10 GhostMarket events.
-const { events } = await gmSDK.api.getEventsV2({ limit: 10 });
-console.info(events)
+const { events } = await gmSDK.api.getEventsV2(new EventsRequest({ size: 1 }))
+console.info(collections)
 ```
 
 ### Fetching collections
 ```js
 // Fetch 10 GhostMarket collections.
-const { collections } = await gmSDK.api.getCollectionsV2({ limit: 10 })
+const { collections } = await gmSDK.api.getCollectionsV2(new CollectionsRequest({ size: 1 }))
 console.info(collections)
 ```
 
@@ -240,7 +240,7 @@ console.info(`available incentives: ${availableIncentives}`)
 ### Signing data
 ```js
 const message = 'signing stuff'
-const signed = await gmSDK.signData(message, accountAddress)
+const signed = await gmSDK.signData(message)
 console.info(`signed data: ${signed}`)
 ```
 
@@ -288,7 +288,7 @@ const transfer = await gmSDK.transferERC20(destination, contract, amount, {from:
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer ERC721 NFT
+### Transfer ERC721
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -297,7 +297,7 @@ const transfer = await gmSDK.transferERC721(destination, contract, tokenId, {fro
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer ERC1155 NFT
+### Transfer ERC1155
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -307,7 +307,7 @@ const transfer = await gmSDK.transferERC1155(destination, contract, [tokenId], [
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Burn ERC721 NFT
+### Burn ERC721
 ```js
 const contract = '0x....'
 const tokenId = ''
@@ -315,7 +315,7 @@ const burn = await gmSDK.burnERC721(contract, tokenId, {from: accountAddress})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Burn ERC1155 NFT
+### Burn ERC1155
 ```js
 const contract = '0x....'
 const tokenId = ''
@@ -324,7 +324,7 @@ const burn = await gmSDK.burnERC721(contract, tokenId, amount, {from: accountAdd
 console.info(`tx hash: ${burn}`)
 ```
 
-### Minting ERC721 NFT
+### Minting ERC721
 ```js
 const creator = '0x...'
 const mintDetails = {
@@ -336,7 +336,7 @@ const token = await gmSDK.mintERC721(mintDetails, {from: accountAddress})
 console.info(`tx hash: ${token}`)
 ```
 
-### Minting ERC1155 NFT
+### Minting ERC1155
 ```js
 const creator = '0x...'
 const mintDetails = {
@@ -357,7 +357,7 @@ CustomContracts
 You can override automatic calculation of network fee and system fee if you add it to the last argument object on each transaction requiring signature.
 Example when buying a NFT:
 
-instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress, systemFee: 0.2, networkFee: 0.2})` if you want to override both with 0.2 GAS
+instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress, systemFee: '0.2', networkFee: '0.2'})` if you want to override both with 0.2 GAS
 
 
 ### Buying one or more NFT
@@ -485,6 +485,7 @@ const offerDetails = {
 const offer = await gmSDK.processOffer(offerDetails, {from: accountAddress})
 console.info(`tx hash: ${offer}`)
 ```
+
 ### Transfer NEP17
 ```js
 const destination = 'N....'
