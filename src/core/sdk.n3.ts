@@ -205,11 +205,14 @@ export class GhostMarketN3SDK {
     }
 
     async invoke(invokeParams: any): Promise<string> {
-        if (invokeParams.networkFee && this.provider === 'neoline') {
+        if (invokeParams.networkFee && (this.provider === 'neoline' || this.provider === 'o3')) {
             invokeParams.fee = invokeParams.networkFee
         }
         if (invokeParams.systemFee && this.provider === 'neoline') {
             invokeParams.overrideSystemFee = invokeParams.systemFee
+        }
+        if (invokeParams.systemFee && this.provider === '03') {
+            invokeParams.extraSystemFee = invokeParams.systemFee
         }
         return new Promise((resolve, reject) => {
             this.getProvider()
@@ -250,11 +253,14 @@ export class GhostMarketN3SDK {
     }
 
     async invokeMultiple(invokeParams: any): Promise<string> {
-        if (invokeParams.networkFee && this.provider === 'neoline') {
+        if (invokeParams.networkFee && (this.provider === 'neoline' || this.provider === 'o3')) {
             invokeParams.fee = invokeParams.networkFee
         }
         if (invokeParams.systemFee && this.provider === 'neoline') {
             invokeParams.overrideSystemFee = invokeParams.systemFee
+        }
+        if (invokeParams.systemFee && this.provider === '03') {
+            invokeParams.extraSystemFee = invokeParams.systemFee
         }
         return new Promise((resolve, reject) => {
             ;(this.provider === 'o3'
