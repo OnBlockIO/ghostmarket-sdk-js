@@ -398,6 +398,11 @@ export class GhostMarketSDK {
         if (!supportsERC721 && !supportsERC155)
             throw new Error(`${contractAddress} does not support ERC721 or ERC1155`)
 
+        const owner = await this._getOwner(contractAddress, supportsERC721)
+
+        if (owner !== txObject.from)
+            throw new Error(`${contractAddress} owner does not match tx.sender`)
+
         const royaltiesRegistryProxyAddress = this._getRoyaltiesRegistryContractAddress(
             this._chainName,
         )
@@ -629,6 +634,11 @@ export class GhostMarketSDK {
 
         if (!supportsERC721) throw new Error(`${contractAddress} does not support ERC721`)
 
+        const owner = await this._ownerOf(contractAddress, tokenId)
+
+        if (owner !== txObject.from)
+            throw new Error(`${contractAddress} owner does not match tx.sender`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -666,6 +676,10 @@ export class GhostMarketSDK {
 
         if (!supportsERC155) throw new Error(`${contractAddress} does not support ERC1155`)
 
+        const balance = await this._balanceOf(contractAddress, tokenIds[0])
+
+        if (balance === 0) throw new Error(`${contractAddress} sender does not own ${tokenIds[0]}`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
         try {
@@ -697,6 +711,11 @@ export class GhostMarketSDK {
 
         if (!supportsERC721) throw new Error(`${contractAddress} does not support ERC721`)
 
+        const owner = await this._ownerOf(contractAddress, tokenId)
+
+        if (owner !== txObject.from)
+            throw new Error(`${contractAddress} owner does not match tx.sender`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -727,6 +746,10 @@ export class GhostMarketSDK {
         const supportsERC155 = await this._supportsERC1155(contractAddress)
 
         if (!supportsERC155) throw new Error(`${contractAddress} does not support ERC1155`)
+
+        const balance = await this._balanceOf(contractAddress, tokenId)
+
+        if (balance === 0) throw new Error(`${contractAddress} sender does not own ${tokenId}`)
 
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
@@ -1124,6 +1147,59 @@ export class GhostMarketSDK {
             default:
                 return false
         }
+    }
+
+    private _getOwner(contractAddress: string, isERC721: boolean): Promise<string> {
+        const ContractInstance = new this.web3.eth.Contract(
+            isERC721 ? ERC721Contract : ERC1155Contract,
+            contractAddress,
+        )
+
+        return ContractInstance.methods
+            .owner()
+            .call()
+            .then((res: any) => {
+                return res
+            })
+            .catch((e: any) => {
+                return NULL_ADDRESS
+            })
+    }
+
+    private async _ownerOf(contractAddress: string, tokenId: string): Promise<string> {
+        const supportsERC721 = await this._supportsERC721(contractAddress)
+        if (supportsERC721) {
+            const NFTContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
+
+            return NFTContractInstance.methods
+                .ownerOf(tokenId)
+                .call()
+                .then((res: any) => {
+                    return res
+                })
+                .catch((e: any) => {
+                    return NULL_ADDRESS
+                })
+        }
+        return NULL_ADDRESS
+    }
+
+    private async _balanceOf(contractAddress: string, tokenId: string): Promise<number> {
+        const supportsERC1555 = await this._supportsERC1155(contractAddress)
+        if (supportsERC1555) {
+            const NFTContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
+
+            return NFTContractInstance.methods
+                .ownerOf(tokenId)
+                .call()
+                .then((res: any) => {
+                    return res
+                })
+                .catch((e: any) => {
+                    return 0
+                })
+        }
+        return 0
     }
 
     private _supportsERC20(contractAddress: string): Promise<boolean> {
