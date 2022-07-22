@@ -222,8 +222,8 @@ console.info(`tx hash: ${approve}`)
 ### Checking token approval
 ```js
 const contract = '0x....'
-const tokenApproval = await gmSDK.checkTokenApproval(contract, accountAddress)
-console.info(`amount approved: ` + tokenApproval)
+const approval = await gmSDK.checkTokenApproval(contract, accountAddress)
+console.info(`amount approved: ` + approval)
 ```
 
 ### Claiming incentives
@@ -271,7 +271,6 @@ const orderDetails = [{
     quotePrice: '', // order price - in biginteger format
     makerAddress: '', // order maker
     type: 1, // 1 - sell order, 2 - offer, 3 - collection offer
-    typeAsset: 1, // 1 - ERC721, 2 - ERC1155
     startDate, // order start date
     endDate: startDate + (3600 * 24) // order end date
 }]

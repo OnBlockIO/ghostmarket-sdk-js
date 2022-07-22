@@ -6,6 +6,7 @@ import {
     ERC20WrappedContract,
     ERC721Contract,
     ERC1155Contract,
+    ERC165Contract,
     ExchangeV2Contract,
     RoyaltiesRegistryContract,
     IncentivesContract,
@@ -23,6 +24,9 @@ import {
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
     MAINNET_API_URL,
+    ERC1155_INTERFACE_ID,
+    ERC721_INTERFACE_ID,
+    ERC20_INTERFACE_ID,
     ChainName,
     ChainId,
     ChainSlug,
@@ -45,7 +49,6 @@ interface IOrderItem {
     quotePrice: string // quote price for the order.
     makerAddress: string // maker address for the order.
     type: number // type of order. // 1 - sell order, 2 - offer, 3 - collection offer
-    typeAsset: number // asset type of order. // 1 - ERC721, 2 - ERC1155
     startDate: number // start date the order can be matched.
     endDate: number // end date the order can be matched.
 }
@@ -127,11 +130,23 @@ export class GhostMarketSDK {
 
         for (let i = 0; i < items.length; i++) {
             try {
+                const supportsERC20 = await this._supportsERC20(items[i].quoteContract)
+                const supportsERC721 = await this._supportsERC721(items[i].tokenContract)
+                const supportsERC155 = await this._supportsERC1155(items[i].tokenContract)
+
+                if (!supportsERC20)
+                    throw new Error(`${items[i].quoteContract} does not support ERC20`)
+
+                if (!supportsERC721 && !supportsERC155)
+                    throw new Error(`${items[i].tokenContract} does not support ERC721 or ERC1155`)
+
                 const salt =
                     '0x' +
                     [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
 
-                const encType = items[i].typeAsset == 1 ? ERC721 : ERC1155
+                const tokenAmount = supportsERC721 ? 1 : items[i].tokenId
+
+                const encType = supportsERC721 ? ERC721 : ERC1155
 
                 const order = Order(
                     items[i].makerAddress,
@@ -189,7 +204,7 @@ export class GhostMarketSDK {
                     chain: this._chainSlug,
                     token_contract: items[i].tokenContract,
                     token_id: items[i].tokenId,
-                    token_amount: items[i].tokenAmount,
+                    token_amount: tokenAmount,
                     quote_contract: items[i].quoteContract,
                     quote_price: items[i].quotePrice,
                     maker_address: items[i].makerAddress,
@@ -376,6 +391,13 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC721 = await this._supportsERC721(contractAddress)
+        const supportsERC155 = await this._supportsERC1155(contractAddress)
+
+        if (!supportsERC721 && !supportsERC155)
+            throw new Error(`${contractAddress} does not support ERC721 or ERC1155`)
+
         const royaltiesRegistryProxyAddress = this._getRoyaltiesRegistryContractAddress(
             this._chainName,
         )
@@ -412,6 +434,7 @@ export class GhostMarketSDK {
      */
     public async wrapToken(amount: string, isFromNativeToWrap: boolean, txObject: TxObject) {
         if (this._isReadonlyProvider) return
+
         const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
         const WrappedTokenContractInstance = new this.web3.eth.Contract(
             ERC20WrappedContract,
@@ -419,14 +442,21 @@ export class GhostMarketSDK {
         )
 
         if (isFromNativeToWrap) {
+            const balance = await this.checkBalance(txObject.from)
+            if (balance < amount) {
+                throw new Error(`Not enough balance to convert from native to wrapped`)
+            }
+        } else {
+            const balance = await this.checkTokenBalance(wrappedTokenAddress, txObject.from)
+            if (balance < amount) {
+                throw new Error(`Not enough balance to convert from wrapped to native`)
+            }
+        }
+
+        if (isFromNativeToWrap) {
             try {
                 const data = await WrappedTokenContractInstance.methods.deposit()
-                return this.sendMethod(
-                    data,
-                    txObject.from,
-                    wrappedTokenAddress,
-                    !isFromNativeToWrap ? undefined : amount,
-                )
+                return this.sendMethod(data, txObject.from, wrappedTokenAddress, amount)
             } catch (e) {
                 return console.error(
                     `wrapToken: Failed to execute deposit on ${wrappedTokenAddress} with error:`,
@@ -452,6 +482,13 @@ export class GhostMarketSDK {
      */
     public async approveContract(contractAddress: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC721 = await this._supportsERC721(contractAddress)
+        const supportsERC155 = await this._supportsERC1155(contractAddress)
+
+        if (!supportsERC721 && !supportsERC155)
+            throw new Error(`${contractAddress} does not support ERC721 or ERC1155`)
+
         const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
@@ -475,6 +512,11 @@ export class GhostMarketSDK {
      */
     public async approveToken(contractAddress: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC20 = await this._supportsERC20(contractAddress)
+
+        if (!supportsERC20) throw new Error(`${contractAddress} does not support ERC20`)
+
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
@@ -546,6 +588,16 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC20 = await this._supportsERC20(contractAddress)
+
+        if (!supportsERC20) throw new Error(`${contractAddress} does not support ERC20`)
+
+        const balance = await this.checkTokenBalance(contractAddress, txObject.from)
+        if (balance < amount) {
+            throw new Error(`Not enough ERC20 balance to transfer`)
+        }
+
         const ContractInstance = new this.web3.eth.Contract(ERC20Contract, contractAddress)
 
         try {
@@ -572,6 +624,11 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC721 = await this._supportsERC721(contractAddress)
+
+        if (!supportsERC721) throw new Error(`${contractAddress} does not support ERC721`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -604,6 +661,11 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC155 = await this._supportsERC1155(contractAddress)
+
+        if (!supportsERC155) throw new Error(`${contractAddress} does not support ERC1155`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
         try {
@@ -630,6 +692,11 @@ export class GhostMarketSDK {
      */
     public async burnERC721(contractAddress: string, tokenId: string, txObject: TxObject) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC721 = await this._supportsERC721(contractAddress)
+
+        if (!supportsERC721) throw new Error(`${contractAddress} does not support ERC721`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -656,6 +723,11 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ) {
         if (this._isReadonlyProvider) return
+
+        const supportsERC155 = await this._supportsERC1155(contractAddress)
+
+        if (!supportsERC155) throw new Error(`${contractAddress} does not support ERC1155`)
+
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
         try {
@@ -750,6 +822,18 @@ export class GhostMarketSDK {
         }
     }
 
+    /** Check native balance for address
+     * @param {string} accountAddress address used to check.
+     */
+    public async checkBalance(accountAddress: string) {
+        try {
+            const data = await this.web3.eth.getBalance(accountAddress)
+            return await this.callMethod(data, accountAddress)
+        } catch (e) {
+            return console.error(`checkBalance: failed to execute getBalance with error:`, e)
+        }
+    }
+
     /** Check one token balance for address
      * @param {string} contractAddress token contract to check approval.
      * @param {string} accountAddress address used to check.
@@ -797,6 +881,12 @@ export class GhostMarketSDK {
      */
     public async claimIncentives(txObject: TxObject) {
         if (this._isReadonlyProvider) return
+
+        const balance = await this.checkIncentives(txObject.from)
+        if (balance === 0) {
+            throw new Error(`Nothing to claim on incentives contract`)
+        }
+
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
@@ -1034,6 +1124,48 @@ export class GhostMarketSDK {
             default:
                 return false
         }
+    }
+
+    private _supportsERC20(contractAddress: string): Promise<boolean> {
+        const ERC20ContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
+
+        return ERC20ContractInstance.methods
+            .supportsInterface(ERC20_INTERFACE_ID)
+            .call()
+            .then((res: any) => {
+                return res
+            })
+            .catch((e: any) => {
+                return false
+            })
+    }
+
+    private _supportsERC721(contractAddress: string): Promise<boolean> {
+        const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
+
+        return NFTContractInstance.methods
+            .supportsInterface(ERC721_INTERFACE_ID)
+            .call()
+            .then((res: any) => {
+                return res
+            })
+            .catch((e: any) => {
+                return false
+            })
+    }
+
+    private _supportsERC1155(contractAddress: string): Promise<boolean> {
+        const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
+
+        return NFTContractInstance.methods
+            .supportsInterface(ERC1155_INTERFACE_ID)
+            .call()
+            .then((res: any) => {
+                return res
+            })
+            .catch((e: any) => {
+                return false
+            })
     }
 
     sendMethod(
