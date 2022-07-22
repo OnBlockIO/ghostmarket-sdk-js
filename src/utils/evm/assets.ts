@@ -5,7 +5,7 @@ import web3 from 'web3'
 const Web3 = new web3()
 
 export function id(str: string): string {
-    const hex = `0x${Web3.utils.keccak256(Buffer.from(str).toString()).substring(0, 8)}`
+    const hex = `${Web3.utils.keccak256(Buffer.from(str).toString()).substring(0, 8)}`
     return hex
 }
 

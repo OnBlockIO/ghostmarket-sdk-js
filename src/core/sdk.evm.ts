@@ -23,7 +23,9 @@ import {
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
     MAINNET_API_URL,
-    Network,
+    ChainName,
+    ChainId,
+    ChainSlug,
 } from './constants'
 import { IEVMOrder } from '../lib/api/ghostmarket/models'
 import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
@@ -34,6 +36,19 @@ import {
     IGhostMarketApiOptions,
     PostCreateOrderRequest,
 } from '../lib/api/ghostmarket'
+
+interface IOrderItem {
+    tokenContract: string // token contract for the order.
+    tokenId: string // token id for the order.
+    tokenAmount: number // token amount for the order.
+    quoteContract: string // quote contract for the order.
+    quotePrice: string // quote price for the order.
+    makerAddress: string // maker address for the order.
+    type: number // type of order. // 1 - sell order, 2 - offer, 3 - collection offer
+    typeAsset: number // asset type of order. // 1 - ERC721, 2 - ERC1155
+    startDate: number // start date the order can be matched.
+    endDate: number // end date the order can be matched.
+}
 
 interface IMintItem {
     creatorAddress: string
@@ -50,7 +65,6 @@ interface TxObject {
     from: string
     value?: string
     gasPrice?: number
-    chainId?: string
 }
 
 export class GhostMarketSDK {
@@ -59,7 +73,9 @@ export class GhostMarketSDK {
     public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
-    private _chainName: Network
+    private _chainName: ChainName
+    private _chainSlug: ChainSlug
+    private _chainId: ChainId
     private _isReadonlyProvider: boolean
 
     /**
@@ -76,7 +92,7 @@ export class GhostMarketSDK {
             environment?: string
             useReadOnlyProvider?: boolean
             rpcUrl?: string
-            chainName?: Network
+            chainName?: ChainName
         },
         logger?: (arg: string) => void,
     ) {
@@ -85,8 +101,10 @@ export class GhostMarketSDK {
         options.rpcUrl = options.rpcUrl || ''
         const useReadOnlyProvider = options.useReadOnlyProvider ?? false
         this._isReadonlyProvider = useReadOnlyProvider
-        options.chainName = options.chainName || Network.Ethereum
+        options.chainName = options.chainName || ChainName.Ethereum
         this._chainName = options.chainName
+        this._chainSlug = ChainSlug[this._chainName.replace(/\s/g, '') as keyof typeof ChainSlug]
+        this._chainId = ChainId[this._chainName.replace(/\s/g, '') as keyof typeof ChainId]
         this.web3 = new Web3(provider)
         const apiConfig = {
             apiKey: options.apiKey,
@@ -97,122 +115,102 @@ export class GhostMarketSDK {
         this.logger = logger || ((arg: string) => arg)
     }
 
-    /** Prepare order based on asset
-     * @param {IAssetV2} asset left signature for the order match.
-     * @param {number} type type of order. // 1 - sell order, 2 - offer, 3 - collection offer
+    /** Create one or more sell order or nft offer or collection offer
+     * @param {IOrderItem[]} items for the order.
      */
-    /* public async prepareOrder(asset: IAssetV2, type: number, accountAddress: string) {
-        try {
-            const tokenId = asset.auction.auction.tokenId
-            const tokenAmount = asset.auction.tokenAmount
-            const baseContract = asset.auction.baseContract.hash
-            const quoteContract = asset.auction.quoteContract.hash
-            const quotePrice = asset.auction.price
-            const encType = asset.nft.nftType.includes('ERC721') ? ERC721 : ERC1155
-            const order: IEVMOrder = Order(
-                accountAddress,
-                type === 2
-                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
-                    : type === 3
-                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(baseContract), quotePrice)
-                    : Asset(encType, enc(baseContract, tokenId), tokenAmount.toString()),
-                NULL_ADDRESS,
-                type === 2
-                    ? Asset(encType, enc(baseContract, tokenId), tokenAmount.toString())
-                    : type === 3
-                    ? Asset(COLLECTION, enc(quoteContract), quotePrice)
-                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
-                asset.auction.salt,
-                asset.auction.startDate,
-                asset.auction.endDate,
-                '0xffffffff',
-                '0x',
-            )
+    public async createOrder(items: IOrderItem[]): Promise<void> {
+        console.log(
+            `createOrder: creating order with ${this.web3.currentProvider?.toString()} on ${
+                this._chainName
+            }`,
+        )
 
-            return order
-        } catch (e) {
-            return console.error(`prepareMatchOrders: failed to execute with error:`, e)
+        for (let i = 0; i < items.length; i++) {
+            try {
+                const salt =
+                    '0x' +
+                    [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
+
+                const encType = items[i].typeAsset == 1 ? ERC721 : ERC1155
+
+                const order = Order(
+                    items[i].makerAddress,
+                    items[i].type === 2
+                        ? Asset(
+                              items[i].quoteContract === '0x' ? ETH : ERC20,
+                              enc(items[i].quoteContract),
+                              items[i].quotePrice,
+                          )
+                        : items[i].type === 3
+                        ? Asset(
+                              items[i].quoteContract === '0x' ? ETH : ERC20,
+                              enc(items[i].tokenContract),
+                              items[i].quotePrice,
+                          )
+                        : Asset(
+                              encType,
+                              enc(items[i].tokenContract, items[i].tokenId),
+                              items[i].tokenAmount.toString(),
+                          ),
+                    NULL_ADDRESS,
+                    items[i].type === 2
+                        ? Asset(
+                              encType,
+                              enc(items[i].tokenContract, items[i].tokenId),
+                              items[i].tokenAmount.toString(),
+                          )
+                        : items[i].type === 3
+                        ? Asset(COLLECTION, enc(items[i].quoteContract), items[i].quotePrice)
+                        : Asset(
+                              items[i].quoteContract === '0x' ? ETH : ERC20,
+                              enc(items[i].quoteContract),
+                              items[i].quotePrice,
+                          ),
+                    salt,
+                    items[i].startDate,
+                    items[i].endDate,
+                    '0xffffffff',
+                    '0x',
+                )
+
+                const verifyingContract = this._getExchangeV2ProxyContractAddress(this._chainName)
+
+                const signature = await sign(
+                    order,
+                    items[i].makerAddress,
+                    verifyingContract,
+                    this.web3,
+                    this._chainId,
+                )
+
+                const orderKeyHash = hashKey(order)
+
+                const nftToList = {
+                    chain: this._chainSlug,
+                    token_contract: items[i].tokenContract,
+                    token_id: items[i].tokenId,
+                    token_amount: items[i].tokenAmount,
+                    quote_contract: items[i].quoteContract,
+                    quote_price: items[i].quotePrice,
+                    maker_address: items[i].makerAddress,
+                    is_buy_offer: items[i].type === 2,
+                    start_date: items[i].startDate,
+                    end_date: items[i].endDate,
+                    signature,
+                    order_key_hash: orderKeyHash,
+                    salt,
+                    origin_fees: 0,
+                    origin_address: '',
+                } as PostCreateOrderRequest
+                const listing = await this.api.postCreateOrder(
+                    new PostCreateOrderRequest(nftToList),
+                )
+                console.log(listing)
+            } catch (e) {
+                return console.error(`Failed to execute postCreateOrder ${i + 1} with error:`, e)
+            }
         }
-    } */
-
-    /** Create a sell order or a single nft offer or a collection offer
-     * @param {string} chain for the order.
-     * @param {string} tokenContract token contract for the order.
-     * @param {string} tokenId token id for the order.
-     * @param {number} tokenAmount token amount for the order.
-     * @param {string} quoteContract quote contract for the order.
-     * @param {string} quotePrice quote price for the order.
-     * @param {string} makerAddress maker address for the order.
-     * @param {number} type type of order. // 1 - sell order, 2 - offer, 3 - collection offer
-     * @param {number} typeAsset asset type of order. // 1 - ERC721, 2 - ERC1155
-     * @param {number} startDate start date the order can be matched.
-     * @param {number} endDate end date the order can be matched.
-     */
-    public async createOrder(
-        chain: string,
-        tokenContract: string,
-        tokenId: string,
-        tokenAmount: number,
-        quoteContract: string,
-        quotePrice: string,
-        makerAddress: string,
-        type: number,
-        typeAsset: number,
-        startDate: number,
-        endDate: number,
-    ) {
-        try {
-            const salt =
-                '0x' +
-                [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
-
-            const encType = typeAsset == 1 ? ERC721 : ERC1155
-
-            const order = Order(
-                makerAddress,
-                type === 2
-                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
-                    : type === 3
-                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(tokenContract), quotePrice)
-                    : Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString()),
-                NULL_ADDRESS,
-                type === 2
-                    ? Asset(encType, enc(tokenContract, tokenId), tokenAmount.toString())
-                    : type === 3
-                    ? Asset(COLLECTION, enc(quoteContract), quotePrice)
-                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
-                salt,
-                startDate,
-                endDate,
-                '0xffffffff',
-                '0x',
-            )
-
-            const verifyingContract = this._getExchangeV2ProxyContractAddress(this._chainName)
-            const signature = await sign(order, makerAddress, verifyingContract)
-            const orderKeyHash = hashKey(order)
-
-            const nftToList = {
-                chain,
-                token_contract: tokenContract,
-                token_id: tokenId,
-                token_amount: tokenAmount,
-                quote_contract: quoteContract,
-                quote_price: quotePrice,
-                maker_address: makerAddress,
-                is_buy_offer: type === 2,
-                start_date: startDate,
-                end_date: endDate,
-                signature,
-                order_key_hash: orderKeyHash,
-                salt,
-                origin_fees: 0,
-                origin_address: '',
-            } as PostCreateOrderRequest
-            await this.api.postCreateOrder(new PostCreateOrderRequest(nftToList))
-        } catch (e) {
-            return console.error(`Failed to execute postCreateOrder with error:`, e)
-        }
+        return
     }
 
     /** Prepare match of a sell order or a single nft offer or a collection offer
@@ -829,209 +827,209 @@ export class GhostMarketSDK {
         }
     }
 
-    private _getIncentivesContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getIncentivesContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.INCENTIVES
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.INCENTIVES
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.INCENTIVES
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.INCENTIVES
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.INCENTIVES
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.INCENTIVES
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.INCENTIVES
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.INCENTIVES
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getERC721GhostContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getERC721GhostContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.GHOST_ERC721
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.GHOST_ERC721
             // Not available yet on Ethereum Mainnet
-            /* case Network.Ethereum:
+            /* case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.GHOST_ERC721 */
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.GHOST_ERC721
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.GHOST_ERC721
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.GHOST_ERC721
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.GHOST_ERC721
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.GHOST_ERC721
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getERC1155GhostContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getERC1155GhostContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.GHOST_ERC1155
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.GHOST_ERC1155
             // Not available yet on Ethereum Mainnet
-            /* case Network.Ethereum:
+            /* case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.GHOST_ERC1155 */
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.GHOST_ERC1155
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.GHOST_ERC1155
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.GHOST_ERC1155
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.GHOST_ERC1155
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.GHOST_ERC1155
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getERC20ProxyContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getERC20ProxyContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_ERC20
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_ERC20
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_ERC20
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_ERC20
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.PROXY_ERC20
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.PROXY_ERC20
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_ERC20
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.PROXY_ERC20
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getNFTProxyContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getNFTProxyContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_NFT
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_NFT
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_NFT
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_NFT
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.PROXY_NFT
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.PROXY_NFT
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_NFT
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.PROXY_NFT
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getExchangeV2ProxyContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getExchangeV2ProxyContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getRoyaltiesRegistryContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getRoyaltiesRegistryContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.PROXY_ROYALTIES
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _getWrappedTokenContractAddress(networkName: string): string {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _getWrappedTokenContractAddress(chainName: string): string {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return AVALANCHE_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return AVALANCHE_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return ETHEREUM_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return ETHEREUM_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.BSC:
+            case ChainName.BSC:
                 return BSC_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return BSC_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return POLYGON_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return POLYGON_TESTNET_CONTRACTS.WRAPPED_TOKEN
             default:
                 throw new Error('Unsupported Network')
         }
     }
 
-    private _supportsEIP1559(networkName: string): boolean {
-        switch (networkName) {
-            case Network.Avalanche:
+    private _supportsEIP1559(chainName: string): boolean {
+        switch (chainName) {
+            case ChainName.Avalanche:
                 return true
-            case Network.AvalancheTestnet:
+            case ChainName.AvalancheTestnet:
                 return true
-            case Network.Ethereum:
+            case ChainName.Ethereum:
                 return true
-            case Network.EthereumTestnet:
+            case ChainName.EthereumTestnet:
                 return true
-            case Network.BSC:
+            case ChainName.BSC:
                 return false
-            case Network.BSCTestnet:
+            case ChainName.BSCTestnet:
                 return false
-            case Network.Polygon:
+            case ChainName.Polygon:
                 return true
-            case Network.PolygonTestnet:
+            case ChainName.PolygonTestnet:
                 return true
             default:
                 return false

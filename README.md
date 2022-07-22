@@ -76,7 +76,7 @@ To get started on Neo N3, you can use either a NEP-12 provider (ex neoline) or a
 
 ```js
 import Web3 from 'web3' // only for EVM
-import { GhostMarketSDK, GhostMarketN3SDK, Network, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
+import { GhostMarketSDK, GhostMarketN3SDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
 // if using EVM private key or mnemonic hdwallet-provider is required
 // import HDWalletProvider from '@truffle/hdwallet-provider'
 
@@ -87,14 +87,14 @@ const privateKey = process.env.PRIVATE_KEY // private key to use - only for Neo 
 const mnemonic = process.env.MNEMONIC // mnemonic to use - only for EVM
 const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
-const chainName = Network.Ethereum // see below for chain values
+const chainName = ChainName.Ethereum // see below for chain values
 
 /* chainName values : 
-    Network.Ethereum / Network.EthereumTestnet
-    Network.Polygon / Network.PolygonTestnet
-    Network.BSC / Network.BSCTestnet
-    Network.Avalanche / Network.AvalancheTestnet
-    Network.Neo3 / Network.Neo3Testnet
+    ChainName.Ethereum / ChainName.EthereumTestnet
+    ChainName.Polygon / ChainName.PolygonTestnet
+    ChainName.BSC / ChainName.BSCTestnet
+    ChainName.Avalanche / ChainName.AvalancheTestnet
+    ChainName.Neo3 / ChainName.Neo3Testnet
     */
 
 // SDK config options.
@@ -119,6 +119,9 @@ const customProvider = new HDWalletProvider(MNEMONIC, rpcUrl)
 const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 // Connected address
 const address = customProvider.addresses[0]
+// Start and stop provider engine - when using HDWalletProvider
+// customProvider.engine.start();
+// customProvider.engine.stop();
 //////// EVM provider options ////////
 
 
@@ -232,22 +235,22 @@ console.info(`tx hash: ${claim}`)
 ### Checking incentives
 ```js
 const incentives = await gmSDK.checkIncentives(accountAddress)
-const availableIncentives = incentives ? incentives.availableIncentives / Math.pow(10, 8) : 0 // EVM
-const availableIncentives = incentives[5].value// Neo N3
+const availableIncentives = incentives ? incentives.availableIncentives : 0 // EVM
+const availableIncentives = incentives[5] ? incentives[5].value : 0 // Neo N3
 console.info(`available incentives: ${availableIncentives}`)
 ```
 
 ### Signing data
 ```js
 const message = 'signing stuff'
-const signed = await gmSDK.signData(message)
+const signed = await gmSDK.signData(message, address) // EVM
+const signed = await gmSDK.signData(message) // N3
 console.info(`signed data: ${signed}`)
 ```
 
 ## Usage - EVM
 
 prepareMatchOrders
-createOpenOrder
 matchOrders
 cancelOrder
 bulkCancelOrders
@@ -256,6 +259,25 @@ You can override automatic calculation of gas price if you add it to the last ar
 Example when wrapping a token:
 
 instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: accountAddress})` simply do `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: accountAddress, gasPrice: 50000})` if you want to override gas price to `50000`.
+
+### Listing NFT fixed price
+```js
+const startDate = new Date().getTime()
+const orderDetails = [{ 
+    tokenContract: '', // order base contract address - nft contract for listing
+    tokenId: '', // order NFT tokenId - token id for listing
+    tokenAmount: 1, // order amount, 1 except for ERC155 where it can be more
+    quoteContract: '', // order quote contract address - currency accepted for listing
+    quotePrice: '', // order price - in biginteger format
+    makerAddress: '', // order maker
+    type: 1, // 1 - sell order, 2 - offer, 3 - collection offer
+    typeAsset: 1, // 1 - ERC721, 2 - ERC1155
+    startDate, // order start date
+    endDate: startDate + (3600 * 24) // order end date
+}]
+const order = await gmSDK.createOrder(orderDetails)
+console.info(`tx hash: ${order}`)
+```
 
 ### Getting contract approval
 ```js

@@ -3,9 +3,6 @@
 // eslint-disable-next-line no-undef
 import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
 
-import web3 from 'web3'
-const Web3 = new web3()
-
 const DOMAIN_TYPE = [
     {
         type: 'string',
@@ -40,7 +37,7 @@ export default {
         }
     },
 
-    signTypedData(from: string, data: any): any {
+    signTypedData(from: string, data: any, provider: any): any {
         // eslint-disable-next-line no-async-promise-executor
         return new Promise(async (resolve, reject) => {
             function cb(err: Error, result: any) {
@@ -65,8 +62,8 @@ export default {
                     s,
                 })
             }
-            if (Web3.givenProvider.currentProvider.isMetaMask) {
-                Web3.givenProvider.currentProvider.sendAsync(
+            if (provider.currentProvider.isMetaMask) {
+                provider.currentProvider.sendAsync(
                     {
                         jsonrpc: '2.0',
                         method: 'eth_signTypedData_v3',
@@ -76,9 +73,9 @@ export default {
                     cb,
                 )
             } else {
-                let send = Web3.givenProvider.currentProvider.sendAsync
-                if (!send) send = Web3.givenProvider.currentProvider.send
-                send.bind(Web3.givenProvider.currentProvider)(
+                let send = provider.currentProvider.sendAsync
+                if (!send) send = provider.currentProvider.send
+                send.bind(provider.currentProvider)(
                     {
                         jsonrpc: '2.0',
                         method: 'eth_signTypedData',

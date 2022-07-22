@@ -135,7 +135,7 @@ export const PHA_TESTNET_CONTRACTS = {
     GM_TOKEN: ''
 }
 
-export enum Network {
+export enum ChainName {
     Avalanche = 'Avalanche',
     AvalancheTestnet = 'Avalanche Testnet',
     BSC = 'BSC',
@@ -148,4 +148,30 @@ export enum Network {
     Neo3Testnet = 'Neo3 Testnet',
     Phantasma = 'Phantasma',
     PhantasmaTestnet = 'Phantasma Testnet',
+}
+
+export enum ChainSlug {
+    Avalanche = 'avalanche',
+    AvalancheTestnet = 'avalanchet',
+    BSC = 'bsc',
+    BSCTestnet = 'bsct',
+    Ethereum = 'eth',
+    EthereumTestnet = 'etht',
+    Polygon = 'polygon',
+    PolygonTestnet = 'polygont',
+    Neo3 = 'n3',
+    Neo3Testnet = 'n3t',
+    Phantasma = 'pha',
+    PhantasmaTestnet = 'phat',
+}
+
+export enum ChainId {
+    Avalanche = 43113,
+    AvalancheTestnet = 43113,
+    BSC = 97,
+    BSCTestnet = 56,
+    Ethereum = 1,
+    EthereumTestnet = 5,
+    Polygon = 137,
+    PolygonTestnet = 80001,
 }

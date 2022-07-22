@@ -6,7 +6,7 @@ import {
     N3_TESTNET_CONTRACTS,
     MAX_INT_255,
     MAINNET_API_URL,
-    Network,
+    ChainName,
 } from './constants'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 
@@ -147,13 +147,13 @@ export class GhostMarketN3SDK {
             environment?: string
             privateKey?: string
             rpcUrl?: string
-            chainName?: Network
+            chainName?: ChainName
         },
         logger?: (arg: string) => void,
     ) {
         options.apiKey = options.apiKey || ''
         options.environment = options.environment || MAINNET_API_URL
-        this.isMainNet = options.chainName === Network.Neo3
+        this.isMainNet = options.chainName === ChainName.Neo3
         this.contractExchangeAddress = this.isMainNet
             ? N3_MAINNET_CONTRACTS.EXCHANGE
             : N3_TESTNET_CONTRACTS.EXCHANGE
@@ -163,7 +163,7 @@ export class GhostMarketN3SDK {
         options.privateKey = options.privateKey || ''
         options.rpcUrl = options.rpcUrl || ''
         this._providerRPCUrl = options.rpcUrl
-        options.chainName = options.chainName || Network.Neo3
+        options.chainName = options.chainName || ChainName.Neo3
         this.chainName = this.isMainNet ? 'n3' : 'n3t'
         this._privateKey = options.privateKey
         this.provider = provider || 'private'

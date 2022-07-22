@@ -6,9 +6,6 @@ import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
 import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
 import EIP712 from './EIP712'
 
-import web3 from 'web3'
-const Web3 = new web3()
-
 export function AssetType(assetClass: string, data: string): IEVMAssetType {
     return { assetClass, data }
 }
@@ -53,8 +50,13 @@ const Types = {
     ],
 }
 
-export async function sign(order: IEVMOrder, account: string, verifyingContract: string) {
-    const chainId = Number(await Web3.eth.getChainId())
+export async function sign(
+    order: IEVMOrder,
+    account: string,
+    verifyingContract: string,
+    provider: any,
+    chainId: number,
+) {
     const data = EIP712.createTypeData(
         {
             name: 'GhostMarket',
@@ -66,5 +68,5 @@ export async function sign(order: IEVMOrder, account: string, verifyingContract:
         order,
         Types,
     )
-    return (await EIP712.signTypedData(account, data)).sig
+    return (await EIP712.signTypedData(account, data, provider)).sig
 }
