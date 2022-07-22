@@ -62,7 +62,7 @@ export default {
                     s,
                 })
             }
-            if (provider.currentProvider.isMetaMask) {
+            if (provider.currentProvider.isMetaMask || provider.currentProvider.engine) {
                 provider.currentProvider.sendAsync(
                     {
                         jsonrpc: '2.0',

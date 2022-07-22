@@ -5,13 +5,18 @@ import web3 from 'web3'
 const Web3 = new web3()
 
 export function id(str: string): string {
-    const hex = `${Web3.utils.keccak256(Buffer.from(str).toString()).substring(0, 8)}`
+    const hex = `${Web3.utils
+        .keccak256(str)
+        .toString()
+        .substring(0, 2 + 8)}`
     return hex
 }
 
 export function enc(token: string, tokenId?: string): string {
     if (tokenId) {
         return Web3.eth.abi.encodeParameters(['address', 'uint256'], [token, tokenId])
+    } else if (token === '0x') {
+        return '0x'
     } else {
         return Web3.eth.abi.encodeParameter('address', token)
     }

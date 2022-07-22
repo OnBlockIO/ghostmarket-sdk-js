@@ -25,6 +25,10 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Checking Incentives](#checking-incentives)
     - [Signing Data](#signing-data)
 - [Usage - EVM](#usage-evm)
+    - [Buying one or more NFT](#buying-one-or-more-nft)
+    - [Listing NFT fixed price](#listing-nft-fixed-price)
+    - [Cancel one or more NFT](#cancel-one-or-more-nft)
+    - [Edit listing price](#edit-listing-price)
     - [Getting contract approval](#getting-contract-approval)
     - [Wrap token](#wrap-token)
     - [Approve contract](#approve-contract)
@@ -41,7 +45,7 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Listing NFT auction](#listing-nft-auction)
     - [Bid NFT auction](#bid-nft-auction)
     - [Claim NFT auction](#claim-nft-auction)
-    - [Cancel one or more NFT](#buying-one-or-more-nft)
+    - [Cancel one or more NFT](#cancel-one-or-more-nft)
     - [Edit listing price](#edit-listing-price)
     - [Place offer](#place-offer)
     - [Accept offer](#accept-offer)
@@ -262,20 +266,57 @@ instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: accountAdd
 
 ### Listing NFT fixed price
 ```js
-const startDate = new Date().getTime()
+const startDate = parseInt(new Date().getTime() / 1000)
 const orderDetails = [{ 
-    tokenContract: '', // order base contract address - nft contract for listing
-    tokenId: '', // order NFT tokenId - token id for listing
-    tokenAmount: 1, // order amount, 1 except for ERC155 where it can be more
+    baseContract: '', // order base contract address - nft contract for listing
+    baseTokenId: '', // order NFT tokenId - token id for listing - set to empty for collection offer
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
     quoteContract: '', // order quote contract address - currency accepted for listing
     quotePrice: '', // order price - in biginteger format
     makerAddress: '', // order maker
-    type: 1, // 1 - sell order, 2 - offer, 3 - collection offer
+    type: 1, // 1 - listing, 2 - offer
     startDate, // order start date
     endDate: startDate + (3600 * 24) // order end date
 }]
-const order = await gmSDK.createOrder(orderDetails)
-console.info(`tx hash: ${order}`)
+const listing = await gmSDK.createOrder(orderDetails)
+console.info(listing)
+```
+
+### Cancel Listing NFT
+```js
+const orderDetails = [{ 
+    baseContract: '', // order base contract address - nft contract for listing
+    baseTokenId: '', // order NFT tokenId - token id for listing - set to empty for collection offer
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
+    quoteContract: '', // order quote contract address - currency accepted for listing
+    quotePrice: '', // order price - in biginteger format
+    makerAddress: '', // order maker
+    type, // 1 - listing, 2 - offer
+    startDate, // order start date
+    endDate, // order end date
+    salt // required for cancellation, use the salt from the order/offer
+}]
+const cancel = await gmSDK.bulkCancelOrders(orderDetails, {from: address})
+console.info(`tx hash: ${cancel}`)
+```
+
+### Edit listing price
+Note: edit listing price does not cancel current order, it just hides it on API and exposes the new one only, but the old one can still be matched later. Only a true cancellation will make it un matcheable.
+```js
+const orderDetails = [{ 
+    baseContract: '', // order base contract address - nft contract for listing
+    baseTokenId: '', // order NFT tokenId - token id for listing - set to empty for collection offer
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
+    quoteContract: '', // order quote contract address - currency accepted for listing
+    quotePrice: '', // order new price - in biginteger format - has to be lower than current price
+    makerAddress: '', // order maker
+    type, // 1 - listing, 2 - offer
+    startDate, // order start date
+    endDate // order end date
+    salt // required for edit, use the salt from the order/offer
+}]
+const edit = await gmSDK.createOrder(orderDetails)
+console.info(edit)
 ```
 
 ### Getting contract approval
