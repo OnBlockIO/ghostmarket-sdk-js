@@ -19,6 +19,8 @@ export interface IAssetOffersResult extends IPagedResult {
         quoteContract: IQuoteContractV2
         startDate: number
         tokenAmount: number
+        tokenId?: string
         type: string
+        contractAuctionId?: string
     }[]
 }
