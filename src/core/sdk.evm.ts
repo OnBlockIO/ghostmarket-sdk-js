@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Web3 from 'web3'
 import { BigNumber } from '@ethersproject/bignumber'
@@ -12,24 +13,16 @@ import {
     IncentivesContract,
 } from '../abi'
 import {
-    ETHEREUM_MAINNET_CONTRACTS,
-    ETHEREUM_TESTNET_CONTRACTS,
-    AVALANCHE_MAINNET_CONTRACTS,
-    AVALANCHE_TESTNET_CONTRACTS,
-    POLYGON_MAINNET_CONTRACTS,
-    POLYGON_TESTNET_CONTRACTS,
-    BSC_MAINNET_CONTRACTS,
-    BSC_TESTNET_CONTRACTS,
     MAX_UINT_256,
     NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
     MAINNET_API_URL,
     ERC1155_INTERFACE_ID,
     ERC721_INTERFACE_ID,
-    // ERC20_INTERFACE_ID,
     ChainName,
+    ChainFullName,
     ChainId,
-    ChainSlug,
+    AddressesByChain,
 } from './constants'
 import { IEVMOrder } from '../lib/api/ghostmarket/models'
 import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
@@ -55,20 +48,20 @@ interface IOrderItem {
 }
 
 interface IMintItem {
-    creatorAddress: string
-    royalties: Royalties[]
-    externalURI: string
+    creatorAddress: string // nft creator
+    royalties: Royalties[] // nft royalties
+    externalURI: string // nft externalURI
 }
 
 interface Royalties {
-    address: string
-    value: number
+    address: string // recipient
+    value: number // amount in bps
 }
 
 interface TxObject {
-    from: string
-    value?: string
-    gasPrice?: number
+    from: string // transaction sender
+    value?: string // value to send
+    gasPrice?: number // gas price
 }
 
 export class GhostMarketSDK {
@@ -78,7 +71,7 @@ export class GhostMarketSDK {
     // Logger function to use when debugging.
     public logger: (arg: string) => void
     private _chainName: ChainName
-    private _chainSlug: ChainSlug
+    private _chainFullName: ChainFullName
     private _chainId: ChainId
     private _isReadonlyProvider: boolean
 
@@ -105,10 +98,10 @@ export class GhostMarketSDK {
         options.rpcUrl = options.rpcUrl || ''
         const useReadOnlyProvider = options.useReadOnlyProvider ?? false
         this._isReadonlyProvider = useReadOnlyProvider
-        options.chainName = options.chainName || ChainName.Ethereum
+        options.chainName = options.chainName || ChainName.ETHEREUM
         this._chainName = options.chainName
-        this._chainSlug = ChainSlug[this._chainName.replace(/\s/g, '') as keyof typeof ChainSlug]
-        this._chainId = ChainId[this._chainName.replace(/\s/g, '') as keyof typeof ChainId]
+        this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
+        this._chainId = ChainId[this._chainName as keyof typeof ChainId]
         this.web3 = new Web3(provider)
         const apiConfig = {
             apiKey: options.apiKey,
@@ -120,7 +113,7 @@ export class GhostMarketSDK {
     }
 
     /** Create one or more sell order or nft offer or collection offer
-     * @param {IOrderItem[]} items for the order.
+     * @param {IOrderItem[]} items items for the order or offer.
      */
     public async createOrder(items: IOrderItem[]): Promise<any> {
         for (let i = 0; i < items.length; i++) {
@@ -131,18 +124,19 @@ export class GhostMarketSDK {
                         : items[i].baseTokenId
                         ? 'collection offer'
                         : 'offer'
-                } on ${this._chainName}`,
+                } on ${this._chainFullName}`,
             )
+
+            if (this._isReadonlyProvider) return
+
             try {
-                const supportsERC20 = await this._supportsERC20(items[i].quoteContract)
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
                 const supportsERC155 = await this._supportsERC1155(items[i].baseContract)
 
-                if (!supportsERC20)
-                    throw new Error(`${items[i].quoteContract} does not support ERC20`)
-
                 if (!supportsERC721 && !supportsERC155)
-                    throw new Error(`${items[i].baseContract} does not support ERC721 or ERC1155`)
+                    throw new Error(
+                        `contract: ${items[i].baseContract} does not support ERC721 or ERC1155`,
+                    )
 
                 const salt =
                     '0x' +
@@ -199,7 +193,7 @@ export class GhostMarketSDK {
                 const orderKeyHash = hashKey(order)
 
                 const nftToList = {
-                    chain: this._chainSlug,
+                    chain: this._chainName,
                     token_contract: items[i].baseContract,
                     token_id: items[i].baseTokenId ? items[i].baseTokenId : '',
                     token_amount: baseTokenAmount,
@@ -226,14 +220,14 @@ export class GhostMarketSDK {
         return
     }
 
-    /** Cancel one or more orders
-     * @param {IOrderItem[]} items[] order(s) to cancel.
+    /** Cancel one or more sell order or nft offer or collection offer
+     * @param {IOrderItem[]} items[] items for the order or offer cancel.
      * @param {TxObject} txObject transaction object to send when calling `bulkCancelOrders`.
      */
     public async bulkCancelOrders(items: IOrderItem[], txObject: TxObject): Promise<any> {
         console.log(
             `bulkCancelOrders: cancel ${items.length} order${items.length > 1 ? 's' : ''} on ${
-                this._chainName
+                this._chainFullName
             }`,
         )
 
@@ -280,7 +274,6 @@ export class GhostMarketSDK {
                           enc(items[i].quoteContract),
                           items[i].quotePrice,
                       ),
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 items[i].salt!,
                 items[i].startDate,
                 items[i].endDate,
@@ -442,7 +435,7 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ): Promise<any> {
         console.log(
-            `setRoyaltiesForContract: set royalties for contract ${contractAddress} on ${this._chainName}`,
+            `setRoyaltiesForContract: set royalties for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
@@ -451,12 +444,12 @@ export class GhostMarketSDK {
         const supportsERC155 = await this._supportsERC1155(contractAddress)
 
         if (!supportsERC721 && !supportsERC155)
-            throw new Error(`${contractAddress} does not support ERC721 or ERC1155`)
+            throw new Error(`contract: ${contractAddress} does not support ERC721 or ERC1155`)
 
         const owner = await this._getOwner(contractAddress, supportsERC721)
 
         if (owner.toLowerCase() !== txObject.from.toLowerCase())
-            throw new Error(`contract owner: ${owner} does not match tx.sender: ${txObject.from}`)
+            throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
 
         const royaltiesRegistryProxyAddress = this._getRoyaltiesRegistryContractAddress(
             this._chainName,
@@ -489,7 +482,7 @@ export class GhostMarketSDK {
 
     /** Wrap token or unwrap token
      * @param {string} amount value to wrap token from/to.
-     * @param {boolean} isFromNativeToWrap true if native to wrap, or false from wrap to native
+     * @param {boolean} isFromNativeToWrap true if native to wrap, or false from wrap to native.
      * @param {TxObject} txObject transaction object to send when calling `wrapToken`.
      */
     public async wrapToken(
@@ -499,7 +492,7 @@ export class GhostMarketSDK {
     ): Promise<any> {
         console.log(
             `wrapToken: ${isFromNativeToWrap ? '' : 'un'}wrap token amount of ${amount} on ${
-                this._chainName
+                this._chainFullName
             }`,
         )
 
@@ -562,7 +555,7 @@ export class GhostMarketSDK {
      */
     public async approveContract(contractAddress: string, txObject: TxObject): Promise<any> {
         console.log(
-            `approveContract: approve nft contract ${contractAddress} on ${this._chainName}`,
+            `approveContract: approve nft contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
@@ -571,7 +564,7 @@ export class GhostMarketSDK {
         const supportsERC155 = await this._supportsERC1155(contractAddress)
 
         if (!supportsERC721 && !supportsERC155)
-            throw new Error(`${contractAddress} does not support ERC721 or ERC1155`)
+            throw new Error(`contract: ${contractAddress} does not support ERC721 or ERC1155`)
 
         const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
@@ -595,13 +588,11 @@ export class GhostMarketSDK {
      * @param {TxObject} txObject transaction object to send when calling `approveToken`.
      */
     public async approveToken(contractAddress: string, txObject: TxObject): Promise<any> {
-        console.log(`approveToken: approve token contract ${contractAddress} on ${this._chainName}`)
+        console.log(
+            `approveToken: approve token contract ${contractAddress} on ${this._chainFullName}`,
+        )
 
         if (this._isReadonlyProvider) return
-
-        const supportsERC20 = await this._supportsERC20(contractAddress)
-
-        if (!supportsERC20) throw new Error(`${contractAddress} does not support ERC20`)
 
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
@@ -623,7 +614,7 @@ export class GhostMarketSDK {
         accountAddress: string,
     ): Promise<any> {
         console.log(
-            `checkContractApproval: check nft contract ${contractAddress} approval on ${this._chainName}`,
+            `checkContractApproval: check nft contract ${contractAddress} approval on ${this._chainFullName}`,
         )
 
         const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
@@ -649,7 +640,7 @@ export class GhostMarketSDK {
      */
     public async checkTokenApproval(contractAddress: string, accountAddress: string): Promise<any> {
         console.log(
-            `checkTokenApproval: check token contract ${contractAddress} approval on ${this._chainName}`,
+            `checkTokenApproval: check token contract ${contractAddress} approval on ${this._chainFullName}`,
         )
 
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
@@ -685,18 +676,14 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ): Promise<any> {
         console.log(
-            `transferERC20: transfer ${amount} from ERC20 contract ${contractAddress} to ${destinationAddress} on ${this._chainName}`,
+            `transferERC20: transfer ${amount} from ERC20 contract ${contractAddress} to ${destinationAddress} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
 
-        const supportsERC20 = await this._supportsERC20(contractAddress)
-
-        if (!supportsERC20) throw new Error(`${contractAddress} does not support ERC20`)
-
         const balance = await this.checkTokenBalance(contractAddress, txObject.from)
         if (balance < amount) {
-            throw new Error(`Not enough ERC20 balance to transfer`)
+            throw new Error(`not enough ERC20 balance to transfer`)
         }
 
         const ContractInstance = new this.web3.eth.Contract(ERC20Contract, contractAddress)
@@ -725,7 +712,7 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ): Promise<any> {
         console.log(
-            `transferERC721: transfer NFT with token id ${tokenId} from ERC721 contract ${contractAddress} to ${destinationAddress} on ${this._chainName}`,
+            `transferERC721: transfer NFT with token id ${tokenId} from ERC721 contract ${contractAddress} to ${destinationAddress} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
@@ -733,7 +720,7 @@ export class GhostMarketSDK {
         const owner = await this._ownerOf(contractAddress, tokenId)
 
         if (owner.toLowerCase() !== txObject.from.toLowerCase())
-            throw new Error(`${contractAddress} owner does not match tx.sender`)
+            throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
 
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
@@ -770,7 +757,7 @@ export class GhostMarketSDK {
             `transferERC1155: transfer ${tokenIds.length} NFT${
                 tokenIds.length > 1 ? 's' : ''
             } from ERC1155 contract ${contractAddress} to ${destinationAddress} on ${
-                this._chainName
+                this._chainFullName
             }`,
         )
 
@@ -780,7 +767,9 @@ export class GhostMarketSDK {
             const balance = await this._balanceOf(txObject.from, contractAddress, tokenIds[i])
 
             if (balance === 0)
-                throw new Error(`${contractAddress} sender does not own enough ${tokenIds[i]}`)
+                throw new Error(
+                    `sender: ${txObject.from} does not own enough tokenId ${tokenIds[i]}`,
+                )
         }
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
@@ -803,7 +792,7 @@ export class GhostMarketSDK {
 
     /** Burn ERC721 NFT
      * @param {string} contractAddress contract of NFT to transfer.
-     * @param {string} tokenId token ID of NFTs to transfer.
+     * @param {string} tokenId tokenId of NFT to transfer.
      * @param {TxObject} txObject transaction object to send when calling `burnERC721`.
      */
     public async burnERC721(
@@ -812,7 +801,7 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ): Promise<any> {
         console.log(
-            `burnERC721: burn 1 NFT from ERC721 contract ${contractAddress} on ${this._chainName}`,
+            `burnERC721: burn 1 NFT from ERC721 contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
@@ -820,7 +809,7 @@ export class GhostMarketSDK {
         const owner = await this._ownerOf(contractAddress, tokenId)
 
         if (owner.toLowerCase() !== txObject.from.toLowerCase())
-            throw new Error(`${contractAddress} owner does not match tx.sender`)
+            throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
 
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
@@ -850,14 +839,15 @@ export class GhostMarketSDK {
         console.log(
             `burnERC1155: burn ${amount} NFT${
                 amount > 1 ? 's' : ''
-            } from ERC1155 contract ${contractAddress} on ${this._chainName}`,
+            } from ERC1155 contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
 
         const balance = await this._balanceOf(txObject.from, contractAddress, tokenId)
 
-        if (balance === 0) throw new Error(`${contractAddress} sender does not own ${tokenId}`)
+        if (balance === 0)
+            throw new Error(`sender: ${txObject.from} does not own enough token ${tokenId}`)
 
         const ContractInstance = new this.web3.eth.Contract(ERC1155Contract, contractAddress)
 
@@ -877,7 +867,7 @@ export class GhostMarketSDK {
      * @param {TxObject} txObject transaction object to send when calling `mintERC721`.
      */
     public async mintERC721(item: IMintItem, txObject: TxObject): Promise<any> {
-        console.log(`mintERC721: mint 1 ERC721 NFT on ${this._chainName}`)
+        console.log(`mintERC721: mint 1 ERC721 NFT on ${this._chainFullName}`)
 
         if (this._isReadonlyProvider) return
 
@@ -920,7 +910,7 @@ export class GhostMarketSDK {
      * @param {TxObject} txObject transaction object to send when calling `mintERC1155`.
      */
     public async mintERC1155(item: IMintItem, amount: number, txObject: TxObject): Promise<any> {
-        console.log(`mintERC1155: mint ${amount} ERC1155 NFT on ${this._chainName}`)
+        console.log(`mintERC1155: mint ${amount} ERC1155 NFT on ${this._chainFullName}`)
 
         if (this._isReadonlyProvider) return
 
@@ -964,7 +954,7 @@ export class GhostMarketSDK {
      */
     public async checkBalance(accountAddress: string): Promise<any> {
         console.log(
-            `checkBalance: checking native balance for address ${accountAddress} on ${this._chainName}`,
+            `checkBalance: checking native balance for address ${accountAddress} on ${this._chainFullName}`,
         )
 
         try {
@@ -981,7 +971,7 @@ export class GhostMarketSDK {
      */
     public async checkTokenBalance(contractAddress: string, accountAddress: string) {
         console.log(
-            `checkTokenBalance: checking token balance for contract ${contractAddress} for address ${accountAddress} on ${this._chainName}`,
+            `checkTokenBalance: checking token balance for contract ${contractAddress} for address ${accountAddress} on ${this._chainFullName}`,
         )
 
         const ERC20ContractInstance = new this.web3.eth.Contract(
@@ -1005,7 +995,7 @@ export class GhostMarketSDK {
      */
     public async checkIncentives(accountAddress: string): Promise<any> {
         console.log(
-            `checkIncentives: checking incentives for address ${accountAddress} on ${this._chainName}`,
+            `checkIncentives: checking incentives for address ${accountAddress} on ${this._chainFullName}`,
         )
 
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
@@ -1030,14 +1020,14 @@ export class GhostMarketSDK {
      */
     public async claimIncentives(txObject: TxObject): Promise<any> {
         console.log(
-            `claimIncentives: claiming incentives for address ${txObject.from} on ${this._chainName}`,
+            `claimIncentives: claiming incentives for address ${txObject.from} on ${this._chainFullName}`,
         )
 
         if (this._isReadonlyProvider) return
 
         const balance = await this.checkIncentives(txObject.from)
         if (parseInt(balance.availableIncentives) === 0) {
-            throw new Error(`Nothing to claim on incentives contract`)
+            throw new Error(`nothing to claim on incentives contract`)
         }
 
         const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
@@ -1062,7 +1052,9 @@ export class GhostMarketSDK {
      * @param {string} accountAddress address used to sign data.
      */
     public async signData(dataToSign: string, accountAddress: string): Promise<any> {
-        console.log(`signData: signing data with address ${accountAddress} on ${this._chainName}`)
+        console.log(
+            `signData: signing data with address ${accountAddress} on ${this._chainFullName}`,
+        )
 
         try {
             const data = this.web3.eth.sign(dataToSign, accountAddress)
@@ -1072,220 +1064,97 @@ export class GhostMarketSDK {
         }
     }
 
+    /** Get Incentives contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getIncentivesContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.INCENTIVES
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.INCENTIVES
-            case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.INCENTIVES
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.INCENTIVES
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.INCENTIVES
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.INCENTIVES
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.INCENTIVES
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.INCENTIVES
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].INCENTIVES
     }
 
+    /** Get ERC721 Ghost contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getERC721GhostContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.GHOST_ERC721
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.GHOST_ERC721
-            // Not available yet on Ethereum Mainnet
-            /* case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.GHOST_ERC721 */
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.GHOST_ERC721
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.GHOST_ERC721
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.GHOST_ERC721
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.GHOST_ERC721
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.GHOST_ERC721
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].GHOST_ERC721!
     }
 
+    /** Get ERC1155 Ghost contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getERC1155GhostContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.GHOST_ERC1155
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.GHOST_ERC1155
-            // Not available yet on Ethereum Mainnet
-            /* case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.GHOST_ERC1155 */
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.GHOST_ERC1155
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.GHOST_ERC1155
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.GHOST_ERC1155
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.GHOST_ERC1155
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.GHOST_ERC1155
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].GHOST_ERC1155!
     }
 
+    /** Get ERC20 Proxy contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getERC20ProxyContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.PROXY_ERC20
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.PROXY_ERC20
-            case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.PROXY_ERC20
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.PROXY_ERC20
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_ERC20
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_ERC20
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.PROXY_ERC20
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.PROXY_ERC20
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].PROXY_ERC20!
     }
 
+    /** Get NFT Proxy contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getNFTProxyContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.PROXY_NFT
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.PROXY_NFT
-            case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.PROXY_NFT
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.PROXY_NFT
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_NFT
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_NFT
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.PROXY_NFT
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.PROXY_NFT
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].PROXY_NFT!
     }
 
+    /** Get ExchangeV2 contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getExchangeV2ProxyContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.PROXY_EXCHANGEV2
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.PROXY_EXCHANGEV2
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].EXCHANGE
     }
 
+    /** Get Royalties contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getRoyaltiesRegistryContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.PROXY_ROYALTIES
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.PROXY_ROYALTIES
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].ROYALTIES!
     }
 
+    /** Get Wrapped Token contract address
+     * @param {string} chainName chain name to check.
+     */
     private _getWrappedTokenContractAddress(chainName: string): string {
-        switch (chainName) {
-            case ChainName.Avalanche:
-                return AVALANCHE_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.AvalancheTestnet:
-                return AVALANCHE_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.Ethereum:
-                return ETHEREUM_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.EthereumTestnet:
-                return ETHEREUM_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.BSC:
-                return BSC_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.BSCTestnet:
-                return BSC_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.Polygon:
-                return POLYGON_MAINNET_CONTRACTS.WRAPPED_TOKEN
-            case ChainName.PolygonTestnet:
-                return POLYGON_TESTNET_CONTRACTS.WRAPPED_TOKEN
-            default:
-                throw new Error('Unsupported Network')
-        }
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].WRAPPED_TOKEN!
     }
 
+    /** Get chain support for EIP1559
+     * @param {string} chainName chain name to check.
+     */
     private _supportsEIP1559(chainName: string): boolean {
         switch (chainName) {
-            case ChainName.Avalanche:
+            case ChainName.AVALANCHE:
                 return true
-            case ChainName.AvalancheTestnet:
+            case ChainName.AVALANCHE_TESTNET:
                 return true
-            case ChainName.Ethereum:
+            case ChainName.ETHEREUM:
                 return true
-            case ChainName.EthereumTestnet:
+            case ChainName.ETHEREUM_TESTNET:
                 return true
             case ChainName.BSC:
                 return false
-            case ChainName.BSCTestnet:
+            case ChainName.BSC_TESTNET:
                 return false
-            case ChainName.Polygon:
+            case ChainName.POLYGON:
                 return true
-            case ChainName.PolygonTestnet:
+            case ChainName.POLYGON_TESTNET:
                 return true
             default:
                 return false
         }
     }
 
+    /** Get owner of a contract
+     * @param {string} contractAddress contract address.
+     * @param {boolean} isERC721 true for ERC721, false for ERC1155.
+     */
     private _getOwner(contractAddress: string, isERC721: boolean): Promise<string> {
         console.log(
             `_getOwner: checking ${
                 isERC721 ? 'ERC721' : 'ERC1155'
-            } contract ownership for contract ${contractAddress} on ${this._chainName}`,
+            } contract ownership for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         const ContractInstance = new this.web3.eth.Contract(
@@ -1305,9 +1174,13 @@ export class GhostMarketSDK {
             })
     }
 
+    /** Get owner of an ERC721 NFT
+     * @param {string} contractAddress contract address of NFT.
+     * @param {string} tokenId tokenId of NFT.
+     */
     private async _ownerOf(contractAddress: string, tokenId: string): Promise<string> {
         console.log(
-            `_balanceOf: checking ERC721 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainName}`,
+            `_balanceOf: checking ERC721 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
         )
 
         const supportsERC721 = await this._supportsERC721(contractAddress)
@@ -1328,13 +1201,18 @@ export class GhostMarketSDK {
         return NULL_ADDRESS
     }
 
+    /** Get balance of one address for an ERC1155 NFT
+     * @param {string} address addres to check.
+     * @param {string} contractAddress contract address of NFT.
+     * @param {string} tokenId tokenId of NFT.
+     */
     private async _balanceOf(
         address: string,
         contractAddress: string,
         tokenId: string,
     ): Promise<number> {
         console.log(
-            `_balanceOf: checking ERC1155 balance for contract ${contractAddress} for address ${address} for token id ${tokenId} on ${this._chainName}`,
+            `_balanceOf: checking ERC1155 balance for contract ${contractAddress} for address ${address} for token id ${tokenId} on ${this._chainFullName}`,
         )
 
         const supportsERC1555 = await this._supportsERC1155(contractAddress)
@@ -1355,32 +1233,12 @@ export class GhostMarketSDK {
         return 0
     }
 
-    private _supportsERC20(_contractAddress: string): boolean {
-        // unless EIP-4524 is adopted, there's no official interface id for ERC20
-        return true
-        /*
-        console.log(
-            `_supportsERC20: checking support for ERC20 for contract ${contractAddress} on ${this._chainName}`,
-        )
-
-        const ERC20ContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
-
-        return ERC20ContractInstance.methods
-            .supportsInterface(ERC20_INTERFACE_ID)
-            .call()
-            .then((res: any) => {
-                console.log(res)
-                return res
-            })
-            .catch((e: any) => {
-                console.log(e)
-                return false
-            }) */
-    }
-
+    /** Get contract support for ERC721
+     * @param {string} contractAddress contract address to check.
+     */
     private _supportsERC721(contractAddress: string): Promise<boolean> {
         console.log(
-            `_supportsERC721: checking support for ERC721 for contract ${contractAddress} on ${this._chainName}`,
+            `_supportsERC721: checking support for ERC721 for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
@@ -1397,9 +1255,12 @@ export class GhostMarketSDK {
             })
     }
 
+    /** Get contract support for ERC1155
+     * @param {string} contractAddress contract address to check.
+     */
     private _supportsERC1155(contractAddress: string): Promise<boolean> {
         console.log(
-            `_supportsERC1155: checking support for ERC1155 for contract ${contractAddress} on ${this._chainName}`,
+            `_supportsERC1155: checking support for ERC1155 for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)

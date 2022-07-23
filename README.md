@@ -91,14 +91,14 @@ const privateKey = process.env.PRIVATE_KEY // private key to use - only for Neo 
 const mnemonic = process.env.MNEMONIC // mnemonic to use - only for EVM
 const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
-const chainName = ChainName.Ethereum // see below for chain values
+const chainName = ChainName.ETHEREUM // see below for chain values
 
 /* chainName values : 
-    ChainName.Ethereum / ChainName.EthereumTestnet
-    ChainName.Polygon / ChainName.PolygonTestnet
-    ChainName.BSC / ChainName.BSCTestnet
-    ChainName.Avalanche / ChainName.AvalancheTestnet
-    ChainName.Neo3 / ChainName.Neo3Testnet
+    ChainName.ETHEREUM / ChainName.ETHEREUM_TESTNET
+    ChainName.POLYGON / ChainName.POLYGON_TESTNET
+    ChainName.BSC / ChainName.BSC_TESTNET
+    ChainName.AVALANCHE / ChainName.AVALANCHE_TESTNET
+    ChainName.NEO3 / ChainName.NEO3_TESTNET
     */
 
 // SDK config options.
@@ -427,7 +427,7 @@ instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: account
 const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
     price: '', // order price - unused for cancellation
-    quoteContractAddress: '0x....', // order quote contract address.
+    quoteContract: '0x....', // order quote contract address.
     isCancellation: false, // is it a cancellation.
 }]
 const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})
@@ -439,9 +439,9 @@ console.info(`tx hash: ${buying}`)
 const startDate = new Date().getTime()
 const listingDetails = [{ 
     tokenId: '', // order NFT tokenId - token id for listing
-    baseContractAddress: '0x....', // order base contract address - nft contract for listing
+    baseContract: '0x....', // order base contract address - nft contract for listing
     price: '1', // order price - in biginteger format
-    quoteContractAddress: '0x....', // order quote contract address - currency accepted for listing
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing
     startDate, // order start date - set to custom one or it will default to right now
     endDate: 0, // order end date - set to 0 for unexpiring
 }]
@@ -455,13 +455,13 @@ const startDate = new Date().getTime()
 const auctionDetails = { 
     auctionType: 1, // classic (1) reserve (2) dutch (3)
     tokenId: '', // auction NFT tokenId.
-    baseContractAddress: '0x....', // auction base contract address.
+    baseContract: '0x....', // auction base contract address.
     extensionPeriod: 600, // auction extension period - 600 for 10 min
     startDate, // auction start date.
     endDate: startDate + 600000 // auction end date. - startDate + 600000 for ten minutes
     startPrice: '', // auction start price.
     endPrice: 0, // auction end price - only used for dutch auctions.
-    quoteContractAddress: '0x....', // auction quote contract address.
+    quoteContract: '0x....', // auction quote contract address.
 }
 const auction = await gmSDK.listAuction(auctionDetails, {from: accountAddress})
 console.info(`tx hash: ${auction}`)
@@ -472,7 +472,7 @@ console.info(`tx hash: ${auction}`)
 const auctionDetails = { 
     contractAuctionId: '', // on chain contract auction ID.
     bidPrice: '', // bid price
-    quoteContractAddress: '0x....', // auction quote contract address.
+    quoteContract: '0x....', // auction quote contract address.
 }
 const auction = await gmSDK.bidAuction(auctionDetails, {from: accountAddress})
 console.info(`tx hash: ${auction}`)
@@ -483,7 +483,7 @@ console.info(`tx hash: ${auction}`)
 const auctionDetails = { 
     contractAuctionId: '', // on chain contract auction ID.
     bidPrice: 0, // bid price
-    quoteContractAddress: '0x....', // auction quote contract address.
+    quoteContract: '0x....', // auction quote contract address.
 }
 const auction = await gmSDK.claimAuction(auctionDetails, {from: accountAddress})
 console.info(`tx hash: ${auction}`)
@@ -494,7 +494,7 @@ console.info(`tx hash: ${auction}`)
 const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
     price: '', // order price - unused for cancellation
-    quoteContractAddress: '0x....', // order quote contract address.
+    quoteContract: '0x....', // order quote contract address.
     isCancellation: true, // is it a cancellation.
 }]
 const cancel = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})
@@ -512,14 +512,14 @@ console.info(`tx hash: ${edit}`)
 ### Place offer
 ```js
 const startDate = new Date().getTime()
-const offerDetails = { 
-    baseContractAddress: '0x....', // offer base contract address - nft contract for offer
-    quoteContractAddress: '0x....', // offer quote contract address - currency for offer - only GM supported for now
+const offerDetails = [{ 
+    baseContract: '0x....', // offer base contract address - nft contract for offer
+    quoteContract: '0x....', // offer quote contract address - currency for offer - only GM supported for now
     tokenId: '', // offer NFT tokenId - token id for listing - leave empty for collection offer
     price: '1', // offer price - in biginteger format
     startDate, // offer start date - set to custom one or it will default to right now
     endDate: startDate + 604800, // offer end date - set to 0 for unexpiring - startDate + 604800 for one week
-}
+}]
 const offer = await gmSDK.placeOffer(offerDetails, {from: accountAddress})
 console.info(`tx hash: ${offer}`)
 ```
@@ -528,7 +528,7 @@ console.info(`tx hash: ${offer}`)
 ```js
 const offerDetails = { 
     auctionId: '', // on chain contract auction ID.
-    quoteContractAddress: '0x....', // offer quote contract address - currency for offer - only GM supported for now
+    quoteContract: '0x....', // offer quote contract address - currency for offer - only GM supported for now
     tokenId: '', // offer NFT tokenId - token id for listing - pass tokenId for collection offer
     isCancellation: false, // is it an offer (true) or a cancellation (false).
 }
@@ -540,7 +540,7 @@ console.info(`tx hash: ${offer}`)
 ```js
 const offerDetails = { 
     auctionId: '', // on chain contract auction ID.
-    quoteContractAddress: '0x....', // offer quote contract address - currency for offer - only GM supported for now
+    quoteContract: '0x....', // offer quote contract address - currency for offer - only GM supported for now
     tokenId: '', // offer NFT tokenId - token id for listing - pass tokenId for collection offer
     isCancellation: true, // is it an offer (true) or a cancellation (false).
 }
