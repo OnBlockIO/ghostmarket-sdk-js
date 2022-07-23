@@ -16,7 +16,7 @@ interface IBuyItem {
     contractAuctionId: string // on chain contract auction ID.
     price: string // order price.
     quoteContract: string // order quote contract address.
-    isCancellation: boolean // is it a cancellation.
+    isCancellation?: boolean // is it a cancellation.
 }
 
 interface ISellItem {
@@ -25,7 +25,7 @@ interface ISellItem {
     price: string // order price.
     quoteContract: string // order quote contract address.
     startDate: number // order start date.
-    endDate: number // order end date.
+    endDate: number // order end date - set to 0 for unexpiring.
 }
 
 interface IBidItem {
@@ -60,17 +60,17 @@ interface IAuctionItem {
 interface IOfferItem {
     baseContract: string // offer base contract address.
     quoteContract: string // offer quote contract address.
-    tokenId: string // offer tokenId.
+    tokenId?: string // offer tokenId.
     price: string // offer price.
     startDate: number // offer start date.
     endDate: number // offer end date.
 }
 
 interface IProcessOfferItem {
-    auctionId: string // auctionId of offer to accept or cancel.
+    contractAuctionId: string // on chain contract auction ID.
     quoteContract: string // quote contract address to use in offer.
-    tokenId: string // tokenId of nft to use in offer.
-    isCancellation: boolean // is it an offer (true) or a cancellation (false).
+    tokenId?: string // tokenId of nft to use in offer.
+    isCancellation?: boolean // is it an offer (true) or a cancellation (false).
 }
 
 interface IMintItem {
@@ -190,19 +190,18 @@ export class GhostMarketN3SDK {
      * @param {TxObject} txObject transaction object to send when calling `buyMultiple`.
      */
     public async buyMultiple(items: IBuyItem[], txObject: TxObject): Promise<any> {
-        const isBuyBatch = items.length > 1
-
-        console.log(
-            `buyMultiple: ${items[0].isCancellation ? 'cancelling' : 'buying'} ${
-                isBuyBatch ? 'bulk' : 'single'
-            } nft on ${this._chainFullName}`,
-        )
-
         const allowedContracts = [this.contractExchangeAddress.substring(2)]
         const argsBuyMultiple = []
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
+
+            console.log(
+                `buyMultiple: ${item.isCancellation ? 'cancelling' : 'buying'} nft on ${
+                    this._chainFullName
+                }`,
+            )
+
             const priceNFTFormatted = item.price
 
             if (item.isCancellation) {
@@ -220,6 +219,12 @@ export class GhostMarketN3SDK {
                 const quoteContract = item.quoteContract.substring(2)
                 if (!allowedContracts.includes(quoteContract)) {
                     allowedContracts.push(quoteContract)
+                }
+
+                const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
+                const diff = parseFloat(priceNFTFormatted) - parseFloat(balance)
+                if (diff > 0) {
+                    throw new Error(`Not enough balance to buy NFT, missing: ${diff}`)
                 }
 
                 argsBuyMultiple.push({
@@ -388,6 +393,14 @@ export class GhostMarketN3SDK {
         console.log(`bidAuction: bidding on nft on ${this._chainFullName}`)
 
         const currentBidFormatted = item.bidPrice || 0
+
+        const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
+        const diff = currentBidFormatted
+            ? parseFloat(currentBidFormatted) - parseFloat(balance)
+            : parseFloat(balance)
+        if (diff > 0) {
+            throw new Error(`Not enough balance to bid on NFT, missing: ${diff}`)
+        }
 
         const argsBidToken = [
             {
@@ -616,6 +629,12 @@ export class GhostMarketN3SDK {
             if (!supportsNEP17)
                 throw new Error(`contract: ${item.quoteContract} does not support NEP17`)
 
+            const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
+            const diff = parseFloat(item.price) - parseFloat(balance)
+            if (diff > 0) {
+                throw new Error(`Not enough balance to place offer on NFT, missing: ${diff}`)
+            }
+
             const argsPlaceOffer = [
                 {
                     type: 'Hash160', // UInt160 baseScriptHash
@@ -691,7 +710,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'ByteArray', // ByteString auctionId
-                value: numberToByteString(item.auctionId),
+                value: numberToByteString(item.contractAuctionId),
             },
             {
                 type: 'ByteArray', // ByteString tokenId
@@ -702,7 +721,7 @@ export class GhostMarketN3SDK {
         const argsCancelOffer = [
             {
                 type: 'ByteArray', // ByteString auctionId
-                value: numberToByteString(item.auctionId),
+                value: numberToByteString(item.contractAuctionId),
             },
         ]
 
@@ -1027,6 +1046,12 @@ export class GhostMarketN3SDK {
         const supportsNEP17 = await this._supportsNEP17(contractAddress)
 
         if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP17`)
+
+        const balance = await this.checkTokenBalance(contractAddress, txObject.from)
+        const diff = parseFloat(amount) - parseFloat(balance)
+        if (diff > 0) {
+            throw new Error(`Not enough balance to transfer NEP17, missing: ${diff}`)
+        }
 
         const argsTransfer = [
             {
