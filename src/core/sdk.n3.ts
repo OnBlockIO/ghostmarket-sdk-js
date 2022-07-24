@@ -125,6 +125,10 @@ const METHOD_CANCEL_OFFER = 'cancelOffer'
 const METHOD_GET_CONTRACT = 'getContract'
 const METHOD_OWNER_OF = 'ownerOf'
 
+const STANDARD_NEP_11 = 'NEP-11'
+const STANDARD_NEP_17 = 'NEP-17'
+const STANDARD_NEP_17_1 = 'NEP-17-1'
+
 export class GhostMarketN3SDK {
     private provider: string
     public readonly api: GhostMarketApi
@@ -295,15 +299,20 @@ export class GhostMarketN3SDK {
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
 
-            const supportsNEP11 = await this._supportsNEP11(item.baseContract)
+            const supportsNEP11 = await this._supportsStandard(item.baseContract, STANDARD_NEP_11)
 
             if (!supportsNEP11)
-                throw new Error(`contract: ${item.baseContract} does not support NEP11`)
+                throw new Error(`contract: ${item.baseContract} does not support NEP-11`)
 
-            const supportsNEP17 = await this._supportsNEP17(item.quoteContract)
+            const supportsNEP17 = await this._supportsStandard(item.quoteContract, STANDARD_NEP_17)
 
             if (!supportsNEP17)
-                throw new Error(`contract: ${item.quoteContract} does not support NEP17`)
+                throw new Error(`contract: ${item.quoteContract} does not support NEP-17`)
+
+            const owner = await this._ownerOf(item.baseContract, item.tokenId)
+
+            if (owner.toLowerCase() !== txObject.from.toLowerCase())
+                throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
 
             const currentDateFormatted =
                 item.startDate === null ? new Date().getTime() : new Date(item.startDate).getTime()
@@ -456,14 +465,15 @@ export class GhostMarketN3SDK {
     public async listAuction(item: IAuctionItem, txObject: TxObject): Promise<any> {
         console.log(`listAuction: auction nft on ${this._chainFullName}`)
 
-        const supportsNEP11 = await this._supportsNEP11(item.baseContract)
+        const supportsNEP11 = await this._supportsStandard(item.baseContract, STANDARD_NEP_11)
 
-        if (!supportsNEP11) throw new Error(`contract: ${item.baseContract} does not support NEP11`)
+        if (!supportsNEP11)
+            throw new Error(`contract: ${item.baseContract} does not support NEP-11`)
 
-        const supportsNEP17 = await this._supportsNEP17(item.quoteContract)
+        const supportsNEP17 = await this._supportsStandard(item.quoteContract, STANDARD_NEP_17)
 
         if (!supportsNEP17)
-            throw new Error(`contract: ${item.quoteContract} does not support NEP17`)
+            throw new Error(`contract: ${item.quoteContract} does not support NEP-17`)
 
         let extensionPeriod = item.extensionPeriod ? item.extensionPeriod : 0 // min 0 - max 1h (3600)
         switch (item.auctionType) {
@@ -620,20 +630,23 @@ export class GhostMarketN3SDK {
                 }`,
             )
 
-            const supportsNEP11 = await this._supportsNEP11(item.baseContract)
+            const supportsNEP11 = await this._supportsStandard(item.baseContract, STANDARD_NEP_11)
 
             if (!supportsNEP11)
-                throw new Error(`contract: ${item.baseContract} does not support NEP11`)
+                throw new Error(`contract: ${item.baseContract} does not support NEP-11`)
 
-            const supportsNEP17 = await this._supportsNEP17(item.quoteContract)
+            const supportsNEP17 = await this._supportsStandard(item.quoteContract, STANDARD_NEP_17)
 
             if (!supportsNEP17)
-                throw new Error(`contract: ${item.quoteContract} does not support NEP17`)
+                throw new Error(`contract: ${item.quoteContract} does not support NEP-17`)
 
-            const supportsNEP17Extension = await this._supportsNEP17Extension(item.quoteContract)
+            const supportsNEP17Extension = await this._supportsStandard(
+                item.quoteContract,
+                STANDARD_NEP_17_1,
+            )
 
             if (!supportsNEP17Extension)
-                throw new Error(`contract: ${item.quoteContract} does not support NEP17 Extension`)
+                throw new Error(`contract: ${item.quoteContract} does not support NEP-17 Extension`)
 
             const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
             const diff = parseFloat(item.price) - parseFloat(balance)
@@ -852,9 +865,9 @@ export class GhostMarketN3SDK {
 
         if (this.provider === 'private') throw new Error('Only supported on Neoline / O3 for now.')
 
-        const supportsNEP11 = await this._supportsNEP11(contractAddress)
+        const supportsNEP11 = await this._supportsStandard(contractAddress, STANDARD_NEP_11)
 
-        if (!supportsNEP11) throw new Error(`contract: ${contractAddress} does not support NEP11`)
+        if (!supportsNEP11) throw new Error(`contract: ${contractAddress} does not support NEP-11`)
 
         /* const owner = await this._getOwner(contractAddress)
 
@@ -945,9 +958,9 @@ export class GhostMarketN3SDK {
     public async approveToken(contractAddress: string, txObject: TxObject): Promise<any> {
         console.log(`approveToken: approve ${contractAddress} on ${this._chainFullName}`)
 
-        const supportsNEP17 = await this._supportsNEP17(contractAddress)
+        const supportsNEP17 = await this._supportsStandard(contractAddress, STANDARD_NEP_17)
 
-        if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP17`)
+        if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP-17`)
 
         const argsApproveToken = [
             {
@@ -989,7 +1002,7 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Check NEP17 Token Contract Approval
+    /** Check NEP-17 Token Contract Approval
      * @param {string} contractAddress token contract to check approval.
      * @param {string} accountAddress address used to check.
      */
@@ -1009,18 +1022,10 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        const signers = [
-            {
-                account: getScriptHashFromAddress(accountAddress),
-                scopes: 1,
-            },
-        ]
-
         const invokeParams = {
             scriptHash: contractAddress,
             operation: METHOD_CHECK_ALLOWANCE,
             args: argsCheckAllowance,
-            signers,
         }
 
         try {
@@ -1035,7 +1040,7 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Transfer NEP17 Token
+    /** Transfer NEP-17 Token
      * @param {string} destinationAddress destination address.
      * @param {string} contractAddress contract of token to transfer.
      * @param {string} amount amount to transfer.
@@ -1049,14 +1054,14 @@ export class GhostMarketN3SDK {
     ): Promise<any> {
         console.log(`transferNEP17: transfer token on ${this._chainFullName}`)
 
-        const supportsNEP17 = await this._supportsNEP17(contractAddress)
+        const supportsNEP17 = await this._supportsStandard(contractAddress, STANDARD_NEP_17)
 
-        if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP17`)
+        if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP-17`)
 
         const balance = await this.checkTokenBalance(contractAddress, txObject.from)
         const diff = parseFloat(amount) - parseFloat(balance)
         if (diff > 0) {
-            throw new Error(`Not enough balance to transfer NEP17, missing: ${diff}`)
+            throw new Error(`Not enough balance to transfer NEP-17, missing: ${diff}`)
         }
 
         const argsTransfer = [
@@ -1104,7 +1109,7 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Transfer one or more NEP11 NFT(s)
+    /** Transfer one or more NEP-11 NFT(s)
      * @param {ITransferItem[]} items details.
      * @param {TxObject} txObject transaction object to send when calling `transferNEP11`.
      */
@@ -1171,7 +1176,7 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Burn one or more NEP11 NFT(s)
+    /** Burn one or more NEP-11 NFT(s)
      * @param {IBurnItem[]} items details.
      * @param {TxObject} txObject transaction object to send when calling `burnNEP11`.
      */
@@ -1227,7 +1232,7 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Mint one or more NEP11 NFT(s)
+    /** Mint one or more NEP-11 NFT(s)
      * @param {IMintItem} item details.
      * @param {TxObject} txObject transaction object to send when calling `mintNEP11`.
      */
@@ -1392,18 +1397,10 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        const signers = [
-            {
-                account: getScriptHashFromAddress(accountAddress),
-                scopes: 1,
-            },
-        ]
-
         const invokeParams = {
             scriptHash: contractAddress,
             operation: METHOD_CHECK_TOKEN_BALANCE,
             args: argsCheckTokenBalance,
-            signers,
         }
 
         try {
@@ -1431,18 +1428,10 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        const signers = [
-            {
-                account: getScriptHashFromAddress(accountAddress),
-                scopes: 1,
-            },
-        ]
-
         const invokeParams = {
             scriptHash: this.contractIncentivesAddress,
             operation: METHOD_CHECK_INCENTIVES,
             args: argsCheckIncentives,
-            signers,
         }
 
         try {
@@ -1576,13 +1565,13 @@ export class GhostMarketN3SDK {
         throw new Error('Feature not available on Neo N3 yet!')
     } */
 
-    /** Get owner of an NEP11 NFT
+    /** Get owner of an NEP-11 NFT
      * @param {string} contractAddress contract address of NFT.
      * @param {string} tokenId tokenId of NFT.
      */
     private async _ownerOf(contractAddress: string, tokenId: string): Promise<string> {
         console.log(
-            `_ownerOf: checking NEP11 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
+            `_ownerOf: checking NEP-11 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
         )
 
         const argsCheckOwnerOf = [
@@ -1607,17 +1596,18 @@ export class GhostMarketN3SDK {
         }
     }
 
-    /** Get contract support for NEP11
+    /** Get contract support for one particular standard
      * @param {string} contractAddress contract address to check.
+     * @param {string} standard standard to check.
      */
-    private async _supportsNEP11(contractAddress: string): Promise<any> {
+    private async _supportsStandard(contractAddress: string, standard: string): Promise<any> {
         console.log(
-            `_supportsNEP11: checking support for NEP11 for contract ${contractAddress} on ${this._chainFullName}`,
+            `_supportsStandard: checking support for ${standard} for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
         const argsGetContract = [
             {
-                type: 'UInt60', // UInt160 contract
+                type: 'Hash160', // UInt160 contract
                 value: contractAddress,
             },
         ] as IArgs[]
@@ -1630,77 +1620,16 @@ export class GhostMarketN3SDK {
 
         try {
             const response = await this.invokeRead(invokeParams)
-            if (response.exception) return `_supportsNEP11 exception: ${response.exception}`
-            return response.stack && response.stack[0] && response.stack[0].value
+            if (response.exception) return `_supportsStandard exception: ${response.exception}`
+            const supportedStandards = response.stack[0]?.value[4]?.value[3]?.value
+            let supportsStandard = false
+            for (let i = 0; i < supportedStandards.length; i++) {
+                if (atob(supportedStandards[i]?.value) === standard) supportsStandard = true
+            }
+            return supportsStandard
         } catch (e) {
             return console.error(
-                `_supportsNEP11: failed to execute ${METHOD_GET_CONTRACT} on ${contractAddress} with error:`,
-                e,
-            )
-        }
-    }
-
-    /** Get contract support for NEP17
-     * @param {string} contractAddress contract address to check.
-     */
-    private async _supportsNEP17(contractAddress: string): Promise<any> {
-        console.log(
-            `_supportsNEP17: checking support for NEP17 for contract ${contractAddress} on ${this._chainFullName}`,
-        )
-
-        const argsGetContract = [
-            {
-                type: 'UInt60', // UInt160 contract
-                value: contractAddress,
-            },
-        ] as IArgs[]
-
-        const invokeParams = {
-            scriptHash: this.contractManagementAddress,
-            operation: METHOD_GET_CONTRACT,
-            args: argsGetContract,
-        }
-
-        try {
-            const response = await this.invokeRead(invokeParams)
-            if (response.exception) return `_supportsNEP17 exception: ${response.exception}`
-            return response.stack && response.stack[0] && response.stack[0].value
-        } catch (e) {
-            return console.error(
-                `_supportsNEP17: failed to execute ${METHOD_GET_CONTRACT} on ${contractAddress} with error:`,
-                e,
-            )
-        }
-    }
-
-    /** Get contract support for NEP17 Extension
-     * @param {string} contractAddress contract address to check.
-     */
-    private async _supportsNEP17Extension(contractAddress: string): Promise<any> {
-        console.log(
-            `_supportsNEP17Extension: checking support for NEP17 extension for contract ${contractAddress} on ${this._chainFullName}`,
-        )
-
-        const argsGetContract = [
-            {
-                type: 'UInt60', // UInt160 contract
-                value: contractAddress,
-            },
-        ] as IArgs[]
-
-        const invokeParams = {
-            scriptHash: this.contractManagementAddress,
-            operation: METHOD_GET_CONTRACT,
-            args: argsGetContract,
-        }
-
-        try {
-            const response = await this.invokeRead(invokeParams)
-            if (response.exception) return `_supportsNEP17 exception: ${response.exception}`
-            return response.stack && response.stack[0] && response.stack[0].value
-        } catch (e) {
-            return console.error(
-                `_supportsNEP17Extension: failed to execute ${METHOD_GET_CONTRACT} on ${contractAddress} with error:`,
+                `_supportsStandard: failed to execute ${METHOD_GET_CONTRACT} on ${this.contractManagementAddress} with error:`,
                 e,
             )
         }
