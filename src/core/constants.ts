@@ -31,6 +31,7 @@ export interface ContractAddresses {
     GHOST_PEPE12?: string
     GHOST_ERC721?: string
     GHOST_ERC1155?: string
+    CONTRACT_MANAGEMENT?: string
 }
 
 export const ETHEREUM_MAINNET_ADDRESSES: ContractAddresses = {
@@ -132,7 +133,8 @@ export const N3_MAINNET_ADDRESSES: ContractAddresses = {
     INCENTIVES: '0x77ea91034026654ba85ab0042dcc43b91ac6e442',
     GM_TOKEN: '0x9b049f1283515eef1d3f6ac610e1595ed25ca3e9',
     GHOST_NEP11: '0x577a51f7d39162c9de1db12a6b319c848e4c54e5',
-    GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf'
+    GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+    CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
 }
 
 export const N3_TESTNET_ADDRESSES: ContractAddresses = {
@@ -140,7 +142,8 @@ export const N3_TESTNET_ADDRESSES: ContractAddresses = {
     INCENTIVES: '0x74055da4ae1d7a1ee0d39175a1b9a6cb00e15763',
     GM_TOKEN: '0x0e07f8d653133c023b4168699f38182956c58968',
     GHOST_NEP11: '0xbab2e190b261296644e8c75a58fe5d8a988c0808',
-    GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf'
+    GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
+    CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
 }
 
 export const PHA_MAINNET_CONTRACTS = {

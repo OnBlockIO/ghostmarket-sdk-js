@@ -122,9 +122,8 @@ const METHOD_CHECK_ALLOWANCE = 'allowance'
 const METHOD_PLACE_OFFER = 'placeOffer'
 const METHOD_ACCEPT_OFFER = 'acceptOffer'
 const METHOD_CANCEL_OFFER = 'cancelOffer'
-const METHOD_SYMBOL = 'symbol'
-const METHOD_DECIMALS = 'decimals'
-const METHOD_TOTAL_SUPPLY = 'totalSupply'
+const METHOD_GET_CONTRACT = 'getContract'
+const METHOD_OWNER_OF = 'ownerOf'
 
 export class GhostMarketN3SDK {
     private provider: string
@@ -139,6 +138,7 @@ export class GhostMarketN3SDK {
     private contractExchangeAddress: string
     private contractIncentivesAddress: string
     private contractNEP11Address: string
+    private contractManagementAddress: string
 
     /**
      * Your instance of GhostMarket.
@@ -170,6 +170,7 @@ export class GhostMarketN3SDK {
         this.contractExchangeAddress = this._getExchangeContractAddress(this._chainName)
         this.contractIncentivesAddress = this._getIncentivesContractAddress(this._chainName)
         this.contractNEP11Address = this._getNEP11GhostContractAddress(this._chainName)
+        this.contractManagementAddress = this._getManagementContractAddress(this._chainName)
         this._privateKey = options.privateKey
         this.provider = provider || 'private'
         const apiConfig = {
@@ -1552,6 +1553,13 @@ export class GhostMarketN3SDK {
         return AddressesByChain[chainName as keyof typeof AddressesByChain].EXCHANGE
     }
 
+    /** Get Management contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getManagementContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].CONTRACT_MANAGEMENT!
+    }
+
     /** Get owner of a contract
      * @param {string} contractAddress contract address.
      */
@@ -1581,7 +1589,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: 'ownerOf',
+            operation: METHOD_OWNER_OF,
             args: argsCheckOwnerOf,
         }
 
@@ -1602,30 +1610,26 @@ export class GhostMarketN3SDK {
             `_supportsNEP11: checking support for NEP11 for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
-        const invokeParamsMultiple = {
-            invokeArgs: [
-                {
-                    scriptHash: contractAddress,
-                    operation: METHOD_SYMBOL,
-                },
-                {
-                    scriptHash: contractAddress,
-                    operation: METHOD_DECIMALS,
-                },
-                {
-                    scriptHash: contractAddress,
-                    operation: METHOD_TOTAL_SUPPLY,
-                },
-            ],
+        const argsGetContract = [
+            {
+                type: 'UInt60', // UInt160 contract
+                value: contractAddress,
+            },
+        ] as IArgs[]
+
+        const invokeParams = {
+            scriptHash: this.contractManagementAddress,
+            operation: METHOD_GET_CONTRACT,
+            args: argsGetContract,
         }
 
         try {
-            const response = await this.invokeReadMultiple(invokeParamsMultiple)
+            const response = await this.invokeRead(invokeParams)
             if (response.exception) return `_supportsNEP11 exception: ${response.exception}`
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
-                `_supportsNEP11: failed to execute symbol, decimals or totalSupply on ${contractAddress} with error:`,
+                `_supportsNEP11: failed to execute ${METHOD_GET_CONTRACT} on ${contractAddress} with error:`,
                 e,
             )
         }
@@ -1639,25 +1643,21 @@ export class GhostMarketN3SDK {
             `_supportsNEP17: checking support for NEP17 for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
-        const invokeParamsMultiple = {
-            invokeArgs: [
-                {
-                    scriptHash: contractAddress,
-                    operation: METHOD_SYMBOL,
-                },
-                {
-                    scriptHash: contractAddress,
-                    operation: METHOD_DECIMALS,
-                },
-                {
-                    scriptHash: contractAddress,
-                    operation: METHOD_TOTAL_SUPPLY,
-                },
-            ],
+        const argsGetContract = [
+            {
+                type: 'UInt60', // UInt160 contract
+                value: contractAddress,
+            },
+        ] as IArgs[]
+
+        const invokeParams = {
+            scriptHash: this.contractManagementAddress,
+            operation: METHOD_GET_CONTRACT,
+            args: argsGetContract,
         }
 
         try {
-            const response = await this.invokeReadMultiple(invokeParamsMultiple)
+            const response = await this.invokeRead(invokeParams)
             if (response.exception) return `_supportsNEP17 exception: ${response.exception}`
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
