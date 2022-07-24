@@ -630,6 +630,11 @@ export class GhostMarketN3SDK {
             if (!supportsNEP17)
                 throw new Error(`contract: ${item.quoteContract} does not support NEP17`)
 
+            const supportsNEP17Extension = await this._supportsNEP17Extension(item.quoteContract)
+
+            if (!supportsNEP17Extension)
+                throw new Error(`contract: ${item.quoteContract} does not support NEP17 Extension`)
+
             const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
             const diff = parseFloat(item.price) - parseFloat(balance)
             if (diff > 0) {
@@ -1662,7 +1667,40 @@ export class GhostMarketN3SDK {
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
-                `_supportsNEP17: failed to execute symbol, decimals or totalSupply on ${contractAddress} with error:`,
+                `_supportsNEP17: failed to execute ${METHOD_GET_CONTRACT} on ${contractAddress} with error:`,
+                e,
+            )
+        }
+    }
+
+    /** Get contract support for NEP17 Extension
+     * @param {string} contractAddress contract address to check.
+     */
+    private async _supportsNEP17Extension(contractAddress: string): Promise<any> {
+        console.log(
+            `_supportsNEP17Extension: checking support for NEP17 extension for contract ${contractAddress} on ${this._chainFullName}`,
+        )
+
+        const argsGetContract = [
+            {
+                type: 'UInt60', // UInt160 contract
+                value: contractAddress,
+            },
+        ] as IArgs[]
+
+        const invokeParams = {
+            scriptHash: this.contractManagementAddress,
+            operation: METHOD_GET_CONTRACT,
+            args: argsGetContract,
+        }
+
+        try {
+            const response = await this.invokeRead(invokeParams)
+            if (response.exception) return `_supportsNEP17 exception: ${response.exception}`
+            return response.stack && response.stack[0] && response.stack[0].value
+        } catch (e) {
+            return console.error(
+                `_supportsNEP17Extension: failed to execute ${METHOD_GET_CONTRACT} on ${contractAddress} with error:`,
                 e,
             )
         }
