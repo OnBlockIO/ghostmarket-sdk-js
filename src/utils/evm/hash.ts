@@ -31,10 +31,6 @@ export function hashKey(order: IEVMOrder) {
     )
 }
 
-function bufferFromHex(hex: string) {
-    return Buffer.from(hex.startsWith('0x') ? hex.substr(2) : hex, 'hex')
-}
-
 function hashAssetType(assetType: IEVMAssetType) {
     return Web3.utils.soliditySha3(
         Web3.eth.abi.encodeParameters(
@@ -47,7 +43,7 @@ function hashAssetType(assetType: IEVMAssetType) {
                           'c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470',
                           'hex',
                       )
-                    : Web3.utils.keccak256(bufferFromHex(assetType.data).toString()),
+                    : Web3.utils.soliditySha3(assetType.data),
             ],
         ),
     )
@@ -87,7 +83,7 @@ export function hashOrder(order: IEVMOrder) {
                 order.start,
                 order.end,
                 order.dataType,
-                Web3.utils.keccak256(bufferFromHex(order.data).toString()),
+                Web3.utils.soliditySha3(order.data),
             ],
         ),
     )
