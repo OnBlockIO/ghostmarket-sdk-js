@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '../utils/n3/helpers'
+import { BigNumber } from '@ethersproject/bignumber'
 import { N3PrivateProvider } from '../utils/n3/N3PrivateProvider'
 import {
     MAX_INT_255,
@@ -228,8 +229,11 @@ export class GhostMarketN3SDK {
                 }
 
                 const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
-                const diff = parseFloat(priceNFTFormatted) - parseFloat(balance)
-                if (diff > 0) {
+
+                const amountDiff = BigNumber.from(priceNFTFormatted)
+                const balanceDiff = BigNumber.from(balance)
+                const diff = amountDiff.sub(balanceDiff)
+                if (diff.gt(BigNumber.from(0))) {
                     throw new Error(`Not enough balance to buy NFT, missing: ${diff}`)
                 }
 
@@ -417,10 +421,11 @@ export class GhostMarketN3SDK {
         const currentBidFormatted = item.bidPrice || 0
 
         const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
-        const diff = currentBidFormatted
-            ? parseFloat(currentBidFormatted) - parseFloat(balance)
-            : parseFloat(balance)
-        if (diff > 0) {
+
+        const amountDiff = BigNumber.from(currentBidFormatted)
+        const balanceDiff = BigNumber.from(balance)
+        const diff = amountDiff.sub(balanceDiff)
+        if (diff.gt(BigNumber.from(0))) {
             throw new Error(`Not enough balance to bid on NFT, missing: ${diff}`)
         }
 
@@ -682,8 +687,11 @@ export class GhostMarketN3SDK {
                 throw new Error(`contract: ${item.quoteContract} does not support NEP-17 Extension`)
 
             const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
-            const diff = parseFloat(item.price) - parseFloat(balance)
-            if (diff > 0) {
+
+            const amountDiff = BigNumber.from(item.price)
+            const balanceDiff = BigNumber.from(balance)
+            const diff = amountDiff.sub(balanceDiff)
+            if (diff.gt(BigNumber.from(0))) {
                 throw new Error(`Not enough balance to place offer on NFT, missing: ${diff}`)
             }
 
@@ -1130,8 +1138,11 @@ export class GhostMarketN3SDK {
         if (!supportsNEP17) throw new Error(`contract: ${quoteContract} does not support NEP-17`)
 
         const balance = await this.checkTokenBalance(quoteContract, txObject.from)
-        const diff = parseFloat(amount) - parseFloat(balance)
-        if (diff > 0) {
+
+        const amountDiff = BigNumber.from(amount)
+        const balanceDiff = BigNumber.from(balance)
+        const diff = amountDiff.sub(balanceDiff)
+        if (diff.gt(BigNumber.from(0))) {
             throw new Error(`Not enough balance to transfer NEP-17, missing: ${diff}`)
         }
 
