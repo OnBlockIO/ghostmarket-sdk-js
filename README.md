@@ -32,6 +32,7 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Getting contract approval](#getting-contract-approval)
     - [Wrap token](#wrap-token)
     - [Approve contract](#approve-contract)
+    - [Checking native balance](#checking-native-balance)
     - [Transfer ERC20](#transfer-ERC20)
     - [Transfer ERC721 NFT](#transfer-ERC721-nft)
     - [Transfer ERC1155 NFT](#transfer-ERC1155-nft)
@@ -341,6 +342,12 @@ const approval = await gmSDK.approveContract(contract, {from: address})
 console.info(`tx hash: ${approval}`)
 ```
 
+### Checking native balance
+```js
+const balance = await gmSDK.checkBalance(contract)
+console.info(`balance: ` + balance)
+```
+
 ### Transfer ERC20
 ```js
 const destination = '0x....'
@@ -382,7 +389,7 @@ console.info(`tx hash: ${burn}`)
 const contract = '0x....'
 const tokenId = ''
 const amount = 1
-const burn = await gmSDK.burnERC721(contract, tokenId, amount, {from: address})
+const burn = await gmSDK.burnERC1155(contract, tokenId, amount, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
