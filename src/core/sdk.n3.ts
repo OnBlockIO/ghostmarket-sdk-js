@@ -36,8 +36,8 @@ interface IBidItem {
 }
 
 interface ITransferItem {
-    contractAddress: string // NFT contract address.
-    destinationAddress: string // destination address.
+    baseContract: string // NFT contract address.
+    destination: string // destination address.
     tokenId: string // NFT tokenId.
 }
 
@@ -971,7 +971,9 @@ export class GhostMarketN3SDK {
      * @param {TxObject} txObject transaction object to send when calling `approveToken`.
      */
     public async approveToken(contractAddress: string, txObject: TxObject): Promise<any> {
-        console.log(`approveToken: approve ${contractAddress} on ${this._chainFullName}`)
+        console.log(
+            `approveToken: approve ${contractAddress} for ${txObject.from} on ${this._chainFullName}`,
+        )
 
         const supportsNEP17 = await this._supportsStandard(contractAddress, STANDARD_NEP_17)
 
@@ -1031,7 +1033,7 @@ export class GhostMarketN3SDK {
      */
     public async checkTokenApproval(contractAddress: string, address: string): Promise<any> {
         console.log(
-            `checkTokenApproval: reading ${contractAddress} approval on N3 ${this._chainFullName}`,
+            `checkTokenApproval: reading ${contractAddress} approval for ${address} on N3 ${this._chainFullName}`,
         )
 
         const argsCheckAllowance = [
@@ -1064,24 +1066,24 @@ export class GhostMarketN3SDK {
     }
 
     /** Transfer NEP-17 Token
-     * @param {string} destinationAddress destination address.
-     * @param {string} contractAddress contract of token to transfer.
+     * @param {string} destination destination address.
+     * @param {string} quoteContract contract of token to transfer.
      * @param {string} amount amount to transfer.
      * @param {TxObject} txObject transaction object to send when calling `transferNEP17`.
      */
     public async transferNEP17(
-        destinationAddress: string,
-        contractAddress: string,
+        destination: string,
+        quoteContract: string,
         amount: string,
         txObject: TxObject,
     ): Promise<any> {
         console.log(`transferNEP17: transfer token on ${this._chainFullName}`)
 
-        const supportsNEP17 = await this._supportsStandard(contractAddress, STANDARD_NEP_17)
+        const supportsNEP17 = await this._supportsStandard(quoteContract, STANDARD_NEP_17)
 
-        if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP-17`)
+        if (!supportsNEP17) throw new Error(`contract: ${quoteContract} does not support NEP-17`)
 
-        const balance = await this.checkTokenBalance(contractAddress, txObject.from)
+        const balance = await this.checkTokenBalance(quoteContract, txObject.from)
         const diff = parseFloat(amount) - parseFloat(balance)
         if (diff > 0) {
             throw new Error(`Not enough balance to transfer NEP-17, missing: ${diff}`)
@@ -1094,7 +1096,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Hash160', // to
-                value: getScriptHashFromAddress(destinationAddress),
+                value: getScriptHashFromAddress(destination),
             },
             {
                 type: 'Integer', // amount
@@ -1114,7 +1116,7 @@ export class GhostMarketN3SDK {
         ]
 
         const invokeParams = {
-            scriptHash: contractAddress,
+            scriptHash: quoteContract,
             operation: METHOD_TRANSFER,
             args: argsTransfer,
             signers,
@@ -1126,7 +1128,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `transferNEP17: failed to execute ${METHOD_TRANSFER} on ${contractAddress} with error:`,
+                `transferNEP17: failed to execute ${METHOD_TRANSFER} on ${quoteContract} with error:`,
                 e,
             )
         }
@@ -1150,18 +1152,18 @@ export class GhostMarketN3SDK {
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
 
-            const owner = await this._ownerOf(item.contractAddress, item.tokenId)
+            const owner = await this._ownerOf(item.baseContract, item.tokenId)
 
             if (owner.toLowerCase() !== txObject.from.toLowerCase())
                 throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
 
             argsTransferMultiple.push({
-                scriptHash: item.contractAddress,
+                scriptHash: item.baseContract,
                 operation: METHOD_TRANSFER,
                 args: [
                     {
                         type: 'Hash160', // UInt160 address
-                        value: getScriptHashFromAddress(item.destinationAddress),
+                        value: getScriptHashFromAddress(item.destination),
                     },
                     {
                         type: 'ByteArray', // ByteArray tokenId
@@ -1193,7 +1195,7 @@ export class GhostMarketN3SDK {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
             return console.error(
-                `transferNEP11: failed to execute ${METHOD_TRANSFER} on ${items[0].contractAddress} with error:`,
+                `transferNEP11: failed to execute ${METHOD_TRANSFER} on ${items[0].baseContract} with error:`,
                 e,
             )
         }
@@ -1412,7 +1414,7 @@ export class GhostMarketN3SDK {
      */
     public async checkTokenBalance(contractAddress: string, address: string): Promise<any> {
         console.log(
-            `checkTokenBalance: checking ${contractAddress} balance on ${this._chainFullName}`,
+            `checkTokenBalance: checking ${contractAddress} balance for ${address} on ${this._chainFullName}`,
         )
 
         const argsCheckTokenBalance = [
@@ -1475,7 +1477,7 @@ export class GhostMarketN3SDK {
      * @param {TxObject} txObject transaction object to send when calling `claimIncentives`.
      */
     public async claimIncentives(txObject: TxObject): Promise<any> {
-        console.log(`claimIncentives: claiming incentives on N3 ${this._chainFullName}`)
+        console.log(`claimIncentives: claiming incentives on ${this._chainFullName}`)
 
         const balance = await this.checkIncentives(txObject.from)
         if (parseInt(balance[5]?.value) === 0) {
@@ -1616,6 +1618,11 @@ export class GhostMarketN3SDK {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `_ownerOf exception: ${response.exception}`
             const owner = response.stack[0]?.value
+            console.log(
+                `NFT ${tokenId} from contract ${contractAddress} owner: ${wallet.getAddressFromScriptHash(
+                    u.reverseHex(u.HexString.fromBase64(owner).toString()),
+                )}`,
+            )
             return wallet.getAddressFromScriptHash(
                 u.reverseHex(u.HexString.fromBase64(owner).toString()),
             )
@@ -1654,6 +1661,7 @@ export class GhostMarketN3SDK {
             for (let i = 0; i < supportedStandards.length; i++) {
                 if (atob(supportedStandards[i]?.value) === standard) supportsStandard = true
             }
+            console.log(`${standard} support: ${supportsStandard}`)
             return supportsStandard
         } catch (e) {
             return console.error(

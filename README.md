@@ -455,7 +455,7 @@ const auctionDetails = {
     baseContract: '0x....', // auction base contract address.
     extensionPeriod: 600, // auction extension period - 600 for 10 min
     startDate, // auction start date.
-    endDate: startDate + 600000 // auction end date. - startDate + 600000 for ten minutes
+    endDate: startDate + 600000, // auction end date. - startDate + 600000 for ten minutes
     startPrice: '', // auction start price.
     endPrice: 0, // auction end price - only used for dutch auctions.
     quoteContract: '0x....', // auction quote contract address.
@@ -486,7 +486,6 @@ console.info(`tx hash: ${auction}`)
 ```js
 const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
-    price: '', // order price - unused for cancellation
     quoteContract: '0x....', // order quote contract address.
     isCancellation: true, // is it a cancellation.
 }]
@@ -544,17 +543,17 @@ console.info(`tx hash: ${offer}`)
 ### Transfer NEP17
 ```js
 const destination = 'N....'
-const contract = '0x....'
+const quoteContract = '0x....'
 const amount = ''
-const transfer = await gmSDK.transferNEP17(destination, contract, amount, {from: address})
+const transfer = await gmSDK.transferNEP17(destination, quoteContract, amount, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
 ### Transfer NEP11
 ```js
 const transferDetails = [{ 
-    destinationAddress: 'N....', // destination address
-    contractAddress: '0x....', // contract address
+    destination: 'N....', // destination address
+    baseContract: '0x....', // contract address
     tokenId: '', // tokenId.
 }]
 const transfer = await gmSDK.transferNEP11(transferDetails, {from: address})
