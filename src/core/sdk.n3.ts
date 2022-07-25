@@ -300,17 +300,25 @@ export class GhostMarketN3SDK {
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
 
-            const supportsNEP11 = await this._supportsStandard(item.baseContract, STANDARD_NEP_11)
+            const supportsNEP11 = await this._supportsStandard(
+                item.baseContract,
+                txObject.from,
+                STANDARD_NEP_11,
+            )
 
             if (!supportsNEP11)
                 throw new Error(`contract: ${item.baseContract} does not support NEP-11`)
 
-            const supportsNEP17 = await this._supportsStandard(item.quoteContract, STANDARD_NEP_17)
+            const supportsNEP17 = await this._supportsStandard(
+                item.quoteContract,
+                txObject.from,
+                STANDARD_NEP_17,
+            )
 
             if (!supportsNEP17)
                 throw new Error(`contract: ${item.quoteContract} does not support NEP-17`)
 
-            const owner = await this._ownerOf(item.baseContract, item.tokenId)
+            const owner = await this._ownerOf(item.baseContract, txObject.from, item.tokenId)
 
             if (owner.toLowerCase() !== txObject.from.toLowerCase())
                 throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
@@ -469,12 +477,20 @@ export class GhostMarketN3SDK {
     public async listAuction(item: IAuctionItem, txObject: TxObject): Promise<any> {
         console.log(`listAuction: auction nft on ${this._chainFullName}`)
 
-        const supportsNEP11 = await this._supportsStandard(item.baseContract, STANDARD_NEP_11)
+        const supportsNEP11 = await this._supportsStandard(
+            item.baseContract,
+            txObject.from,
+            STANDARD_NEP_11,
+        )
 
         if (!supportsNEP11)
             throw new Error(`contract: ${item.baseContract} does not support NEP-11`)
 
-        const supportsNEP17 = await this._supportsStandard(item.quoteContract, STANDARD_NEP_17)
+        const supportsNEP17 = await this._supportsStandard(
+            item.quoteContract,
+            txObject.from,
+            STANDARD_NEP_17,
+        )
 
         if (!supportsNEP17)
             throw new Error(`contract: ${item.quoteContract} does not support NEP-17`)
@@ -638,18 +654,27 @@ export class GhostMarketN3SDK {
                 }`,
             )
 
-            const supportsNEP11 = await this._supportsStandard(item.baseContract, STANDARD_NEP_11)
+            const supportsNEP11 = await this._supportsStandard(
+                item.baseContract,
+                txObject.from,
+                STANDARD_NEP_11,
+            )
 
             if (!supportsNEP11)
                 throw new Error(`contract: ${item.baseContract} does not support NEP-11`)
 
-            const supportsNEP17 = await this._supportsStandard(item.quoteContract, STANDARD_NEP_17)
+            const supportsNEP17 = await this._supportsStandard(
+                item.quoteContract,
+                txObject.from,
+                STANDARD_NEP_17,
+            )
 
             if (!supportsNEP17)
                 throw new Error(`contract: ${item.quoteContract} does not support NEP-17`)
 
             const supportsNEP17Extension = await this._supportsStandard(
                 item.quoteContract,
+                txObject.from,
                 STANDARD_NEP_17_1,
             )
 
@@ -880,7 +905,11 @@ export class GhostMarketN3SDK {
 
         if (this.provider === 'private') throw new Error('Only supported on Neoline / O3 for now.')
 
-        const supportsNEP11 = await this._supportsStandard(contractAddress, STANDARD_NEP_11)
+        const supportsNEP11 = await this._supportsStandard(
+            contractAddress,
+            txObject.from,
+            STANDARD_NEP_11,
+        )
 
         if (!supportsNEP11) throw new Error(`contract: ${contractAddress} does not support NEP-11`)
 
@@ -975,12 +1004,17 @@ export class GhostMarketN3SDK {
             `approveToken: approve ${contractAddress} for ${txObject.from} on ${this._chainFullName}`,
         )
 
-        const supportsNEP17 = await this._supportsStandard(contractAddress, STANDARD_NEP_17)
+        const supportsNEP17 = await this._supportsStandard(
+            contractAddress,
+            txObject.from,
+            STANDARD_NEP_17,
+        )
 
         if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP-17`)
 
         const supportsNEP17Extension = await this._supportsStandard(
             contractAddress,
+            txObject.from,
             STANDARD_NEP_17_1,
         )
 
@@ -1047,10 +1081,18 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+
         const invokeParams = {
             scriptHash: contractAddress,
             operation: METHOD_ALLOWANCE,
             args: argsCheckAllowance,
+            signers,
         }
 
         try {
@@ -1079,7 +1121,11 @@ export class GhostMarketN3SDK {
     ): Promise<any> {
         console.log(`transferNEP17: transfer token on ${this._chainFullName}`)
 
-        const supportsNEP17 = await this._supportsStandard(quoteContract, STANDARD_NEP_17)
+        const supportsNEP17 = await this._supportsStandard(
+            quoteContract,
+            txObject.from,
+            STANDARD_NEP_17,
+        )
 
         if (!supportsNEP17) throw new Error(`contract: ${quoteContract} does not support NEP-17`)
 
@@ -1152,7 +1198,7 @@ export class GhostMarketN3SDK {
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
 
-            const owner = await this._ownerOf(item.baseContract, item.tokenId)
+            const owner = await this._ownerOf(item.baseContract, txObject.from, item.tokenId)
 
             if (owner.toLowerCase() !== txObject.from.toLowerCase())
                 throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
@@ -1217,7 +1263,7 @@ export class GhostMarketN3SDK {
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
 
-            const owner = await this._ownerOf(item.contractAddress, item.tokenId)
+            const owner = await this._ownerOf(item.contractAddress, txObject.from, item.tokenId)
 
             if (owner.toLowerCase() !== txObject.from.toLowerCase())
                 throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
@@ -1424,10 +1470,18 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+
         const invokeParams = {
             scriptHash: contractAddress,
             operation: METHOD_BALANCE_OF,
             args: argsCheckTokenBalance,
+            signers,
         }
 
         try {
@@ -1455,10 +1509,18 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+
         const invokeParams = {
             scriptHash: this.contractIncentivesAddress,
             operation: METHOD_GET_INCENTIVE,
             args: argsCheckIncentives,
+            signers,
         }
 
         try {
@@ -1594,9 +1656,14 @@ export class GhostMarketN3SDK {
 
     /** Get owner of an NEP-11 NFT
      * @param {string} contractAddress contract address of NFT.
+     * @param {string} address address used to check.
      * @param {string} tokenId tokenId of NFT.
      */
-    private async _ownerOf(contractAddress: string, tokenId: string): Promise<string> {
+    private async _ownerOf(
+        contractAddress: string,
+        address: string,
+        tokenId: string,
+    ): Promise<string> {
         console.log(
             `_ownerOf: checking NEP-11 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
         )
@@ -1608,10 +1675,18 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+
         const invokeParams = {
             scriptHash: contractAddress,
             operation: METHOD_OWNER_OF,
             args: argsCheckOwnerOf,
+            signers,
         }
 
         try {
@@ -1633,9 +1708,14 @@ export class GhostMarketN3SDK {
 
     /** Get contract support for one particular standard
      * @param {string} contractAddress contract address to check.
+     * @param {string} address address used to check.
      * @param {string} standard standard to check.
      */
-    private async _supportsStandard(contractAddress: string, standard: string): Promise<any> {
+    private async _supportsStandard(
+        contractAddress: string,
+        address: string,
+        standard: string,
+    ): Promise<any> {
         console.log(
             `_supportsStandard: checking support for ${standard} for contract ${contractAddress} on ${this._chainFullName}`,
         )
@@ -1647,10 +1727,18 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+
         const invokeParams = {
             scriptHash: this.contractManagementAddress,
             operation: METHOD_GET_CONTRACT,
             args: argsGetContract,
+            signers,
         }
 
         try {
