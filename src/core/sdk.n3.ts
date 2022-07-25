@@ -8,7 +8,7 @@ import {
     ChainName,
     ChainFullName,
     AddressesByChain,
-    NULL_ADDRESS,
+    NULL_ADDRESS_N3,
 } from './constants'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
 
@@ -24,13 +24,13 @@ interface ISellItem {
     baseContract: string // order base contract address.
     price: string // order price.
     quoteContract: string // order quote contract address.
-    startDate: number // order start date.
-    endDate: number // order end date - set to 0 for unexpiring.
+    startDate?: number // order start date.
+    endDate?: number // order end date - set to 0 for unexpiring.
 }
 
 interface IBidItem {
     contractAuctionId: string // on chain contract auction ID.
-    bidPrice: string // order bid price.
+    bidPrice?: string // order bid price.
     quoteContract: string // order quote contract address.
 }
 
@@ -50,8 +50,8 @@ interface IAuctionItem {
     tokenId: string // auction NFT tokenId.
     baseContract: string // auction base contract address.
     extensionPeriod: number // auction extension period.
-    startDate: number // auction start date.
-    endDate: number // auction end date
+    startDate?: number // auction start date.
+    endDate?: number // auction end date
     startPrice: string // auction start price.
     endPrice: string // auction end price.
     quoteContract: string // auction quote contract address.
@@ -62,8 +62,8 @@ interface IOfferItem {
     quoteContract: string // offer quote contract address.
     tokenId?: string // offer tokenId.
     price: string // offer price.
-    startDate: number // offer start date.
-    endDate: number // offer end date.
+    startDate?: number // offer start date.
+    endDate?: number // offer end date.
 }
 
 interface IProcessOfferItem {
@@ -74,7 +74,7 @@ interface IProcessOfferItem {
 }
 
 interface IMintItem {
-    quantity: number // NFT quantity.
+    quantity?: number // NFT quantity.
     attrT1?: string // NFT Attr Type 1.
     attrV1?: string // NFT Attr Value 1.
     attrT2?: string // NFT Attr Type 2.
@@ -84,12 +84,12 @@ interface IMintItem {
     name: string // NFT name.
     description: string // NFT description.
     imageURL: string // image URL.
-    externalURI: string // external URI.
-    royalties: Royalties[] // royalties.
-    type: string // NFT Type.
+    externalURI?: string // external URI.
+    royalties: IRoyalties[] // royalties.
+    type?: string // NFT Type.
 }
 
-interface Royalties {
+interface IRoyalties {
     address: string // recipient
     value: number // amount in bps
 }
@@ -113,12 +113,12 @@ const METHOD_TRANSFER = 'transfer'
 const METHOD_BURN = 'burn'
 const METHOD_MINT = 'mint'
 const METHOD_MULTI_MINT = 'multiMint'
-const METHOD_SET_COLLECTION_ROYALTIES = 'setRoyaltiesForContract'
-const METHOD_CLAIM_INCENTIVES = 'claim'
-const METHOD_CHECK_INCENTIVES = 'getIncentive'
-const METHOD_CHECK_TOKEN_BALANCE = 'balanceOf'
-const METHOD_APPROVE_TOKEN = 'approve'
-const METHOD_CHECK_ALLOWANCE = 'allowance'
+const METHOD_SET_ROYALTIES_FOR_CONTRACT = 'setRoyaltiesForContract'
+const METHOD_CLAIM = 'claim'
+const METHOD_GET_INCENTIVE = 'getIncentive'
+const METHOD_BALANCE_OF = 'balanceOf'
+const METHOD_APPROVE = 'approve'
+const METHOD_ALLOWANCE = 'allowance'
 const METHOD_PLACE_OFFER = 'placeOffer'
 const METHOD_ACCEPT_OFFER = 'acceptOffer'
 const METHOD_CANCEL_OFFER = 'cancelOffer'
@@ -315,8 +315,11 @@ export class GhostMarketN3SDK {
                 throw new Error(`owner: ${owner} does not match tx.sender: ${txObject.from}`)
 
             const currentDateFormatted =
-                item.startDate === null ? new Date().getTime() : new Date(item.startDate).getTime()
-            const endDateFormatted = item.endDate === null ? 0 : new Date(item.endDate).getTime()
+                item.startDate === null || !item.startDate
+                    ? new Date().getTime()
+                    : new Date(item.startDate).getTime()
+            const endDateFormatted =
+                item.endDate === null || !item.endDate ? 0 : new Date(item.endDate).getTime()
 
             const baseContract = item.baseContract.substring(2)
             if (!allowedContracts.includes(baseContract)) {
@@ -492,8 +495,12 @@ export class GhostMarketN3SDK {
         const priceNFTFormatted = item.startPrice ?? 0
         const endPriceNFTFormatted = item.endPrice ?? 0
 
-        const startDateFormatted = new Date(item.startDate).getTime()
-        const endDateFormatted = new Date(item.endDate).getTime()
+        const currentDateFormatted =
+            item.startDate === null || !item.startDate
+                ? new Date().getTime()
+                : new Date(item.startDate).getTime()
+        const endDateFormatted =
+            item.endDate === null || !item.endDate ? 0 : new Date(item.endDate).getTime()
 
         const argsListToken = [
             {
@@ -522,7 +529,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Integer', // BigInteger startDate
-                value: startDateFormatted,
+                value: currentDateFormatted,
             },
             {
                 type: 'Integer', // BigInteger endDate
@@ -654,6 +661,13 @@ export class GhostMarketN3SDK {
                 throw new Error(`Not enough balance to place offer on NFT, missing: ${diff}`)
             }
 
+            const currentDateFormatted =
+                item.startDate === null || !item.startDate
+                    ? new Date().getTime()
+                    : new Date(item.startDate).getTime()
+            const endDateFormatted =
+                item.endDate === null || !item.endDate ? 0 : new Date(item.endDate).getTime()
+
             const argsPlaceOffer = [
                 {
                     type: 'Hash160', // UInt160 baseScriptHash
@@ -677,11 +691,11 @@ export class GhostMarketN3SDK {
                 },
                 {
                     type: 'Integer', // BigInteger startDate
-                    value: item.startDate,
+                    value: currentDateFormatted,
                 },
                 {
                     type: 'Integer', // BigInteger endDate
-                    value: item.endDate,
+                    value: endDateFormatted,
                 },
             ]
 
@@ -853,12 +867,12 @@ export class GhostMarketN3SDK {
 
     /** Set royalties for contract
      * @param {string} contractAddress contract address to set royalties for.
-     * @param {Royalties[]} royalties royalties settings to use for the contract.
+     * @param {IRoyalties[]} royalties royalties settings to use for the contract.
      * @param {TxObject} txObject transaction object to send when calling `setRoyaltiesForContract`.
      */
     public async setRoyaltiesForContract(
         contractAddress: string,
-        royalties: Royalties[],
+        royalties: IRoyalties[],
         txObject: TxObject,
     ): Promise<any> {
         console.log(`setRoyaltiesForContract: edit collection royalties on ${this._chainFullName}`)
@@ -934,7 +948,7 @@ export class GhostMarketN3SDK {
         ]
         const invokeParams = {
             scriptHash: this.contractExchangeAddress,
-            operation: METHOD_SET_COLLECTION_ROYALTIES,
+            operation: METHOD_SET_ROYALTIES_FOR_CONTRACT,
             args: argsSetCollectionRoyalties,
             signers,
             networkFee: txObject.networkFee,
@@ -945,7 +959,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `setRoyaltiesForContract: Failed to execute ${METHOD_SET_COLLECTION_ROYALTIES} on ${this.contractExchangeAddress} with error:`,
+                `setRoyaltiesForContract: Failed to execute ${METHOD_SET_ROYALTIES_FOR_CONTRACT} on ${this.contractExchangeAddress} with error:`,
                 e,
             )
         }
@@ -961,6 +975,14 @@ export class GhostMarketN3SDK {
         const supportsNEP17 = await this._supportsStandard(contractAddress, STANDARD_NEP_17)
 
         if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP-17`)
+
+        const supportsNEP17Extension = await this._supportsStandard(
+            contractAddress,
+            STANDARD_NEP_17_1,
+        )
+
+        if (!supportsNEP17Extension)
+            throw new Error(`contract: ${contractAddress} does not support NEP-17 Extension`)
 
         const argsApproveToken = [
             {
@@ -985,7 +1007,7 @@ export class GhostMarketN3SDK {
         ]
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_APPROVE_TOKEN,
+            operation: METHOD_APPROVE,
             args: argsApproveToken,
             signers,
             networkFee: txObject.networkFee,
@@ -996,7 +1018,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `approveToken: failed to execute ${METHOD_APPROVE_TOKEN} on ${contractAddress} with error:`,
+                `approveToken: failed to execute ${METHOD_APPROVE} on ${contractAddress} with error:`,
                 e,
             )
         }
@@ -1004,9 +1026,9 @@ export class GhostMarketN3SDK {
 
     /** Check NEP-17 Token Contract Approval
      * @param {string} contractAddress token contract to check approval.
-     * @param {string} accountAddress address used to check.
+     * @param {string} address address used to check.
      */
-    public async checkTokenApproval(contractAddress: string, accountAddress: string): Promise<any> {
+    public async checkTokenApproval(contractAddress: string, address: string): Promise<any> {
         console.log(
             `checkTokenApproval: reading ${contractAddress} approval on N3 ${this._chainFullName}`,
         )
@@ -1014,7 +1036,7 @@ export class GhostMarketN3SDK {
         const argsCheckAllowance = [
             {
                 type: 'Hash160',
-                value: getScriptHashFromAddress(accountAddress),
+                value: getScriptHashFromAddress(address),
             },
             {
                 type: 'Hash160',
@@ -1024,7 +1046,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_CHECK_ALLOWANCE,
+            operation: METHOD_ALLOWANCE,
             args: argsCheckAllowance,
         }
 
@@ -1034,7 +1056,7 @@ export class GhostMarketN3SDK {
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
-                `checkTokenApproval: failed to execute ${METHOD_CHECK_ALLOWANCE} on ${contractAddress} with error:`,
+                `checkTokenApproval: failed to execute ${METHOD_ALLOWANCE} on ${contractAddress} with error:`,
                 e,
             )
         }
@@ -1237,7 +1259,9 @@ export class GhostMarketN3SDK {
      * @param {TxObject} txObject transaction object to send when calling `mintNEP11`.
      */
     public async mintNEP11(item: IMintItem, txObject: TxObject): Promise<any> {
-        const isMintBatch = item.quantity > 1
+        const quantity = item.quantity ?? 1
+        if (quantity > 10) throw new Error(`You can only mint 10 NFT at once maximum.`)
+        const isMintBatch = quantity > 1
 
         console.log(
             `mintNEP11: minting ${isMintBatch ? 'bulk' : 'single'} nft on ${this._chainFullName}`,
@@ -1246,7 +1270,7 @@ export class GhostMarketN3SDK {
         const isOnChainMetadata = true
 
         const creatorAddress = txObject.from
-        const type = item.type
+        const type = item.type ?? 1
         const hasLocked = false
         const attributes: {
             trait_type: string | number | undefined
@@ -1319,7 +1343,7 @@ export class GhostMarketN3SDK {
             const tokensMeta = []
             const tokensLock = []
             const tokensRoya = []
-            for (let i = 0; i < item.quantity; i++) {
+            for (let i = 0; i < quantity; i++) {
                 tokensMeta.push({
                     type: 'ByteArray',
                     value: b64EncodeUnicode(jsonMetadata),
@@ -1383,9 +1407,9 @@ export class GhostMarketN3SDK {
 
     /** Check one token balance for address
      * @param {string} contractAddress token contract to check approval.
-     * @param {string} accountAddress address used to check.
+     * @param {string} address address used to check.
      */
-    public async checkTokenBalance(contractAddress: string, accountAddress: string): Promise<any> {
+    public async checkTokenBalance(contractAddress: string, address: string): Promise<any> {
         console.log(
             `checkTokenBalance: checking ${contractAddress} balance on ${this._chainFullName}`,
         )
@@ -1393,13 +1417,13 @@ export class GhostMarketN3SDK {
         const argsCheckTokenBalance = [
             {
                 type: 'Hash160', // UInt160 address
-                value: getScriptHashFromAddress(accountAddress),
+                value: getScriptHashFromAddress(address),
             },
         ] as IArgs[]
 
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_CHECK_TOKEN_BALANCE,
+            operation: METHOD_BALANCE_OF,
             args: argsCheckTokenBalance,
         }
 
@@ -1409,28 +1433,28 @@ export class GhostMarketN3SDK {
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
-                `checkTokenBalance: failed to execute ${METHOD_CHECK_TOKEN_BALANCE} on ${contractAddress} with error:`,
+                `checkTokenBalance: failed to execute ${METHOD_BALANCE_OF} on ${contractAddress} with error:`,
                 e,
             )
         }
     }
 
     /** Check incentives for address
-     * @param {string} accountAddress address used to check.
+     * @param {string} address address used to check.
      */
-    public async checkIncentives(accountAddress: string): Promise<any> {
+    public async checkIncentives(address: string): Promise<any> {
         console.log(`checkIncentives: reading incentives on ${this._chainFullName}`)
 
         const argsCheckIncentives = [
             {
                 type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(accountAddress),
+                value: getScriptHashFromAddress(address),
             },
         ] as IArgs[]
 
         const invokeParams = {
             scriptHash: this.contractIncentivesAddress,
-            operation: METHOD_CHECK_INCENTIVES,
+            operation: METHOD_GET_INCENTIVE,
             args: argsCheckIncentives,
         }
 
@@ -1440,7 +1464,7 @@ export class GhostMarketN3SDK {
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
             return console.error(
-                `checkIncentives: failed to execute ${METHOD_CHECK_INCENTIVES} on ${this.contractIncentivesAddress} with error:`,
+                `checkIncentives: failed to execute ${METHOD_GET_INCENTIVE} on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
         }
@@ -1473,7 +1497,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: this.contractIncentivesAddress,
-            operation: METHOD_CLAIM_INCENTIVES,
+            operation: METHOD_CLAIM,
             args: argsClaimIncentives,
             signers,
             networkFee: txObject.networkFee,
@@ -1484,7 +1508,7 @@ export class GhostMarketN3SDK {
             return this.invoke(invokeParams)
         } catch (e) {
             return console.error(
-                `claimIncentives: failed to execute ${METHOD_CLAIM_INCENTIVES} on ${this.contractIncentivesAddress} with error:`,
+                `claimIncentives: failed to execute ${METHOD_CLAIM} on ${this.contractIncentivesAddress} with error:`,
                 e,
             )
         }
@@ -1533,7 +1557,7 @@ export class GhostMarketN3SDK {
         return AddressesByChain[chainName as keyof typeof AddressesByChain].INCENTIVES
     }
 
-    /** Get NEP11 Ghost contract address
+    /** Get NEP-11 Ghost contract address
      * @param {string} chainName chain name to check.
      */
     private _getNEP11GhostContractAddress(chainName: string): string {
@@ -1590,9 +1614,10 @@ export class GhostMarketN3SDK {
         try {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `_ownerOf exception: ${response.exception}`
-            return response.stack && response.stack[0] && response.stack[0].value
+            const owner = response.stack[0]?.value
+            return atob(owner)
         } catch (e) {
-            return NULL_ADDRESS
+            return NULL_ADDRESS_N3
         }
     }
 
@@ -1653,7 +1678,7 @@ export class GhostMarketN3SDK {
             default:
                 // eslint-disable-next-line no-case-declarations
                 const win = window as any
-                if (!win.NEOLineN3) {
+                if (!win.neo3Dapi) {
                     throw new Error('O3 not installed. Please install it and try again.')
                 }
                 return win.neo3Dapi

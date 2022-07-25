@@ -49,11 +49,11 @@ interface IOrderItem {
 
 interface IMintItem {
     creatorAddress: string // nft creator
-    royalties: Royalties[] // nft royalties
+    royalties: IRoyalties[] // nft royalties
     externalURI: string // nft externalURI
 }
 
-interface Royalties {
+interface IRoyalties {
     address: string // recipient
     value: number // amount in bps
 }
@@ -426,12 +426,12 @@ export class GhostMarketSDK {
 
     /** Set royalties for contract
      * @param {string} contractAddress contract address to set royalties for.
-     * @param {Royalties[]} royalties royalties settings to use for the contract.
+     * @param {IRoyalties[]} royalties royalties settings to use for the contract.
      * @param {TxObject} txObject transaction object to send when calling `setRoyaltiesForContract`.
      */
     public async setRoyaltiesForContract(
         contractAddress: string,
-        royalties: Royalties[],
+        royalties: IRoyalties[],
         txObject: TxObject,
     ): Promise<any> {
         console.log(

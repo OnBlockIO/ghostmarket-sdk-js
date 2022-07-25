@@ -204,41 +204,41 @@ console.info(balance)
 ### Checking FT balances
 ```js
 const contract =  '' 
-const balance = await gmSDK.checkTokenBalance(contract, accountAddress)
+const balance = await gmSDK.checkTokenBalance(contract, address)
 console.info(`balance: ` + balance)
 ```
 
 ### Set contract royalties
 ```js
 const contractAddress = '0x....'
-const royaltiesArray = [{address: accountAddress, value: 1000}] // array of recipient/value array (in bps)
-const royalties = await gmSDK.setRoyaltiesForContract(contractAddress, royaltiesArray, {from: accountAddress})
+const royaltiesArray = [{address, value: 1000}] // array of recipient/value array (in bps)
+const royalties = await gmSDK.setRoyaltiesForContract(contractAddress, royaltiesArray, {from: address})
 console.info(`tx hash: ${royalties}`)
 ```
 
 ### Approve token
 ```js
 const contract = '0x....'
-const approve = await gmSDK.approveToken(contract, {from: accountAddress})
+const approve = await gmSDK.approveToken(contract, {from: address})
 console.info(`tx hash: ${approve}`)
 ```
 
 ### Checking token approval
 ```js
 const contract = '0x....'
-const approval = await gmSDK.checkTokenApproval(contract, accountAddress)
+const approval = await gmSDK.checkTokenApproval(contract, address)
 console.info(`amount approved: ` + approval)
 ```
 
 ### Claiming incentives
 ```js
-const claim = await gmSDK.claimIncentives({from: accountAddress})
+const claim = await gmSDK.claimIncentives({from: address})
 console.info(`tx hash: ${claim}`)
 ```
 
 ### Checking incentives
 ```js
-const incentives = await gmSDK.checkIncentives(accountAddress)
+const incentives = await gmSDK.checkIncentives(address)
 const availableIncentives = incentives ? incentives.availableIncentives : 0 // EVM
 const availableIncentives = incentives[5] ? incentives[5].value : 0 // Neo N3
 console.info(`available incentives: ${availableIncentives}`)
@@ -262,7 +262,7 @@ bulkCancelOrders
 You can override automatic calculation of gas price if you add it to the last argument object on each transaction requiring signature.
 Example when wrapping a token:
 
-instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: accountAddress})` simply do `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: accountAddress, gasPrice: 50000})` if you want to override gas price to `50000`.
+instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})` simply do `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address, gasPrice: 50000})` if you want to override gas price to `50000`.
 
 ### Listing NFT fixed price
 ```js
@@ -322,7 +322,7 @@ console.info(edit)
 ### Getting contract approval
 ```js
 const contract = '0x....'
-const approval = await gmSDK.checkContractApproval(contract, accountAddress)
+const approval = await gmSDK.checkContractApproval(contract, address)
 console.info(`is contract approved: ` + contractApproval)
 ```
 
@@ -330,14 +330,14 @@ console.info(`is contract approved: ` + contractApproval)
 ```js
 const amount = '1' // in wei
 const isWrap = true // set to false to unwrap
-const wrap = await gmSDK.wrapToken(amount, isWrap, {from: accountAddress})
+const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})
 console.info(`tx hash: ${wrap}`)
 ```
 
 ### Approve contract
 ```js
 const contract = '0x....'
-const approval = await gmSDK.approveContract(contract, {from: accountAddress})
+const approval = await gmSDK.approveContract(contract, {from: address})
 console.info(`tx hash: ${approval}`)
 ```
 
@@ -346,7 +346,7 @@ console.info(`tx hash: ${approval}`)
 const destination = '0x....'
 const contract = '0x....'
 const amount = '1' // in wei
-const transfer = await gmSDK.transferERC20(destination, contract, amount, {from: accountAddress})
+const transfer = await gmSDK.transferERC20(destination, contract, amount, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
@@ -355,7 +355,7 @@ console.info(`tx hash: ${transfer}`)
 const destination = '0x....'
 const contract = '0x....'
 const tokenId = ''
-const transfer = await gmSDK.transferERC721(destination, contract, tokenId, {from: accountAddress})
+const transfer = await gmSDK.transferERC721(destination, contract, tokenId, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
@@ -365,7 +365,7 @@ const destination = '0x....'
 const contract = '0x....'
 const tokenId = ''
 const amount = 1
-const transfer = await gmSDK.transferERC1155(destination, contract, [tokenId], [amount], {from: accountAddress})
+const transfer = await gmSDK.transferERC1155(destination, contract, [tokenId], [amount], {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
@@ -373,7 +373,7 @@ console.info(`tx hash: ${transfer}`)
 ```js
 const contract = '0x....'
 const tokenId = ''
-const burn = await gmSDK.burnERC721(contract, tokenId, {from: accountAddress})
+const burn = await gmSDK.burnERC721(contract, tokenId, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
@@ -382,44 +382,41 @@ console.info(`tx hash: ${burn}`)
 const contract = '0x....'
 const tokenId = ''
 const amount = 1
-const burn = await gmSDK.burnERC721(contract, tokenId, amount, {from: accountAddress})
+const burn = await gmSDK.burnERC721(contract, tokenId, amount, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
 ### Minting ERC721
 ```js
-const creator = '0x...'
+const royaltyRecipient = '0x....'
 const mintDetails = {
-    creatorAddress: creator,
-    royalties: [{address: creator, value: 1000}], // use bps
+    creatorAddress: address,
+    royalties: [{address: royaltyRecipient, value: 1000}], // use bps
     externalURI: 'ipfs://xxx'
 }
-const token = await gmSDK.mintERC721(mintDetails, {from: accountAddress})
+const token = await gmSDK.mintERC721(mintDetails, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
 ### Minting ERC1155
 ```js
-const creator = '0x...'
+const royaltyRecipient = '0x...'
 const mintDetails = {
-    creatorAddress: creator,
-    royalties: [{address: creator, value: 1000}], // use bps
+    creatorAddress: address,
+    royalties: [{address: royaltyRecipient, value: 1000}], // use bps
     externalURI: 'ipfs://xxx'
 }
 const amount = 1
-const token = await gmSDK.mintERC1155(mintDetails, amount, {from: accountAddress})
+const token = await gmSDK.mintERC1155(mintDetails, amount, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
 ## Usage Neo N3
 
-setRoyaltiesForContract
-CustomContracts
-
 You can override automatic calculation of network fee and system fee if you add it to the last argument object on each transaction requiring signature.
 Example when buying a NFT:
 
-instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress, systemFee: '0.2', networkFee: '0.2'})` if you want to override both with 0.2 GAS
+instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address, systemFee: '0.2', networkFee: '0.2'})` if you want to override both with 0.2 GAS
 
 
 ### Buying one or more NFT
@@ -430,7 +427,7 @@ const buyingDetails = [{
     quoteContract: '0x....', // order quote contract address.
     isCancellation: false, // is it a cancellation.
 }]
-const buying = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})
+const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})
 console.info(`tx hash: ${buying}`)
 ```
 
@@ -443,9 +440,9 @@ const listingDetails = [{
     price: '1', // order price - in biginteger format
     quoteContract: '0x....', // order quote contract address - currency accepted for listing
     startDate, // order start date - set to custom one or it will default to right now
-    endDate: 0, // order end date - set to 0 for unexpiring
+    endDate: 0, // order end date - set to custom one or it will default to unexpiring
 }]
-const listing = await gmSDK.sellMultiple(listingDetails, {from: accountAddress})
+const listing = await gmSDK.sellMultiple(listingDetails, {from: address})
 console.info(`tx hash: ${listing}`)
 ```
 
@@ -463,7 +460,7 @@ const auctionDetails = {
     endPrice: 0, // auction end price - only used for dutch auctions.
     quoteContract: '0x....', // auction quote contract address.
 }
-const auction = await gmSDK.listAuction(auctionDetails, {from: accountAddress})
+const auction = await gmSDK.listAuction(auctionDetails, {from: address})
 console.info(`tx hash: ${auction}`)
 ```
 
@@ -474,18 +471,14 @@ const auctionDetails = {
     bidPrice: '', // bid price
     quoteContract: '0x....', // auction quote contract address.
 }
-const auction = await gmSDK.bidAuction(auctionDetails, {from: accountAddress})
+const auction = await gmSDK.bidAuction(auctionDetails, {from: address})
 console.info(`tx hash: ${auction}`)
 ```
 
 ### Claim NFT auction
 ```js
-const auctionDetails = { 
-    contractAuctionId: '', // on chain contract auction ID.
-    bidPrice: 0, // bid price
-    quoteContract: '0x....', // auction quote contract address.
-}
-const auction = await gmSDK.claimAuction(auctionDetails, {from: accountAddress})
+const contractAuctionId = '' // on chain contract auction ID.
+const auction = await gmSDK.claimAuction(contractAuctionId, {from: address})
 console.info(`tx hash: ${auction}`)
 ```
 
@@ -497,7 +490,7 @@ const buyingDetails = [{
     quoteContract: '0x....', // order quote contract address.
     isCancellation: true, // is it a cancellation.
 }]
-const cancel = await gmSDK.buyMultiple(buyingDetails, {from: accountAddress})
+const cancel = await gmSDK.buyMultiple(buyingDetails, {from: address})
 console.info(`tx hash: ${cancel}`)
 ```
 
@@ -505,7 +498,7 @@ console.info(`tx hash: ${cancel}`)
 ```js
 const contractAuctionId = '' // on chain contract auction ID.
 const price = '' // new price
-const edit = await gmSDK.editPrice(contractAuctionId, price, {from: accountAddress})
+const edit = await gmSDK.editPrice(contractAuctionId, price, {from: address})
 console.info(`tx hash: ${edit}`)
 ```
 
@@ -520,7 +513,7 @@ const offerDetails = [{
     startDate, // offer start date - set to custom one or it will default to right now
     endDate: startDate + 604800, // offer end date - set to 0 for unexpiring - startDate + 604800 for one week
 }]
-const offer = await gmSDK.placeOffer(offerDetails, {from: accountAddress})
+const offer = await gmSDK.placeOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
 
@@ -532,7 +525,7 @@ const offerDetails = {
     tokenId: '', // offer NFT tokenId - token id for listing - pass tokenId for collection offer
     isCancellation: false, // is it an offer (true) or a cancellation (false).
 }
-const offer = await gmSDK.processOffer(offerDetails, {from: accountAddress})
+const offer = await gmSDK.processOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
 
@@ -544,7 +537,7 @@ const offerDetails = {
     tokenId: '', // offer NFT tokenId - token id for listing - pass tokenId for collection offer
     isCancellation: true, // is it an offer (true) or a cancellation (false).
 }
-const offer = await gmSDK.processOffer(offerDetails, {from: accountAddress})
+const offer = await gmSDK.processOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
 
@@ -553,7 +546,7 @@ console.info(`tx hash: ${offer}`)
 const destination = 'N....'
 const contract = '0x....'
 const amount = ''
-const transfer = await gmSDK.transferNEP17(destination, contract, amount, {from: accountAddress})
+const transfer = await gmSDK.transferNEP17(destination, contract, amount, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
@@ -564,7 +557,7 @@ const transferDetails = [{
     contractAddress: '0x....', // contract address
     tokenId: '', // tokenId.
 }]
-const transfer = await gmSDK.transferNEP11(transferDetails, {from: accountAddress})
+const transfer = await gmSDK.transferNEP11(transferDetails, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
@@ -574,7 +567,7 @@ const burnDetails = [{
     contractAddress: '0x....', // contract address
     tokenId: '', // tokenId.
 }]
-const burn = await gmSDK.burnNEP11(burnDetails, {from: accountAddress})
+const burn = await gmSDK.burnNEP11(burnDetails, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
@@ -582,15 +575,12 @@ console.info(`tx hash: ${burn}`)
 ```js
 const royaltyRecipient = 'NLp9MRxBHH2YJrsF1D1VMXg3mvze3WSTqn'
 const mintDetails = { 
-    quantity: 1, // NFT quantity.
     name: 'test name', // NFT name.
     description: 'test description', // NFT description.
     imageURL: 'ipfs://xxx', // image URL.
-    externalURI: 'ipfs://yyy', // external URI.
     royalties: [{address: royaltyRecipient, value: 100}], // royalties - use bps.
-    type: '1', // NFT Type.
 }
-const token = await gmSDK.mintNEP11(mintDetails, {from: accountAddress})
+const token = await gmSDK.mintNEP11(mintDetails, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
