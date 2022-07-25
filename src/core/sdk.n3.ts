@@ -11,6 +11,7 @@ import {
     NULL_ADDRESS_N3,
 } from './constants'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/ghostmarket'
+import { u, wallet } from '@cityofzion/neon-js'
 
 interface IBuyItem {
     contractAuctionId: string // on chain contract auction ID.
@@ -1615,7 +1616,7 @@ export class GhostMarketN3SDK {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `_ownerOf exception: ${response.exception}`
             const owner = response.stack[0]?.value
-            return atob(owner)
+            return wallet.getAddressFromScriptHash(u.base642hex(owner))
         } catch (e) {
             return NULL_ADDRESS_N3
         }
