@@ -42,8 +42,8 @@ interface IOrderItem {
     quotePrice: string // quote price for the order.
     makerAddress: string // maker address for the order.
     type: number // type of order. // 1 - listing, 2 - offer
-    startDate: number // start date the order can be matched.
-    endDate: number // end date the order can be matched.
+    startDate?: number // start date the order can be matched - optional default to now, need to be passed to cancel order
+    endDate?: number // end date the order can be matched - optional default to unexpiring, need to be passed to cancel order
     salt?: string // salt - calculated automatically, need to be passed to cancel order
 }
 
@@ -146,6 +146,9 @@ export class GhostMarketSDK {
 
                 const encType = supportsERC721 ? ERC721 : ERC1155
 
+                const startDate = items[i].startDate ?? 0
+                const endDate = items[i].endDate ?? 0
+
                 const order = Order(
                     items[i].makerAddress,
                     items[i].type === 2
@@ -174,8 +177,8 @@ export class GhostMarketSDK {
                               items[i].quotePrice,
                           ),
                     salt,
-                    items[i].startDate,
-                    items[i].endDate,
+                    startDate,
+                    endDate,
                     '0xffffffff',
                     '0x',
                 )
@@ -201,8 +204,8 @@ export class GhostMarketSDK {
                     quote_price: items[i].quotePrice,
                     maker_address: items[i].makerAddress,
                     is_buy_offer: items[i].type === 2,
-                    start_date: items[i].startDate,
-                    end_date: items[i].endDate,
+                    start_date: startDate,
+                    end_date: endDate,
                     signature,
                     order_key_hash: orderKeyHash,
                     salt,
@@ -275,8 +278,8 @@ export class GhostMarketSDK {
                           items[i].quotePrice,
                       ),
                 items[i].salt!,
-                items[i].startDate,
-                items[i].endDate,
+                items[i].startDate!,
+                items[i].endDate!,
                 '0xffffffff',
                 '0x',
             )
@@ -510,18 +513,28 @@ export class GhostMarketSDK {
             if (bal) {
                 balance = parseFloat(bal)
             }
-            const diff = parseFloat(amount) - balance
-            if (diff > 0) {
+
+            const amountDiff = BigNumber.from(amount)
+            const balanceDiff = BigNumber.from(balance)
+            const diff = amountDiff.sub(balanceDiff)
+            if (diff.gt(BigNumber.from(0))) {
                 throw new Error(
-                    `Not enough balance to convert from native to wrapped, missing: ${diff}`,
+                    `Not enough balance to convert from native to wrapped, missing: ${BigNumber.from(
+                        diff,
+                    )}`,
                 )
             }
         } else {
             const balance = await this.checkTokenBalance(wrappedTokenAddress, txObject.from)
-            const diff = parseFloat(amount) - parseFloat(balance)
-            if (diff > 0) {
+
+            const amountDiff = BigNumber.from(amount)
+            const balanceDiff = BigNumber.from(balance)
+            const diff = amountDiff.sub(balanceDiff)
+            if (diff.gt(BigNumber.from(0))) {
                 throw new Error(
-                    `Not enough balance to convert from wrapped to native, missing: ${diff}`,
+                    `Not enough balance to convert from wrapped to native, missing: ${BigNumber.from(
+                        diff,
+                    )}`,
                 )
             }
         }
@@ -640,7 +653,7 @@ export class GhostMarketSDK {
      */
     public async checkTokenApproval(contractAddress: string, accountAddress: string): Promise<any> {
         console.log(
-            `checkTokenApproval: check token contract ${contractAddress} approval on ${this._chainFullName}`,
+            `checkTokenApproval: check token contract ${contractAddress} approval for ${accountAddress} on ${this._chainFullName}`,
         )
 
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
@@ -682,8 +695,14 @@ export class GhostMarketSDK {
         if (this._isReadonlyProvider) return
 
         const balance = await this.checkTokenBalance(contractAddress, txObject.from)
-        if (balance < amount) {
-            throw new Error(`not enough ERC20 balance to transfer`)
+
+        const amountDiff = BigNumber.from(amount)
+        const balanceDiff = BigNumber.from(balance)
+        const diff = amountDiff.sub(balanceDiff)
+        if (diff.gt(BigNumber.from(0))) {
+            throw new Error(
+                `not enough ERC20 balance to transfer, missing: ${BigNumber.from(diff)}`,
+            )
         }
 
         const ContractInstance = new this.web3.eth.Contract(ERC20Contract, contractAddress)
@@ -801,9 +820,8 @@ export class GhostMarketSDK {
         txObject: TxObject,
     ): Promise<any> {
         console.log(
-            `burnERC721: burn 1 NFT from ERC721 contract ${contractAddress} on ${this._chainFullName}`,
+            `burnERC721: burn 1 NFT from ERC721 contract ${contractAddress} with token id ${tokenId} on ${this._chainFullName}`,
         )
-
         if (this._isReadonlyProvider) return
 
         const owner = await this._ownerOf(contractAddress, tokenId)
@@ -839,7 +857,9 @@ export class GhostMarketSDK {
         console.log(
             `burnERC1155: burn ${amount} NFT${
                 amount > 1 ? 's' : ''
-            } from ERC1155 contract ${contractAddress} on ${this._chainFullName}`,
+            } from ERC1155 contract ${contractAddress} with token id ${tokenId} on ${
+                this._chainFullName
+            }`,
         )
 
         if (this._isReadonlyProvider) return
