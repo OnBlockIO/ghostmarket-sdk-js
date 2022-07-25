@@ -1616,7 +1616,9 @@ export class GhostMarketN3SDK {
             const response = await this.invokeRead(invokeParams)
             if (response.exception) return `_ownerOf exception: ${response.exception}`
             const owner = response.stack[0]?.value
-            return wallet.getAddressFromScriptHash(u.base642hex(owner))
+            return wallet.getAddressFromScriptHash(
+                u.reverseHex(u.HexString.fromBase64(owner).toString()),
+            )
         } catch (e) {
             return NULL_ADDRESS_N3
         }
