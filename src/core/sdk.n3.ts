@@ -87,7 +87,7 @@ interface IMintItem {
     description: string // NFT description.
     imageURL: string // image URL.
     externalURI?: string // external URI.
-    royalties: IRoyalties[] // royalties.
+    royalties?: IRoyalties[] // royalties.
     type?: string // NFT Type.
 }
 
@@ -231,7 +231,7 @@ export class GhostMarketN3SDK {
                 const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
 
                 const amountDiff = BigNumber.from(priceNFTFormatted)
-                const balanceDiff = BigNumber.from(balance)
+                const balanceDiff = BigNumber.from(balance.toString())
                 const diff = amountDiff.sub(balanceDiff)
                 if (diff.gt(BigNumber.from(0))) {
                     throw new Error(`Not enough balance to buy NFT, missing: ${diff}`)
@@ -422,8 +422,8 @@ export class GhostMarketN3SDK {
 
         const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
 
-        const amountDiff = BigNumber.from(currentBidFormatted)
-        const balanceDiff = BigNumber.from(balance)
+        const amountDiff = BigNumber.from(currentBidFormatted.toString())
+        const balanceDiff = BigNumber.from(balance.toString())
         const diff = amountDiff.sub(balanceDiff)
         if (diff.gt(BigNumber.from(0))) {
             throw new Error(`Not enough balance to bid on NFT, missing: ${diff}`)
@@ -689,7 +689,7 @@ export class GhostMarketN3SDK {
             const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
 
             const amountDiff = BigNumber.from(item.price)
-            const balanceDiff = BigNumber.from(balance)
+            const balanceDiff = BigNumber.from(balance.toString())
             const diff = amountDiff.sub(balanceDiff)
             if (diff.gt(BigNumber.from(0))) {
                 throw new Error(`Not enough balance to place offer on NFT, missing: ${diff}`)
@@ -1140,7 +1140,7 @@ export class GhostMarketN3SDK {
         const balance = await this.checkTokenBalance(quoteContract, txObject.from)
 
         const amountDiff = BigNumber.from(amount)
-        const balanceDiff = BigNumber.from(balance)
+        const balanceDiff = BigNumber.from(balance.toString())
         const diff = amountDiff.sub(balanceDiff)
         if (diff.gt(BigNumber.from(0))) {
             throw new Error(`Not enough balance to transfer NEP-17, missing: ${diff}`)

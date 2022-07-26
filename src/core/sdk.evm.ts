@@ -50,7 +50,7 @@ interface IOrderItem {
 
 interface IMintItem {
     creatorAddress: string // nft creator
-    royalties: IRoyalties[] // nft royalties
+    royalties?: IRoyalties[] // nft royalties
     externalURI: string // nft externalURI
 }
 
@@ -608,7 +608,7 @@ export class GhostMarketSDK {
             }
 
             const amountDiff = BigNumber.from(amount)
-            const balanceDiff = BigNumber.from(balance)
+            const balanceDiff = BigNumber.from(balance.toString())
             const diff = amountDiff.sub(balanceDiff)
             if (diff.gt(BigNumber.from(0))) {
                 throw new Error(
@@ -621,7 +621,7 @@ export class GhostMarketSDK {
             const balance = await this.checkTokenBalance(wrappedTokenAddress, txObject.from)
 
             const amountDiff = BigNumber.from(amount)
-            const balanceDiff = BigNumber.from(balance)
+            const balanceDiff = BigNumber.from(balance.toString())
             const diff = amountDiff.sub(balanceDiff)
             if (diff.gt(BigNumber.from(0))) {
                 throw new Error(
@@ -723,21 +723,26 @@ export class GhostMarketSDK {
             `checkContractApproval: check nft contract ${contractAddress} approval on ${this._chainFullName}`,
         )
 
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
-        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
+        const supportsERC721 = await this._supportsERC721(contractAddress)
+        const supportsERC1155 = await this._supportsERC1155(contractAddress)
+        if (supportsERC721 || supportsERC1155) {
+            const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
+            const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
-        try {
-            const data = await ContractInstance.methods.isApprovedForAll(
-                accountAddress,
-                proxyContractAddress,
-            )
-            return await this.callMethod(data, accountAddress)
-        } catch (e) {
-            return console.error(
-                `checkContractApproval: failed to execute isApprovedForAll on ${contractAddress} with error:`,
-                e,
-            )
+            try {
+                const data = await ContractInstance.methods.isApprovedForAll(
+                    accountAddress,
+                    proxyContractAddress,
+                )
+                return await this.callMethod(data, accountAddress)
+            } catch (e) {
+                return console.error(
+                    `checkContractApproval: failed to execute isApprovedForAll on ${contractAddress} with error:`,
+                    e,
+                )
+            }
         }
+        return false
     }
 
     /** Check ERC20 Token Contract Approval
@@ -790,7 +795,7 @@ export class GhostMarketSDK {
         const balance = await this.checkTokenBalance(contractAddress, txObject.from)
 
         const amountDiff = BigNumber.from(amount)
-        const balanceDiff = BigNumber.from(balance)
+        const balanceDiff = BigNumber.from(balance.toString())
         const diff = amountDiff.sub(balanceDiff)
         if (diff.gt(BigNumber.from(0))) {
             throw new Error(

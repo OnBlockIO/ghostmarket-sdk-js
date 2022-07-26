@@ -432,7 +432,7 @@ console.info(`tx hash: ${burn}`)
 const royaltyRecipient = '0x....'
 const mintDetails = {
     creatorAddress: address,
-    royalties: [{address: royaltyRecipient, value: 1000}], // use bps
+    royalties: [{address: royaltyRecipient, value: 1000}], // royalties - optional - use bps.
     externalURI: 'ipfs://xxx'
 }
 const token = await gmSDK.mintERC721(mintDetails, {from: address})
@@ -444,7 +444,7 @@ console.info(`tx hash: ${token}`)
 const royaltyRecipient = '0x...'
 const mintDetails = {
     creatorAddress: address,
-    royalties: [{address: royaltyRecipient, value: 1000}], // use bps
+    royalties: [{address: royaltyRecipient, value: 1000}], // royalties - optional - use bps.
     externalURI: 'ipfs://xxx'
 }
 const amount = 1
@@ -618,7 +618,7 @@ const mintDetails = {
     name: 'test name', // NFT name.
     description: 'test description', // NFT description.
     imageURL: 'ipfs://xxx', // image URL.
-    royalties: [{address: royaltyRecipient, value: 100}], // royalties - use bps.
+    royalties: [{address: royaltyRecipient, value: 100}], // royalties - optional - use bps.
 }
 const token = await gmSDK.mintNEP11(mintDetails, {from: address})
 console.info(`tx hash: ${token}`)
