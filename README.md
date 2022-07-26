@@ -83,7 +83,7 @@ Install [web3](https://github.com/ethereum/web3.js) if you don't have it already
 To get started on EVM, you can use either a read only provider, a web3 provider (ex metamask), a private key or a mnemonic (last two are to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
-import Web3 from 'web3' // only for EVM
+import Web3 from 'web3'
 import { GhostMarketSDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
 // if using EVM private key or mnemonic hdwallet-provider is required
 // import HDWalletProvider from '@truffle/hdwallet-provider'
@@ -92,7 +92,7 @@ import { GhostMarketSDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'gho
 // Variables
 const apiKey = process.env.GM_API_KEY // GhostMarket API KEY if you have one
 const privateKey = process.env.PRIVATE_KEY // private key to use - only for private key provider
-const mnemonic = process.env.MNEMONIC // mnemonic to use - only for EVM
+const mnemonic = process.env.MNEMONIC // mnemonic to use - only for mnemonic provider
 const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
 const chainName = ChainName.ETHEREUM // see below for chain values
@@ -112,7 +112,7 @@ const sdkConfig = {
     chainName,
 }
 
-// Option 1 - readonly provider, only reads the network state. Can not sign transactions.
+// Option 1 - readonly provider, only reads the network state. Can not sign transactions
 const customProvider = new Web3.providers.HttpProvider(rpcUrl)
 const address = ''
 // Option 2 - metamask provider
@@ -120,7 +120,7 @@ const customProvider = window.ethereum
 const address = await ethereum.request({
     method: 'eth_requestAccounts',
   })[0];
-// Option 3 - private key - EVM
+// Option 3 - private key
 const customProvider = new HDWalletProvider(KEY, rpcUrl)
 const address = customProvider.addresses[0]
 // Option 4 - mnemonic
@@ -191,23 +191,23 @@ console.info(assets)
 
 ```js
 // Fetch 10 GhostMarket events.
-const { events } = await gmSDK.api.getEvents({ limit: 1 })
+const { events } = await gmSDK.api.getEventsV2({ size: 10 })
 console.info(events)
 ```
 
 ### Getting collections
 ```js
 // Fetch 10 GhostMarket collections.
-const { collections } = await gmSDK.api.getCollections({ limit: 1 })
+const { collections } = await gmSDK.api.getCollectionsV2({ size: 10 })
 console.info(collections)
 ```
 
 ### Getting offers 
 ```js
 // Fetch offers from asset.
-const chain = '' // filter by chain
-const contractAddress = '' // filter for one contract
-const tokenId = '' // filter for one tokenId
+const chain = '' // filter by chain.
+const contractAddress = '' // filter for one contract.
+const tokenId = '' // filter for one tokenId.
 const { offers } = await gmSDK.api.getAssetOffersV2({ chain, contractAddress, tokenId })
 console.info(offers)
 ```
@@ -215,18 +215,18 @@ console.info(offers)
 ### Getting orders 
 ```js
 // Fetch orders from asset.
-const chain = '' // filter by chain
-const contractAddress = '0x....' // filter for one contract
-const tokenId = '' // filter for one tokenId
+const chain = '' // filter by chain.
+const contractAddress = '0x....' // filter for one contract.
+const tokenId = '' // filter for one tokenId.
 const { orders } = await gmSDK.api.getAssetOrdersV2({ chain, contractAddress, tokenId })
 console.info(orders)
 ```
 
 ### Getting NFT balances
 ```js
-const chain = '' // filter by chain
-const contractAddress =  '' // filter for one contract
-const owners = ['0x....'] // filter by one or more owner
+const chain = '' // filter by chain.
+const contractAddress =  '' // filter for one contract.
+const owners = ['0x....'] // filter by one or more owner.
 const balance = await gmSDK.api.getAssetsV2({ chain, contractAddress, owners })
 console.info(balance)
 ```
@@ -235,14 +235,14 @@ console.info(balance)
 ```js
 const contract =  '' 
 const balance = await gmSDK.checkTokenBalance(contract, address)
-console.info(`balance: ` + balance)
+console.info(balance)
 ```
 
 ### Getting token approval
 ```js
 const contract = '0x....'
 const approval = await gmSDK.checkTokenApproval(contract, address)
-console.info(`amount approved: ` + approval)
+console.info(approval)
 ```
 
 ### Getting incentives
@@ -256,22 +256,22 @@ console.info(`available incentives: ${availableIncentives}`)
 ### Set contract royalties
 ```js
 const contractAddress = '0x....'
-const royaltiesArray = [{address, value: 1000}] // array of recipient/value array (in bps)
+const royaltiesArray = [{address, value: 1000}] // array of recipient/value array (in bps).
 const royalties = await gmSDK.setRoyaltiesForContract(contractAddress, royaltiesArray, {from: address})
-console.info(`tx hash: ${royalties}`)
+console.info(royalties)
 ```
 
 ### Approve token
 ```js
 const contract = '0x....'
 const approve = await gmSDK.approveToken(contract, {from: address})
-console.info(`tx hash: ${approve}`)
+console.info(approve)
 ```
 
 ### Claiming incentives
 ```js
 const claim = await gmSDK.claimIncentives({from: address})
-console.info(`tx hash: ${claim}`)
+console.info(claim)
 ```
 
 ### Signing data
@@ -279,7 +279,7 @@ console.info(`tx hash: ${claim}`)
 const message = 'signing stuff'
 const signed = await gmSDK.signData(message, address) // EVM
 const signed = await gmSDK.signData(message) // N3
-console.info(`signed data: ${signed}`)
+console.info(signed)
 ```
 
 ## Usage - EVM
@@ -292,17 +292,17 @@ instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})`
 ### Buying NFT
 ```js
 const orderDetails = [{ 
-    baseContract: '0x....', // order maker base contract address
-    baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer
-    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '0x....', // order maker quote contract address
-    quotePrice: '1', // order maker price - in wei
-    makerAddress: '0x....', // order maker
-    type: 1, // order maker type 1 - listing, 2 - offer
-    startDate: 0, // order maker start date
-    endDate: 0, // order maker end date
-    salt: '0x....', // order maker salt
-    signature: '0x....', // order maker signature
+    baseContract: '0x....', // order maker base contract address.
+    baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer.
+    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order maker quote contract address.
+    quotePrice: '1', // order maker price - in wei.
+    makerAddress: '0x....', // order maker.
+    type: 1, // order maker type 1 - listing, 2 - offer.
+    startDate: 0, // order maker start date.
+    endDate: 0, // order maker end date.
+    salt: '0x....', // order maker salt.
+    signature: '0x....', // order maker signature.
 }]
 const buying = await gmSDK.matchOrders(orderDetails, {from: address})
 console.info(buying)
@@ -312,15 +312,15 @@ console.info(buying)
 ```js
 const startDate = parseInt(new Date().getTime() / 1000)
 const orderDetails = [{ 
-    baseContract: '0x....', // order base contract address - nft contract for listing
-    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer
-    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing
-    quotePrice: '1', // order price - in wei
-    makerAddress: '0x....', // order maker
-    type: 1, // 1 - listing, 2 - offer
-    startDate, // order start date
-    endDate: startDate + (3600 * 24) // order end date
+    baseContract: '0x....', // order base contract address - nft contract for listing.
+    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quotePrice: '1', // order price - in wei.
+    makerAddress: '0x....', // order maker.
+    type: 1, // 1 - listing, 2 - offer.
+    startDate, // order start date.
+    endDate: startDate + (3600 * 24) // order end date.
 }]
 const listing = await gmSDK.createOrder(orderDetails)
 console.info(listing)
@@ -329,16 +329,16 @@ console.info(listing)
 ### Cancel Listing NFT
 ```js
 const orderDetails = [{ 
-    baseContract: '0x....', // order base contract address - nft contract for listing
-    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer
-    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing
-    quotePrice: '1', // order price - in wei
-    makerAddress: '0x....', // order maker
-    type: 1, // 1 - listing, 2 - offer
-    startDate: 0, // order start date
-    endDate: 0, // order end date
-    salt: '0x....' // required for cancellation, use the salt from the order/offer
+    baseContract: '0x....', // order base contract address - nft contract for listing.
+    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quotePrice: '1', // order price - in wei.
+    makerAddress: '0x....', // order maker.
+    type: 1, // 1 - listing, 2 - offer.
+    startDate: 0, // order start date.
+    endDate: 0, // order end date.
+    salt: '0x....' // required for cancellation, use the salt from the order/offer.
 }]
 const cancel = await gmSDK.bulkCancelOrders(orderDetails, {from: address})
 console.info(cancel)
@@ -348,16 +348,16 @@ console.info(cancel)
 Note: edit listing price does not cancel current order, it just hides it on API and exposes the new one only, but the old one can still be matched later. Only a true cancellation will make it un matcheable.
 ```js
 const orderDetails = [{ 
-    baseContract: '0x....', // order base contract address - nft contract for listing
-    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer
-    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing
-    quotePrice: '1', // order new price - in wei - has to be lower than current price
-    makerAddress: '0x....', // order maker
-    type: 1, // 1 - listing, 2 - offer
-    startDate: 0, // order start date
-    endDate: 0, // order end date
-    salt: '0x....' // required for edit, use the salt from the order/offer
+    baseContract: '0x....', // order base contract address - nft contract for listing.
+    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quotePrice: '1', // order new price - in wei - has to be lower than current price.
+    makerAddress: '0x....', // order maker.
+    type: 1, // 1 - listing, 2 - offer.
+    startDate: 0, // order start date.
+    endDate: 0, // order end date.
+    salt: '0x....' // required for edit, use the salt from the order/offer.
 }]
 const edit = await gmSDK.createOrder(orderDetails)
 console.info(edit)
@@ -367,15 +367,15 @@ console.info(edit)
 ```js
 const startDate = parseInt(new Date().getTime() / 1000)
 const orderDetails = [{ 
-    baseContract: '0x....', // order base contract address - nft contract for listing
-    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer
-    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing
-    quotePrice: '1', // order price - in wei
-    makerAddress: '0x....', // order maker
-    type: 2, // 1 - listing, 2 - offer
-    startDate, // order start date
-    endDate: startDate + (3600 * 24) // order end date
+    baseContract: '0x....', // order base contract address - nft contract for listing.
+    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quotePrice: '1', // order price - in wei.
+    makerAddress: '0x....', // order maker.
+    type: 2, // 1 - listing, 2 - offer.
+    startDate, // order start date.
+    endDate: startDate + (3600 * 24) // order end date.
 }]
 const listing = await gmSDK.createOrder(orderDetails)
 console.info(listing)
@@ -384,17 +384,17 @@ console.info(listing)
 ### Accept offer
 ```js
 const orderDetails = [{ 
-    baseContract: '0x....', // order maker base contract address
-    baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer
-    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '0x....', // order maker quote contract address
-    quotePrice: '1', // order maker price - in wei
-    makerAddress: '0x....', // order maker
-    type: 2, // order maker type 1 - listing, 2 - offer
-    startDate: 0, // order maker start date
-    endDate: 0, // order maker end date
-    salt: '0x....', // order maker salt
-    signature: '0x....', // order maker signature
+    baseContract: '0x....', // order maker base contract address.
+    baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer.
+    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order maker quote contract address.
+    quotePrice: '1', // order maker price - in wei.
+    makerAddress: '0x....', // order maker.
+    type: 2, // order maker type 1 - listing, 2 - offer.
+    startDate: 0, // order maker start date.
+    endDate: 0, // order maker end date.
+    salt: '0x....', // order maker salt.
+    signature: '0x....', // order maker signature.
 }]
 const accept = await gmSDK.matchOrders(orderDetails, {from: address})
 console.info(accept)
@@ -409,8 +409,8 @@ console.info(approval)
 
 ### Wrap token
 ```js
-const amount = '1' // in wei
-const isWrap = true // set to false to unwrap
+const amount = '1' // in wei.
+const isWrap = true // set to false to unwrap.
 const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})
 console.info(wrap)
 ```
@@ -432,7 +432,7 @@ console.info(balance)
 ```js
 const destination = '0x....'
 const contract = '0x....'
-const amount = '1' // in wei
+const amount = '1' // in wei.
 const transfer = await gmSDK.transferERC20(destination, contract, amount, {from: address})
 console.info(transfer)
 ```
@@ -510,7 +510,7 @@ instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address
 ```js
 const buyingDetails = [{ 
     contractAuctionId: '1', // on chain contract auction ID.
-    price: '1', // order price - in biginteger format
+    price: '1', // order price - in biginteger format.
     quoteContract: '0x....', // order quote contract address.
 }]
 const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})
@@ -630,7 +630,7 @@ console.info(offer)
 ```js
 const destination = 'NLp9MRxBHH2YJrsF1D1VMXg3mvze3WSTqn'
 const quoteContract = '0x....'
-const amount = '1' // in biginteger format
+const amount = '1' // in biginteger format.
 const transfer = await gmSDK.transferNEP17(destination, quoteContract, amount, {from: address})
 console.info(transfer)
 ```
