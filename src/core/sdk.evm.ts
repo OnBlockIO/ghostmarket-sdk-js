@@ -1175,7 +1175,8 @@ export class GhostMarketSDK {
         )
 
         try {
-            const data = this.web3.eth.sign(dataToSign, accountAddress)
+            const hash = this.web3.utils.sha3(dataToSign)!
+            const data = this.web3.eth.sign(hash, accountAddress)
             return data
         } catch (e) {
             return console.error(`signData: Failed to execute sign with error:`, e)
