@@ -1,8 +1,14 @@
+<p align="center">
+  <img src="https://cdn.ghostmarket.io/brands/gm-light-logo-oneline.svg" />
+</p>
+
 # ghostmarket-sdk-js
 
 [![https://badges.frapsoft.com/os/mit/mit.svg?v=102](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://opensource.org/licenses/MIT)
 
-Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript/Javascript. 
+Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript/Javascript.
+
+Full support in a single SDK of all blockchains integrated with GhostMarket, currently six: Ethereum, BSC, Avalanche, Polygon, Phantasma, Neo N3.
 
 Checkout the [Changelog](https://github.com/OnBlockIO/ghostmarket-sdk-js/blob/master/CHANGELOG.md)
 
@@ -10,7 +16,7 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
 
 - [Installation](#installation)
 - [Getting Started](#getting-started)
-- [Usage - Common](#usage-common)
+- [Usage Common](#usage-common)
     - [Getting assets](#getting-assets)
     - [Getting events](#getting-events)
     - [Getting collections](#getting-collections)
@@ -24,7 +30,7 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Approve token](#approve-token)
     - [Claiming incentives](#claiming-incentives)
     - [Signing Data](#signing-data)
-- [Usage - EVM](#usage-evm)
+- [Usage EVM](#usage-evm)
     - [Buying NFT](#buying-nft)
     - [Listing NFT fixed price](#listing-nft-fixed-price)
     - [Cancel listing](#cancel-listing)
@@ -42,7 +48,7 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Burn ERC1155 NFT](#burn-erc1155-nft)
     - [Mint ERC721 NFT](#mint-erc721-nft)
     - [Mint ERC1155 NFT](#mint-erc1155-nft)
-- [Usage - Neo N3](#usage-neo-n3)
+- [Usage Neo N3](#usage-neo-n3)
     - [Buying NFT](#buying-nft)
     - [Listing NFT fixed price](#listing-nft-fixed-price)
     - [Listing NFT auction](#listing-nft-auction)
@@ -177,7 +183,7 @@ const address = (await gmSDK.getProvider().getAccount()).address
 // All set - use the object gmSDK to access GhostMarket SDK
 ```
 
-## Usage - Common
+## Usage Common
 
 ### Getting assets
 
@@ -282,12 +288,14 @@ const signed = await gmSDK.signData(message) // N3
 console.info(signed)
 ```
 
-## Usage - EVM
+## Usage EVM
 
 You can override automatic calculation of gas price if you add it to the last argument object on each transaction requiring signature.
 Example when wrapping a token:
 
 instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})` simply do `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address, gasPrice: 50000})` if you want to override gas price to `50000`.
+
+All interfaces are documented here: [EVM interfaces](https://github.com/OnBlockIO/ghostmarket-sdk-js/blob/master/src/core/models/evm/index.ts)
 
 ### Buying NFT
 ```js
@@ -505,6 +513,7 @@ Example when buying a NFT:
 
 instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address, systemFee: '0.2', networkFee: '0.2'})` if you want to override both with 0.2 GAS
 
+All interfaces are documented here: [Neo N3 interfaces](https://github.com/OnBlockIO/ghostmarket-sdk-js/blob/master/src/core/models/n3/index.ts)
 
 ### Buying NFT
 ```js
