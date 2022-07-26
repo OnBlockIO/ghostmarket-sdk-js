@@ -25,7 +25,8 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Checking Incentives](#checking-incentives)
     - [Signing Data](#signing-data)
 - [Usage - EVM](#usage-evm)
-    - [Buying one or more NFT](#buying-one-or-more-nft)
+    - [Buying NFT](#buying-nft)
+    - [Accepting offer](#accepting-offer)
     - [Listing NFT fixed price](#listing-nft-fixed-price)
     - [Cancel one or more NFT](#cancel-one-or-more-nft)
     - [Edit listing price](#edit-listing-price)
@@ -255,15 +256,48 @@ console.info(`signed data: ${signed}`)
 
 ## Usage - EVM
 
-prepareMatchOrders
-matchOrders
-cancelOrder
-bulkCancelOrders
-
 You can override automatic calculation of gas price if you add it to the last argument object on each transaction requiring signature.
 Example when wrapping a token:
 
 instead of `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})` simply do `const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address, gasPrice: 50000})` if you want to override gas price to `50000`.
+
+### Buying NFT
+```js
+const orderDetails = [{ 
+    baseContract: '', // order maker base contract address
+    baseTokenId: '', // order maker NFT tokenId - set to the one to offer for a collection offer
+    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1
+    quoteContract: '', // order maker quote contract address
+    quotePrice: '', // order maker price - in biginteger format
+    makerAddress: '', // order maker
+    type: 1, // orer maker type 1 - listing, 2 - offer
+    startDate, // order maker start date
+    endDate, // order maker end date
+    salt, // order maker salt
+    signature, // order maker signature
+}]
+const buying = await gmSDK.matchOrders(orderDetails, {from: address})
+console.info(buying)
+```
+
+### Accepting offer
+```js
+const orderDetails = [{ 
+    baseContract: '', // order maker base contract address
+    baseTokenId: '', // order maker NFT tokenId - set to the one to offer for a collection offer
+    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1
+    quoteContract: '', // order maker quote contract address
+    quotePrice: '', // order maker price - in biginteger format
+    makerAddress: '', // order maker
+    type: 2, // orer maker type 1 - listing, 2 - offer
+    startDate, // order maker start date
+    endDate, // order maker end date
+    salt, // order maker salt
+    signature, // order maker signature
+}]
+const buying = await gmSDK.matchOrders(orderDetails, {from: address})
+console.info(buying)
+```
 
 ### Listing NFT fixed price
 ```js
