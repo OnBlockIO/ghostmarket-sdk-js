@@ -489,7 +489,7 @@ export class GhostMarketSDK {
      * @param {string} signatureRight signature right to match.
      * @param {TxObject} txObject transaction object to send when calling `_matchOrders`.
      */
-    private async _matchOrders(
+    public async _matchOrders(
         orderLeft: IEVMOrder,
         signatureLeft: string,
         orderRight: IEVMOrder,
