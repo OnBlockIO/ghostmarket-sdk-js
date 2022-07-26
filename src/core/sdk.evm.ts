@@ -36,15 +36,16 @@ import {
 
 interface IOrderItem {
     baseContract: string // token contract for the order.
-    baseTokenId: string // token id for the order - set to empty for collection offer
+    baseTokenId?: string // token id for the order - set to empty for collection offer
     baseTokenAmount?: number // token amount for the order - only used for ERC1155
     quoteContract: string // quote contract for the order.
     quotePrice: string // quote price for the order.
     makerAddress: string // maker address for the order.
     type: number // type of order. // 1 - listing, 2 - offer
-    startDate?: number // start date the order can be matched - optional default to now, need to be passed to cancel order
-    endDate?: number // end date the order can be matched - optional default to unexpiring, need to be passed to cancel order
-    salt?: string // salt - calculated automatically, need to be passed to cancel order
+    startDate?: number // start date the order can be matched - optional default to now, need to be passed to cancel or match order
+    endDate?: number // end date the order can be matched - optional default to unexpiring, need to be passed to cancel or match order
+    salt?: string // salt - calculated automatically, need to be passed to cancel or match order
+    signature?: string // signature - calculated automatically, need to be passed to match order
 }
 
 interface IMintItem {
@@ -138,15 +139,33 @@ export class GhostMarketSDK {
                         `contract: ${items[i].baseContract} does not support ERC721 or ERC1155`,
                     )
 
+                if (items[i].type === 1) {
+                    const owner = await this._ownerOf(items[i].baseContract, items[i].baseTokenId!)
+
+                    if (owner.toLowerCase() !== items[i].makerAddress.toLowerCase())
+                        throw new Error(
+                            `owner: ${owner} does not match maker: ${items[i].makerAddress}`,
+                        )
+                }
+
                 const salt =
                     '0x' +
                     [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
 
-                const baseTokenAmount = supportsERC721 ? 1 : items[i].baseTokenId
+                const baseTokenAmount = items[i].baseTokenAmount
+                    ? supportsERC721
+                        ? 1
+                        : items[i].baseTokenAmount
+                    : 1
 
                 const encType = supportsERC721 ? ERC721 : ERC1155
 
-                const startDate = items[i].startDate ?? 0
+                const now = new Date().getTime() / 1000
+                const startDate = items[i].startDate
+                    ? parseInt(items[i].startDate!.toString()) < now
+                        ? parseInt(now.toString())
+                        : items[i].startDate!
+                    : now
                 const endDate = items[i].endDate ?? 0
 
                 const order = Order(
@@ -160,14 +179,14 @@ export class GhostMarketSDK {
                         : Asset(
                               encType,
                               enc(items[i].baseContract, items[i].baseTokenId),
-                              baseTokenAmount.toString(),
+                              baseTokenAmount!.toString(),
                           ),
                     NULL_ADDRESS,
                     items[i].type === 2 && items[i].baseTokenId
                         ? Asset(
                               encType,
                               enc(items[i].baseContract, items[i].baseTokenId),
-                              baseTokenAmount.toString(),
+                              baseTokenAmount!.toString(),
                           )
                         : items[i].type === 2
                         ? Asset(COLLECTION, enc(items[i].quoteContract), items[i].quotePrice)
@@ -198,7 +217,7 @@ export class GhostMarketSDK {
                 const nftToList = {
                     chain: this._chainName,
                     token_contract: items[i].baseContract,
-                    token_id: items[i].baseTokenId ? items[i].baseTokenId : '',
+                    token_id: items[i].baseTokenId ?? '',
                     token_amount: baseTokenAmount,
                     quote_contract: items[i].quoteContract,
                     quote_price: items[i].quotePrice,
@@ -246,13 +265,28 @@ export class GhostMarketSDK {
         for (let i = 0; i < items.length; i++) {
             const supportsERC721 = await this._supportsERC721(items[i].baseContract)
 
-            const baseTokenAmount = supportsERC721 ? 1 : items[i].baseTokenId
+            if (items[i].makerAddress.toLowerCase() !== txObject.from.toLowerCase())
+                throw new Error(
+                    `maker: ${items[i].makerAddress} does not match tx.sender: ${txObject.from}`,
+                )
+
+            const baseTokenAmount = items[i].baseTokenAmount
+                ? supportsERC721
+                    ? 1
+                    : items[i].baseTokenAmount
+                : 1
 
             const encType = supportsERC721 ? ERC721 : ERC1155
 
             const order = Order(
-                txObject.from,
-                items[i].type === 2
+                items[i].makerAddress,
+                items[i].type === 2 && items[i].baseTokenId
+                    ? Asset(
+                          items[i].quoteContract === '0x' ? ETH : ERC20,
+                          enc(items[i].quoteContract),
+                          items[i].quotePrice,
+                      )
+                    : items[i].type === 2
                     ? Asset(
                           items[i].quoteContract === '0x' ? ETH : ERC20,
                           enc(items[i].quoteContract),
@@ -261,16 +295,16 @@ export class GhostMarketSDK {
                     : Asset(
                           encType,
                           enc(items[i].baseContract, items[i].baseTokenId),
-                          baseTokenAmount.toString(),
+                          baseTokenAmount!.toString(),
                       ),
                 NULL_ADDRESS,
-                items[i].type === 2
+                items[i].type === 2 && items[i].baseTokenId
                     ? Asset(
                           encType,
                           enc(items[i].baseContract, items[i].baseTokenId),
-                          baseTokenAmount.toString(),
+                          baseTokenAmount!.toString(),
                       )
-                    : items[i].type === 2 && items[i].baseTokenId
+                    : items[i].type === 2
                     ? Asset(COLLECTION, enc(items[i].quoteContract), items[i].quotePrice)
                     : Asset(
                           items[i].quoteContract === '0x' ? ETH : ERC20,
@@ -299,83 +333,135 @@ export class GhostMarketSDK {
     }
 
     /** Prepare match of a sell order or a single nft offer or a collection offer
-     * @param {string} signatureLeft left signature for the order match.
-     * @param {string} salt salt for the order match.
-     * @param {string} baseContract token contract for the order.
-     * @param {string} baseTokenId token id for the order.
-     * @param {number} baseTokenAmount token amount for the order.
-     * @param {string} quoteContract quote contract for the order.
-     * @param {string} quotePrice quote price for the order.
-     * @param {string} makerAddress maker address for the order.
-     * @param {number} type type of order. // 1 - sell order, 2 - offer, 3 - collection offer
-     * @param {number} typeAsset asset type of order. // 1 - ERC721, 2 - ERC1155
-     * @param {number} startDate start date the order can be matched.
-     * @param {number} endDate end date the order can be matched.
-     * @param {TxObject} txObject transaction object to send when calling `prepareMatchOrders`.
+     * @param {IOrderItem} orderMaker order to match.
+     * @param {TxObject} txObject transaction object to send when calling `matchOrders`.
      */
-    public async prepareMatchOrders(
-        signatureLeft: string,
-        salt: string,
-        baseContract: string,
-        baseTokenId: string,
-        baseTokenAmount: number,
-        quoteContract: string,
-        quotePrice: string,
-        makerAddress: string,
-        type: number,
-        typeAsset: number,
-        startDate: number,
-        endDate: number,
-        txObject: TxObject,
-    ) {
+    public async matchOrders(orderMaker: IOrderItem, txObject: TxObject): Promise<any> {
+        console.log(
+            `matchOrders: matching ${
+                orderMaker.type === 1
+                    ? 'listing'
+                    : orderMaker.baseTokenId
+                    ? 'offer'
+                    : 'collection offer'
+            } on ${this._chainFullName}`,
+        )
+
+        if (this._isReadonlyProvider) return
+
         try {
-            const encType = typeAsset == 1 ? ERC721 : ERC1155
+            const supportsERC721 = await this._supportsERC721(orderMaker.baseContract)
 
-            const orderLeft = Order(
-                makerAddress,
-                type === 2
-                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
-                    : type === 3
-                    ? Asset(encType, enc(baseContract, baseTokenId), baseTokenAmount.toString())
-                    : Asset(encType, enc(baseContract, baseTokenId), baseTokenAmount.toString()),
+            if (orderMaker.makerAddress.toLowerCase() === txObject.from.toLowerCase())
+                throw new Error(
+                    `maker: ${orderMaker.makerAddress} and tx.sender: ${txObject.from} can not be the same`,
+                )
+
+            const baseTokenAmount = orderMaker.baseTokenAmount
+                ? supportsERC721
+                    ? 1
+                    : orderMaker.baseTokenAmount
+                : 1
+
+            const encType = supportsERC721 ? ERC721 : ERC1155
+
+            const _orderMaker = Order(
+                orderMaker.type === 2 && orderMaker.baseTokenId
+                    ? orderMaker.makerAddress
+                    : orderMaker.type === 2
+                    ? txObject.from
+                    : orderMaker.makerAddress,
+                orderMaker.type === 2 && orderMaker.baseTokenId
+                    ? Asset(
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
+                      )
+                    : orderMaker.type === 2
+                    ? Asset(
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount!.toString(),
+                      )
+                    : Asset(
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount!.toString(),
+                      ),
                 NULL_ADDRESS,
-                type === 2
-                    ? Asset(encType, enc(baseContract, baseTokenId), baseTokenAmount.toString())
-                    : type === 3
-                    ? Asset(COLLECTION, enc(baseContract), baseTokenAmount.toString())
-                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
-                salt,
-                startDate,
-                endDate,
+                orderMaker.type === 2 && orderMaker.baseTokenId
+                    ? Asset(
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount!.toString(),
+                      )
+                    : orderMaker.type === 2
+                    ? Asset(
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
+                      )
+                    : Asset(
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
+                      ),
+                orderMaker.salt!,
+                orderMaker.startDate!,
+                orderMaker.endDate!,
                 '0xffffffff',
                 '0x',
             )
 
-            const orderRight = Order(
-                txObject.from,
-                type === 2
-                    ? Asset(encType, enc(baseContract, baseTokenId), baseTokenAmount.toString())
-                    : type === 3
-                    ? Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice)
-                    : Asset(quoteContract === '0x' ? ETH : ERC20, enc(quoteContract), quotePrice),
+            const _orderTaker = Order(
+                orderMaker.type === 2 && orderMaker.baseTokenId
+                    ? txObject.from
+                    : orderMaker.type === 2
+                    ? orderMaker.makerAddress
+                    : txObject.from,
+                orderMaker.type === 2 && orderMaker.baseTokenId
+                    ? Asset(
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount.toString(),
+                      )
+                    : orderMaker.type === 2
+                    ? Asset(
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
+                      )
+                    : Asset(
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
+                      ),
                 NULL_ADDRESS,
-                type === 2
-                    ? Asset(encType, enc(baseContract, baseTokenId), baseTokenAmount.toString())
-                    : type === 3
-                    ? Asset(COLLECTION, enc(baseContract), baseTokenAmount.toString())
-                    : Asset(encType, enc(baseContract, baseTokenId), baseTokenAmount.toString()),
-                salt,
-                startDate,
-                endDate,
+                orderMaker.type === 2 && orderMaker.baseTokenId
+                    ? Asset(
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
+                      )
+                    : orderMaker.type === 2
+                    ? Asset(COLLECTION, enc(orderMaker.baseContract), baseTokenAmount.toString())
+                    : Asset(
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount.toString(),
+                      ),
+                orderMaker.salt!,
+                orderMaker.startDate!,
+                orderMaker.endDate!,
                 '0xffffffff',
                 '0x',
             )
 
-            const signatureRight = '0x'
+            const _signatureTaker = '0x'
 
-            const priceTotal = BigNumber.from(quotePrice)
+            const priceTotal = BigNumber.from(orderMaker.quotePrice)
             const priceToSend =
-                quoteContract === '0x' && type === 1
+                orderMaker.quoteContract === '0x' && orderMaker.type === 1
                     ? priceTotal.mul(GHOSTMARKET_TRADE_FEE_BPS).div(10000).toString()
                     : undefined
 
@@ -384,9 +470,15 @@ export class GhostMarketSDK {
                 value: priceToSend,
             }
 
-            this.matchOrders(orderLeft, signatureLeft, orderRight, signatureRight, txObject)
+            this._matchOrders(
+                _orderMaker,
+                orderMaker.signature!,
+                _orderTaker,
+                _signatureTaker,
+                txObject,
+            )
         } catch (e) {
-            return console.error(`prepareMatchOrders: failed to execute with error:`, e)
+            return console.error(`matchOrders: failed to execute with error:`, e)
         }
     }
 
@@ -395,16 +487,17 @@ export class GhostMarketSDK {
      * @param {string} signatureLeft signature left to match.
      * @param {IEVMOrder} orderRight order right to match.
      * @param {string} signatureRight signature right to match.
-     * @param {TxObject} txObject transaction object to send when calling `matchOrders`.
+     * @param {TxObject} txObject transaction object to send when calling `_matchOrders`.
      */
-    public async matchOrders(
+    private async _matchOrders(
         orderLeft: IEVMOrder,
         signatureLeft: string,
         orderRight: IEVMOrder,
         signatureRight: string,
         txObject: TxObject,
-    ) {
+    ): Promise<any> {
         if (this._isReadonlyProvider) return
+
         const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
             ExchangeV2Contract,
@@ -421,7 +514,7 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, exchangeV2ProxyAddress, txObject.value)
         } catch (e) {
             return console.error(
-                `matchOrders: failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:`,
+                `_matchOrders: failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:`,
                 e,
             )
         }
