@@ -19,7 +19,11 @@ import {
     GhostMarketApi,
     IGhostMarketApiOptions,
 } from '../../lib/api/ghostmarket'
-import { AssetsRequest } from '../../lib/api/ghostmarket/requestsV2'
+import {
+    AssetsRequest,
+    EventsRequest,
+    CollectionsRequest,
+} from '../../lib/api/ghostmarket/requestsV2'
 expect.extend(matchers)
 
 describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
@@ -104,7 +108,10 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
 
     describe('Collections', () => {
         it('should get Collections', async () => {
-            const collectionsData = await ghostmarketAPI.getCollections(new GetCollectionsRequest())
+            const collectionsData =
+                ORDERBOOK_VERSION > 1
+                    ? await ghostmarketAPI.getCollectionsV2(new CollectionsRequest())
+                    : await ghostmarketAPI.getCollectionsV1(new GetCollectionsRequest())
             expect(collectionsData).toHaveProperty('collections')
             const { collections } = collectionsData
             expect(collections).toBeArray()
@@ -112,9 +119,10 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
         }, 10000)
 
         it('should get single Collection', async () => {
-            const collectionsData = await ghostmarketAPI.getCollections(
-                new GetCollectionsRequest({ limit: 1 }),
-            )
+            const collectionsData =
+                ORDERBOOK_VERSION > 1
+                    ? await ghostmarketAPI.getCollectionsV2(new CollectionsRequest({ size: 1 }))
+                    : await ghostmarketAPI.getCollectionsV1(new GetCollectionsRequest({ limit: 1 }))
             expect(collectionsData).toHaveProperty('collections')
             const { collections } = collectionsData
             expect(collections).toBeArray()
@@ -124,7 +132,10 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
 
     describe('Events', () => {
         it('should get Events', async () => {
-            const eventsData = await ghostmarketAPI.getEvents(new GetEventsRequest())
+            const eventsData =
+                ORDERBOOK_VERSION > 1
+                    ? await ghostmarketAPI.getEventsV2(new EventsRequest())
+                    : await ghostmarketAPI.getEventsV1(new GetEventsRequest())
             expect(eventsData).toHaveProperty('events')
             const { events } = eventsData
             expect(events).toBeArray()
@@ -132,7 +143,10 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
         }, 10000)
 
         it('should get single Event', async () => {
-            const eventsData = await ghostmarketAPI.getEvents(new GetEventsRequest({ limit: 1 }))
+            const eventsData =
+                ORDERBOOK_VERSION > 1
+                    ? await ghostmarketAPI.getEventsV2(new EventsRequest({ size: 1 }))
+                    : await ghostmarketAPI.getEventsV1(new GetEventsRequest({ limit: 1 }))
             expect(eventsData).toHaveProperty('events')
             const { events } = eventsData
             expect(events).toBeArray()

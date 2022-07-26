@@ -4,8 +4,10 @@ import {
     IAddressIncentiveResults,
     ICollectionCategory,
     IMarketplaceStatistics,
+    ICollection,
     IOffer,
 } from './models'
+import { IContractInfoV2 } from './models/IContractInfoV2'
 import {
     GetUsersRequest,
     IGetUsersResult,
@@ -54,6 +56,10 @@ import {
     IAssetOrdersResult,
     IAssetRoyaltiesResult,
     IAssetsResult,
+    EventsRequest,
+    IEventsResult,
+    CollectionsRequest,
+    ICollectionsResult,
 } from './requestsV2'
 
 export interface IGhostMarketApiOptions {
@@ -115,9 +121,6 @@ export class GhostMarketApi {
             request.contract = request.collection_slug
             delete request.collection_slug
         }
-        if (this.options.issuer && !request.issuer) {
-            request.issuer = this.options.issuer
-        }
         const res = await axios.get(url, this.config(request))
         return res.data
     }
@@ -128,13 +131,82 @@ export class GhostMarketApi {
         return res.data
     }
 
-    async getCollections(request: GetCollectionsRequest): Promise<IGetCollectionsResult> {
+    async getCollectionsV1(request: GetCollectionsRequest): Promise<IGetCollectionsResult> {
         const url = this.options.baseUrl + '/collections'
-        if (this.options.issuer && !request.issuer) {
-            request.issuer = this.options.issuer
-        }
         const res = await axios.get(url, this.config(request))
         return res.data
+    }
+
+    async getCollectionsV2(request: CollectionsRequest): Promise<ICollectionsResult> {
+        const url = this.baseUrl2 + '/collections'
+        const res = await axios.get(url, this.config(request))
+        return res.data
+    }
+
+    async getCollectionsAdapterV2(request: CollectionsRequest): Promise<IGetCollectionsResult> {
+        const res = await this.getCollectionsV2(request)
+        // console.log('got collections v2', res)
+        const col = {
+            collections:
+                res.collections?.map(c => {
+                    const contracts = c.contracts
+                        ? c.contracts.map(o => this.v2ToContractInfo(o))
+                        : undefined
+
+                    const coll: ICollection = {
+                        background_color: c.backgroundColor,
+                        category: c.category,
+                        description: c.description,
+                        featured_image: c.featuredImage,
+                        name: c.name,
+                        join_date: 0,
+                        logo_url: c.logoUrl,
+                        slug: c.slug,
+                        nft_count: c.nftCount,
+                        nft_active_count: c.nftActiveCount,
+                        floor_price: c.floorPrice,
+                        listed_nft_count: c.listedNftCount,
+                        socials_facebook: c.socials.facebook,
+                        socials_instagram: c.socials.instagram,
+                        socials_telegram: c.socials.telegram,
+                        socials_twitter: c.socials.twitter,
+                        socials_youtube: c.socials.youtube,
+                        website: c.website,
+                        verified: c.verified,
+                        tradable: c.tradable,
+                        issuer: c.issuer,
+                        contracts,
+                        main_token_contract: this.v2ToContractInfo(c.mainTokenContract) as any,
+                        nft_infused_count: c.nftInfusedCount,
+                        weekly_volume: c.weeklyVolume,
+                        filters: [],
+                    } as any
+                    return coll
+                }) || [],
+            total_results: res.total,
+        }
+        // console.log('collection from V2', col)
+        return col
+    }
+
+    private v2ToContractInfo(o: IContractInfoV2 | undefined) {
+        if (o == undefined) {
+            return undefined
+        }
+        // console.log('v2 contract info', o)
+        return {
+            chain: o.chain,
+            hash: o.hash,
+            owner_address: o.owner?.address,
+            owner_address_verified: o.owner?.addressVerified,
+            owner_onchain_name: o.owner?.onchainName,
+            owner_offchain_name: o.owner?.offchainName,
+            owner_offchain_title: o.owner?.offchainTitle,
+            owner_avatar: o.owner?.avatar,
+            royalty_bps: o.royalties?.value,
+            royalty_recipient: o.royalties?.recipient.address,
+            symbol: o.symbol,
+        }
     }
 
     async getCollectionsAttributes(
@@ -159,10 +231,47 @@ export class GhostMarketApi {
         return res.data
     }
 
-    async getEvents(request: GetEventsRequest): Promise<IGetEventsResult> {
+    async getEventsV1(request: GetEventsRequest): Promise<IGetEventsResult> {
         const url = this.options.baseUrl + '/events'
         const res = await axios.get(url, this.config(request))
         return res.data
+    }
+
+    async getEventsV2(request: EventsRequest): Promise<IEventsResult> {
+        const url = this.baseUrl2 + '/events'
+        const res = await axios.get(url, this.config(request))
+        return res.data
+    }
+
+    async getEventsAdapterV2(req: GetEventsRequest): Promise<IEventsResult> {
+        const request = new EventsRequest({
+            page: req.offset && req.limit ? 1 + Math.round(req.offset / req.limit) : 1,
+            size: req.limit,
+            chain: req.chain,
+            contract: req.contract,
+            collection: req.collection_slug,
+            tokenId: req.token_id,
+
+            eventKind: req.event_kind as any,
+
+            nftName: req.nft_name_partial,
+            dateFrom: req.date_greater,
+            dateTill: req.date_less,
+
+            issuer: req.issuer,
+            addresses: req.address,
+
+            orderBy: req.order_by as any,
+            orderDirection: req.order_direction as any,
+            fiatCurrency: req.fiat_currency,
+            grouping: req.grouping == 1,
+            getTotal: req.with_total == 1,
+
+            showBlacklisted:
+                req.blacklisted_mode == 'all' ? '' : req.blacklisted_mode == 'blacklisted',
+            showNsfw: req.nsfw_mode == 'all' ? '' : !(req.nsfw_mode == 'only_safe'),
+        })
+        return await this.getEventsV2(request)
     }
 
     async getSeries(request: GetSeriesRequest): Promise<IGetSeriesResult> {
@@ -184,9 +293,6 @@ export class GhostMarketApi {
         request: GetCollectionStatisticsRequest,
     ): Promise<IGetStatisticsResult> {
         const url = this.options.baseUrl + '/collectionStatistics'
-        if (this.options.issuer && !request.issuer) {
-            request.issuer = this.options.issuer
-        }
         const res = await axios.get(url, this.config(request))
         return res.data
     }
@@ -446,9 +552,6 @@ export class GhostMarketApi {
 
     async getAssetsV2(request: AssetsRequest): Promise<IAssetsResult> {
         const url = this.baseUrl2 + '/assets'
-        if (this.options.issuer && !request.issuer) {
-            request.issuer = this.options.issuer
-        }
         const res = await axios.get(url, this.config(request))
         return res.data
     }
