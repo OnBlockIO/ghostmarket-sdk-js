@@ -154,8 +154,8 @@ const address = (await gmSDK.getProvider().getAccount()).address
 ### Fetching assets
 
 ```js
-// Fetch 1 GhostMarket asset.
-const { assets } = await gmSDK.api.getAssetsV2(new AssetsRequest({ size: 1 }))
+// Fetch 10 GhostMarket assets.
+const { assets } = await gmSDK.api.getAssetsV2({ size: 10 })
 console.info(assets)
 ```
 
@@ -163,14 +163,14 @@ console.info(assets)
 
 ```js
 // Fetch 10 GhostMarket events.
-const { events } = await gmSDK.api.getEventsV2(new EventsRequest({ size: 1 }))
-console.info(collections)
+const { events } = await gmSDK.api.getEvents({ limit: 1 })
+console.info(events)
 ```
 
 ### Fetching collections
 ```js
 // Fetch 10 GhostMarket collections.
-const { collections } = await gmSDK.api.getCollectionsV2(new CollectionsRequest({ size: 1 }))
+const { collections } = await gmSDK.api.getCollections({ limit: 1 })
 console.info(collections)
 ```
 
