@@ -8,7 +8,6 @@ export const GHOSTMARKET_TRADE_FEE_BPS = 200
 export const MIN_BID_INCREASE_BPS = 500
 export const ERC1155_INTERFACE_ID = '0xd9b67a26'
 export const ERC721_INTERFACE_ID = '0x80ac58cd'
-export const ERC20_INTERFACE_ID = '0x36372b07'
 
 export const ORDERBOOK_VERSION = 1
 export const API_BASE_MAINNET = 'https://api.ghostmarket.io'

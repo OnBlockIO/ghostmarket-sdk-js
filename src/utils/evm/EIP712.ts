@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-undef
-import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
+import { IEVMOrder } from '../../core/models/evm'
 
 const DOMAIN_TYPE = [
     {

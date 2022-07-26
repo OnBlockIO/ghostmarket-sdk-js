@@ -4,7 +4,7 @@ import Web3 from 'web3'
 
 import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
 import { GhostMarketSDK } from '../../core/sdk.evm'
-import { GhostMarketApi, IGhostMarketApiOptions } from '../../lib/api/ghostmarket'
+import { GhostMarketApi, IGhostMarketApiOptions } from '../../lib/api/'
 import { API_BASE_TESTNET, API_PATH, ORDERBOOK_VERSION } from '../../core/constants'
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {

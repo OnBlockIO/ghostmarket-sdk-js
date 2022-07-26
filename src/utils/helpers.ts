@@ -1,4 +1,4 @@
-import { IAsset } from '../lib/api/ghostmarket'
+import { IAsset } from '../lib/api/'
 import { SITE_HOST_MAINNET, SITE_HOST_TESTNET } from '../core/constants'
 
 export function getGhostMarketLink(asset: IAsset, isMainNet = true) {

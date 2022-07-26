@@ -1,8 +1,8 @@
-import { IUserInfo } from '../models/IUserInfo'
-import { IQuoteContractV2 } from '../models/IQuoteContractV2'
-import { IBaseContractV2 } from '../models/IBaseContractV2'
-import { IOrderDataV2 } from '../models/IOrderDataV2'
-import { IFees } from '../models/IFees'
+import { IUserInfo } from './IUserInfo'
+import { IQuoteContractV2 } from './IQuoteContractV2'
+import { IBaseContractV2 } from './IBaseContractV2'
+import { IOrderDataV2 } from './IOrderDataV2'
+import { IFees } from './IFees'
 
 export interface IOffer {
     end_date: number

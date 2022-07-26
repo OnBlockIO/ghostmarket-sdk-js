@@ -18,12 +18,8 @@ import {
     GetUsersRequest,
     GhostMarketApi,
     IGhostMarketApiOptions,
-} from '../../lib/api/ghostmarket'
-import {
-    AssetsRequest,
-    EventsRequest,
-    CollectionsRequest,
-} from '../../lib/api/ghostmarket/requestsV2'
+} from '../../lib/api/'
+import { AssetsRequest, EventsRequest, CollectionsRequest } from '../../lib/api/requestsV2'
 expect.extend(matchers)
 
 describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {

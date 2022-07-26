@@ -24,46 +24,11 @@ import {
     ChainId,
     AddressesByChain,
 } from './constants'
-import { IEVMOrder } from '../lib/api/ghostmarket/models'
 import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
 import { hashKey } from '../utils/evm/hash'
 import { sign, Order, Asset } from '../utils/evm/order'
-import {
-    GhostMarketApi,
-    IGhostMarketApiOptions,
-    PostCreateOrderRequest,
-} from '../lib/api/ghostmarket'
-
-interface IOrderItem {
-    baseContract: string // token contract for the order.
-    baseTokenId?: string // token id for the order - set to empty for collection offer
-    baseTokenAmount?: number // token amount for the order - only used for ERC1155
-    quoteContract: string // quote contract for the order.
-    quotePrice: string // quote price for the order.
-    makerAddress: string // maker address for the order.
-    type: number // type of order. // 1 - listing, 2 - offer
-    startDate?: number // start date the order can be matched - optional default to now, need to be passed to cancel or match order
-    endDate?: number // end date the order can be matched - optional default to unexpiring, need to be passed to cancel or match order
-    salt?: string // salt - calculated automatically, need to be passed to cancel or match order
-    signature?: string // signature - calculated automatically, need to be passed to match order
-}
-
-interface IMintItem {
-    creatorAddress: string // nft creator
-    royalties?: IRoyalties[] // nft royalties
-    externalURI: string // nft externalURI
-}
-
-interface IRoyalties {
-    address: string // recipient
-    value: number // amount in bps
-}
-
-interface TxObject {
-    from: string // transaction sender
-    value?: string // value to send
-    gasPrice?: number // gas price
-}
+import { IEVMOrder, IOrderItem, IMintItem, IRoyalties, TxObject } from '../core/models/evm'
+import { GhostMarketApi, IGhostMarketApiOptions, PostCreateOrderRequest } from '../lib/api/'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.

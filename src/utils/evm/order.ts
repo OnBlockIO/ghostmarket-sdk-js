@@ -1,9 +1,7 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
 // eslint-disable-next-line no-undef
-import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
-import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
-import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
+import { IEVMOrder, IEVMAsset, IEVMAssetType } from '../../core/models/evm'
 import EIP712 from './EIP712'
 
 export function AssetType(assetClass: string, data: string): IEVMAssetType {

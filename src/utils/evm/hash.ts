@@ -1,8 +1,6 @@
 /* eslint-disable no-undef */
 /* eslint-disable @typescript-eslint/no-var-requires */
-import { IEVMOrder } from '../../lib/api/ghostmarket/models/IEVMOrder'
-import { IEVMAsset } from '../../lib/api/ghostmarket/models/IEVMAsset'
-import { IEVMAssetType } from '../../lib/api/ghostmarket/models/IEVMAssetType'
+import { IEVMOrder, IEVMAsset, IEVMAssetType } from '../../core/models/evm'
 
 import web3 from 'web3'
 const Web3 = new web3()
