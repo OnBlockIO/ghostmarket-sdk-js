@@ -11,51 +11,52 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
 - [Installation](#installation)
 - [Getting Started](#getting-started)
 - [Usage - Common](#usage-common)
-    - [Fetching assets](#fetching-assets)
-    - [Fetching events](#fetching-events)
-    - [Fetching collections](#fetching-collections)
-    - [Fetching offers](#fetching-offers)
-    - [Fetching orders](#fetching-orders)
-    - [Fetching NFT balances](#fetching-nft-balances)
-    - [Checking FT balances](#getting-ft-balances)
+    - [Getting assets](#getting-assets)
+    - [Getting events](#getting-events)
+    - [Getting collections](#getting-collections)
+    - [Getting offers](#getting-offers)
+    - [Getting orders](#getting-orders)
+    - [Getting NFT balances](#getting-nft-balances)
+    - [Getting token balances](#getting-token-balances)
+    - [Getting token approval](#getting-token-approval)
+    - [Getting incentives](#getting-incentives)
     - [Set contract royalties](#set-contract-royalties)
     - [Approve token](#approve-token)
-    - [Checking token approval](#checking-token-approval)
-    - [Claiming Incentives](#claiming-incentives)
-    - [Checking Incentives](#checking-incentives)
+    - [Claiming incentives](#claiming-incentives)
     - [Signing Data](#signing-data)
 - [Usage - EVM](#usage-evm)
     - [Buying NFT](#buying-nft)
-    - [Accepting offer](#accepting-offer)
     - [Listing NFT fixed price](#listing-nft-fixed-price)
-    - [Cancel one or more NFT](#cancel-one-or-more-nft)
+    - [Cancel listing](#cancel-listing)
     - [Edit listing price](#edit-listing-price)
+    - [Place offer](#place-offer)
+    - [Accept offer](#accept-offer)
     - [Getting contract approval](#getting-contract-approval)
     - [Wrap token](#wrap-token)
     - [Approve contract](#approve-contract)
     - [Checking native balance](#checking-native-balance)
-    - [Transfer ERC20](#transfer-ERC20)
-    - [Transfer ERC721 NFT](#transfer-ERC721-nft)
-    - [Transfer ERC1155 NFT](#transfer-ERC1155-nft)
+    - [Transfer ERC20 token](#transfer-erc20-token)
+    - [Transfer ERC721 NFT](#transfer-erc721-nft)
+    - [Transfer ERC1155 NFT](#transfer-erc1155-nft)
     - [Burn ERC721 NFT](#burn-erc721-nft)
     - [Burn ERC1155 NFT](#burn-erc1155-nft)
     - [Mint ERC721 NFT](#mint-erc721-nft)
     - [Mint ERC1155 NFT](#mint-erc1155-nft)
 - [Usage - Neo N3](#usage-neo-n3)
-    - [Buying one or more NFT](#buying-one-or-more-nft)
+    - [Buying NFT](#buying-nft)
     - [Listing NFT fixed price](#listing-nft-fixed-price)
     - [Listing NFT auction](#listing-nft-auction)
     - [Bid NFT auction](#bid-nft-auction)
     - [Claim NFT auction](#claim-nft-auction)
-    - [Cancel one or more NFT](#cancel-one-or-more-nft)
+    - [Cancel listing](#cancel-listing)
     - [Edit listing price](#edit-listing-price)
     - [Place offer](#place-offer)
     - [Accept offer](#accept-offer)
     - [Cancel offer](#cancel-offer)
-    - [Transfer NEP17](#transfer-nep17)
-    - [Transfer NEP11](#transfer-nep11)
-    - [Burn NEP11](#burn-nep11)
-    - [Mint NEP11](#mint-nep11)
+    - [Transfer NEP17 token](#transfer-nep17-token)
+    - [Transfer NEP11 NFT](#transfer-nep11-nft)
+    - [Burn NEP11 NFT](#burn-nep11-nft)
+    - [Mint NEP11 NFT](#mint-nep11-nft)
 
 
 - [Development](#development)
@@ -77,19 +78,20 @@ Install [web3](https://github.com/ethereum/web3.js) if you don't have it already
 
 ## Getting started
 
+### EVM quickstart
+
 To get started on EVM, you can use either a read only provider, a web3 provider (ex metamask), a private key or a mnemonic (last two are to be stored in `.env` file, see `.env.example` for a reference).
-To get started on Neo N3, you can use either a NEP-12 provider (ex neoline) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
 import Web3 from 'web3' // only for EVM
-import { GhostMarketSDK, GhostMarketN3SDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
+import { GhostMarketSDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
 // if using EVM private key or mnemonic hdwallet-provider is required
 // import HDWalletProvider from '@truffle/hdwallet-provider'
 
 
 // Variables
 const apiKey = process.env.GM_API_KEY // GhostMarket API KEY if you have one
-const privateKey = process.env.PRIVATE_KEY // private key to use - only for Neo N3 private provider or EVM
+const privateKey = process.env.PRIVATE_KEY // private key to use - only for private key provider
 const mnemonic = process.env.MNEMONIC // mnemonic to use - only for EVM
 const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
@@ -100,39 +102,68 @@ const chainName = ChainName.ETHEREUM // see below for chain values
     ChainName.POLYGON / ChainName.POLYGON_TESTNET
     ChainName.BSC / ChainName.BSC_TESTNET
     ChainName.AVALANCHE / ChainName.AVALANCHE_TESTNET
+    */
+
+// SDK config options.
+const sdkConfig = {
+    apiKey,
+    rpcUrl,
+    environment,
+    chainName,
+}
+
+// Option 1 - readonly provider, only reads the network state. Can not sign transactions.
+const customProvider = new Web3.providers.HttpProvider(rpcUrl)
+const address = ''
+// Option 2 - metamask provider
+const customProvider = window.ethereum
+const address = await ethereum.request({
+    method: 'eth_requestAccounts',
+  })[0];
+// Option 3 - private key - EVM
+const customProvider = new HDWalletProvider(KEY, rpcUrl)
+const address = customProvider.addresses[0]
+// Option 4 - mnemonic
+const customProvider = new HDWalletProvider(MNEMONIC, rpcUrl)
+const address = customProvider.addresses[0]
+// Create instance of GhostMarketSDK - EVM
+const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
+// Start and stop provider engine - when using HDWalletProvider
+// customProvider.engine.start();
+// your code here
+// customProvider.engine.stop();
+
+// All set - use the object gmSDK to access GhostMarket SDK
+```
+
+### Neo N3 quickstart
+
+To get started on Neo N3, you can use either a NEP-12 provider (ex neoline or o3) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
+
+```js
+import { GhostMarketN3SDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
+
+// Variables
+const apiKey = process.env.GM_API_KEY // GhostMarket API KEY if you have one
+const privateKey = process.env.PRIVATE_KEY // private key to use - only for Neo N3 private provider
+const rpcUrl = process.env.RPC_URL // RPC to use instead of default ones
+const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
+const chainName = ChainName.NEO3 // see below for chain values
+
+/* chainName values : 
     ChainName.NEO3 / ChainName.NEO3_TESTNET
     */
 
 // SDK config options.
 const sdkConfig = {
     apiKey,
-    rpcUrl, // only required for EVM, or to override default ones on Neo N3
+    rpcUrl,
     environment,
     chainName,
-    privateKey // only required for Neo N3 private key provider
+    privateKey
 }
 
-//////// EVM provider options ////////
-// Option 1 - Readonly provider, only reads the network state. Can not sign transactions.
-const customProvider = new Web3.providers.HttpProvider(rpcUrl)
-// Option 2 - metamask provider
-const customProvider = window.ethereum
-// Option 3 - private key - EVM
-const customProvider = new HDWalletProvider(KEY, rpcUrl)
-// Option 4 - mnemonic
-const customProvider = new HDWalletProvider(MNEMONIC, rpcUrl)
-// Create instance of GhostMarketSDK - EVM
-const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
-// Connected address
-const address = customProvider.addresses[0]
-// Start and stop provider engine - when using HDWalletProvider
-// customProvider.engine.start();
-// customProvider.engine.stop();
-//////// EVM provider options ////////
-
-
-//////// Neo N3 provider options ////////
-// Option 1 - Neoline
+// Option 1 - neoline
 const customProvider = 'neoline'
 // Option 2 - o3
 const customProvider = 'o3'
@@ -142,16 +173,13 @@ const customProvider = 'private'
 const gmSDK = new GhostMarketN3SDK(customProvider, sdkConfig);
 // Connected address (neoline / o3)
 const address = (await gmSDK.getProvider().getAccount()).address
-//////// Neo N3 provider options ////////
-
 
 // All set - use the object gmSDK to access GhostMarket SDK
 ```
 
-
 ## Usage - Common
 
-### Fetching assets
+### Getting assets
 
 ```js
 // Fetch 10 GhostMarket assets.
@@ -159,7 +187,7 @@ const { assets } = await gmSDK.api.getAssetsV2({ size: 10 })
 console.info(assets)
 ```
 
-### Fetching events
+### Getting events
 
 ```js
 // Fetch 10 GhostMarket events.
@@ -167,14 +195,14 @@ const { events } = await gmSDK.api.getEvents({ limit: 1 })
 console.info(events)
 ```
 
-### Fetching collections
+### Getting collections
 ```js
 // Fetch 10 GhostMarket collections.
 const { collections } = await gmSDK.api.getCollections({ limit: 1 })
 console.info(collections)
 ```
 
-### Fetching offers 
+### Getting offers 
 ```js
 // Fetch offers from asset.
 const chain = '' // filter by chain
@@ -184,7 +212,7 @@ const { offers } = await gmSDK.api.getAssetOffersV2({ chain, contractAddress, to
 console.info(offers)
 ```
 
-### Fetching orders 
+### Getting orders 
 ```js
 // Fetch orders from asset.
 const chain = '' // filter by chain
@@ -194,7 +222,7 @@ const { orders } = await gmSDK.api.getAssetOrdersV2({ chain, contractAddress, to
 console.info(orders)
 ```
 
-### Fetching NFT balances
+### Getting NFT balances
 ```js
 const chain = '' // filter by chain
 const contractAddress =  '' // filter for one contract
@@ -203,11 +231,26 @@ const balance = await gmSDK.api.getAssetsV2({ chain, contractAddress, owners })
 console.info(balance)
 ```
 
-### Checking FT balances
+### Getting token balances
 ```js
 const contract =  '' 
 const balance = await gmSDK.checkTokenBalance(contract, address)
 console.info(`balance: ` + balance)
+```
+
+### Getting token approval
+```js
+const contract = '0x....'
+const approval = await gmSDK.checkTokenApproval(contract, address)
+console.info(`amount approved: ` + approval)
+```
+
+### Getting incentives
+```js
+const incentives = await gmSDK.checkIncentives(address)
+const availableIncentives = incentives ? incentives.availableIncentives : 0 // EVM
+const availableIncentives = incentives[5] ? incentives[5].value : 0 // Neo N3
+console.info(`available incentives: ${availableIncentives}`)
 ```
 
 ### Set contract royalties
@@ -225,25 +268,10 @@ const approve = await gmSDK.approveToken(contract, {from: address})
 console.info(`tx hash: ${approve}`)
 ```
 
-### Checking token approval
-```js
-const contract = '0x....'
-const approval = await gmSDK.checkTokenApproval(contract, address)
-console.info(`amount approved: ` + approval)
-```
-
 ### Claiming incentives
 ```js
 const claim = await gmSDK.claimIncentives({from: address})
 console.info(`tx hash: ${claim}`)
-```
-
-### Checking incentives
-```js
-const incentives = await gmSDK.checkIncentives(address)
-const availableIncentives = incentives ? incentives.availableIncentives : 0 // EVM
-const availableIncentives = incentives[5] ? incentives[5].value : 0 // Neo N3
-console.info(`available incentives: ${availableIncentives}`)
 ```
 
 ### Signing data
@@ -270,26 +298,7 @@ const orderDetails = [{
     quoteContract: '', // order maker quote contract address
     quotePrice: '', // order maker price - in biginteger format
     makerAddress: '', // order maker
-    type: 1, // orer maker type 1 - listing, 2 - offer
-    startDate, // order maker start date
-    endDate, // order maker end date
-    salt, // order maker salt
-    signature, // order maker signature
-}]
-const buying = await gmSDK.matchOrders(orderDetails, {from: address})
-console.info(buying)
-```
-
-### Accepting offer
-```js
-const orderDetails = [{ 
-    baseContract: '', // order maker base contract address
-    baseTokenId: '', // order maker NFT tokenId - set to the one to offer for a collection offer
-    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1
-    quoteContract: '', // order maker quote contract address
-    quotePrice: '', // order maker price - in biginteger format
-    makerAddress: '', // order maker
-    type: 2, // orer maker type 1 - listing, 2 - offer
+    type: 1, // order maker type 1 - listing, 2 - offer
     startDate, // order maker start date
     endDate, // order maker end date
     salt, // order maker salt
@@ -354,6 +363,43 @@ const edit = await gmSDK.createOrder(orderDetails)
 console.info(edit)
 ```
 
+### Place offer
+```js
+const startDate = parseInt(new Date().getTime() / 1000)
+const orderDetails = [{ 
+    baseContract: '', // order base contract address - nft contract for listing
+    baseTokenId: '', // order NFT tokenId - token id for listing - set to empty for collection offer
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1
+    quoteContract: '', // order quote contract address - currency accepted for listing
+    quotePrice: '', // order price - in biginteger format
+    makerAddress: '', // order maker
+    type: 2, // 1 - listing, 2 - offer
+    startDate, // order start date
+    endDate: startDate + (3600 * 24) // order end date
+}]
+const listing = await gmSDK.createOrder(orderDetails)
+console.info(listing)
+```
+
+### Accept offer
+```js
+const orderDetails = [{ 
+    baseContract: '', // order maker base contract address
+    baseTokenId: '', // order maker NFT tokenId - set to the one to offer for a collection offer
+    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1
+    quoteContract: '', // order maker quote contract address
+    quotePrice: '', // order maker price - in biginteger format
+    makerAddress: '', // order maker
+    type: 2, // order maker type 1 - listing, 2 - offer
+    startDate, // order maker start date
+    endDate, // order maker end date
+    salt, // order maker salt
+    signature, // order maker signature
+}]
+const buying = await gmSDK.matchOrders(orderDetails, {from: address})
+console.info(buying)
+```
+
 ### Getting contract approval
 ```js
 const contract = '0x....'
@@ -382,7 +428,7 @@ const balance = await gmSDK.checkBalance(contract)
 console.info(`balance: ` + balance)
 ```
 
-### Transfer ERC20
+### Transfer ERC20 token
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -391,7 +437,7 @@ const transfer = await gmSDK.transferERC20(destination, contract, amount, {from:
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer ERC721
+### Transfer ERC721 NFT
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -400,7 +446,7 @@ const transfer = await gmSDK.transferERC721(destination, contract, tokenId, {fro
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer ERC1155
+### Transfer ERC1155 NFT
 ```js
 const destination = '0x....'
 const contract = '0x....'
@@ -410,7 +456,7 @@ const transfer = await gmSDK.transferERC1155(destination, contract, [tokenId], [
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Burn ERC721
+### Burn ERC721 NFT
 ```js
 const contract = '0x....'
 const tokenId = ''
@@ -418,7 +464,7 @@ const burn = await gmSDK.burnERC721(contract, tokenId, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Burn ERC1155
+### Burn ERC1155 NFT
 ```js
 const contract = '0x....'
 const tokenId = ''
@@ -427,7 +473,7 @@ const burn = await gmSDK.burnERC1155(contract, tokenId, amount, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Minting ERC721
+### Mint ERC721 NFT
 ```js
 const royaltyRecipient = '0x....'
 const mintDetails = {
@@ -439,7 +485,7 @@ const token = await gmSDK.mintERC721(mintDetails, {from: address})
 console.info(`tx hash: ${token}`)
 ```
 
-### Minting ERC1155
+### Mint ERC1155 NFT
 ```js
 const royaltyRecipient = '0x...'
 const mintDetails = {
@@ -460,7 +506,7 @@ Example when buying a NFT:
 instead of `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address})` simply do `const buying = await gmSDK.buyMultiple(buyingDetails, {from: address, systemFee: '0.2', networkFee: '0.2'})` if you want to override both with 0.2 GAS
 
 
-### Buying one or more NFT
+### Buying NFT
 ```js
 const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
@@ -523,7 +569,7 @@ const auction = await gmSDK.claimAuction(contractAuctionId, {from: address})
 console.info(`tx hash: ${auction}`)
 ```
 
-### Cancel one or more NFT
+### Cancel listing
 ```js
 const buyingDetails = [{ 
     contractAuctionId: '', // on chain contract auction ID.
@@ -581,7 +627,7 @@ const offer = await gmSDK.processOffer(offerDetails, {from: address})
 console.info(`tx hash: ${offer}`)
 ```
 
-### Transfer NEP17
+### Transfer NEP17 token
 ```js
 const destination = 'N....'
 const quoteContract = '0x....'
@@ -590,7 +636,7 @@ const transfer = await gmSDK.transferNEP17(destination, quoteContract, amount, {
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Transfer NEP11
+### Transfer NEP11 NFT
 ```js
 const transferDetails = [{ 
     destination: 'N....', // destination address
@@ -601,7 +647,7 @@ const transfer = await gmSDK.transferNEP11(transferDetails, {from: address})
 console.info(`tx hash: ${transfer}`)
 ```
 
-### Burn NEP11
+### Burn NEP11 NFT
 ```js
 const burnDetails = [{ 
     contractAddress: '0x....', // contract address
@@ -611,7 +657,7 @@ const burn = await gmSDK.burnNEP11(burnDetails, {from: address})
 console.info(`tx hash: ${burn}`)
 ```
 
-### Mint NEP11
+### Mint NEP11 NFT
 ```js
 const royaltyRecipient = 'NLp9MRxBHH2YJrsF1D1VMXg3mvze3WSTqn'
 const mintDetails = { 
