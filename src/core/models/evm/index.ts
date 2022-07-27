@@ -5,7 +5,7 @@ export interface IOrderItem {
     quoteContract: string // quote contract for the order.
     quotePrice: string // quote price for the order.
     makerAddress: string // maker address for the order.
-    type: number // type of order. // 1 - listing, 2 - offer.
+    type: number // type of order. // 1 - listing, 2 - offer, 3 - collection offer.
     startDate?: number // start date the order can be matched - optional default to now, need to be passed to cancel or match order.
     endDate?: number // end date the order can be matched - optional default to unexpiring, need to be passed to cancel or match order.
     salt?: string // salt - calculated automatically, need to be passed to cancel or match order.

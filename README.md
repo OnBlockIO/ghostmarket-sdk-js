@@ -322,7 +322,7 @@ const orderDetails = [{
     quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order price - in wei.
     makerAddress: '0x....', // order maker.
-    type: 1, // 1 - listing, 2 - offer.
+    type: 1, // 1 - listing, 2 - offer, 3 - collection offer.
     startDate, // order start date.
     endDate: startDate + (3600 * 24) // order end date.
 }]
@@ -339,7 +339,7 @@ const orderDetails = [{
     quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order price - in wei.
     makerAddress: '0x....', // order maker.
-    type: 1, // 1 - listing, 2 - offer.
+    type: 1, // 1 - listing, 2 - offer, 3 - collection offer.
     startDate: 0, // order start date.
     endDate: 0, // order end date.
     salt: '0x....' // required for cancellation, use the salt from the order/offer.
@@ -358,7 +358,7 @@ const orderDetails = [{
     quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order new price - in wei - has to be lower than current price.
     makerAddress: '0x....', // order maker.
-    type: 1, // 1 - listing, 2 - offer.
+    type: 1, // 1 - listing, 2 - offer, 3 - collection offer.
     startDate: 0, // order start date.
     endDate: 0, // order end date.
     salt: '0x....' // required for edit, use the salt from the order/offer.
@@ -374,10 +374,10 @@ const orderDetails = [{
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
     baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
+    quoteContract: '0x....', // order quote contract address.
     quotePrice: '1', // order price - in wei.
     makerAddress: '0x....', // order maker.
-    type: 2, // 1 - listing, 2 - offer.
+    type: 2, // 1 - listing, 2 - offer, 3 - collection offer.
     startDate, // order start date.
     endDate: startDate + (3600 * 24) // order end date.
 }]
@@ -391,10 +391,10 @@ const orderDetails = [{
     baseContract: '0x....', // order maker base contract address.
     baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer.
     baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order maker quote contract address - use 0x for native currency (ex. ETH).
+    quoteContract: '0x....', // order maker quote contract address.
     quotePrice: '1', // order maker price - in wei.
     makerAddress: '0x....', // order maker.
-    type: 2, // order maker type 1 - listing, 2 - offer.
+    type: 2, // order maker type 1 - listing, 2 - offer, 3 - collection offer.
     startDate: 0, // order maker start date.
     endDate: 0, // order maker end date.
     salt: '0x....', // order maker salt.
@@ -402,6 +402,24 @@ const orderDetails = [{
 }]
 const accept = await gmSDK.matchOrders(orderDetails, {from: address})
 console.info(accept)
+```
+
+### Cancel offer
+```js
+const orderDetails = [{ 
+    baseContract: '0x....', // order base contract address - nft contract for listing.
+    baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
+    baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order quote contract address.
+    quotePrice: '1', // order price - in wei.
+    makerAddress: '0x....', // order maker.
+    type: 2, // 1 - listing, 2 - offer, 3 - collection offer.
+    startDate: 0, // order start date.
+    endDate: 0, // order end date.
+    salt: '0x....'
+}]
+const cancel = await gmSDK.bulkCancelOrders(orderDetails, {from: address})
+console.info(listing)
 ```
 
 ### Getting contract approval

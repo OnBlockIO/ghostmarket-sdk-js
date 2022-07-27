@@ -97,14 +97,17 @@ export class GhostMarketSDK {
                 `createOrder: create ${
                     items[i].type === 1
                         ? 'listing'
-                        : items[i].baseTokenId
-                        ? 'collection offer'
-                        : 'offer'
+                        : items[i].type === 2
+                        ? 'offer'
+                        : 'collection offer'
                 } on ${this._chainFullName}`,
             )
 
             if (this._isReadonlyProvider)
                 throw new Error(`Can not sign transaction with a read only provider.`)
+
+            if (items[i].type !== 3 && !items[i].baseTokenId)
+                throw new Error(`baseTokenId is required to place an offer or an order.`)
 
             try {
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
@@ -157,7 +160,7 @@ export class GhostMarketSDK {
 
                 const order = Order(
                     items[i].makerAddress,
-                    items[i].type === 2
+                    items[i].type === 2 || items[i].type === 3
                         ? Asset(
                               items[i].quoteContract === '0x' ? ETH : ERC20,
                               enc(items[i].quoteContract),
@@ -169,14 +172,14 @@ export class GhostMarketSDK {
                               baseTokenAmount!.toString(),
                           ),
                     NULL_ADDRESS_EVM,
-                    items[i].type === 2 && items[i].baseTokenId
+                    items[i].type === 2
                         ? Asset(
                               encType,
                               enc(items[i].baseContract, items[i].baseTokenId),
                               baseTokenAmount!.toString(),
                           )
-                        : items[i].type === 2
-                        ? Asset(COLLECTION, enc(items[i].quoteContract), items[i].quotePrice)
+                        : items[i].type === 3
+                        ? Asset(COLLECTION, enc(items[i].baseContract), baseTokenAmount!.toString())
                         : Asset(
                               items[i].quoteContract === '0x' ? ETH : ERC20,
                               enc(items[i].quoteContract),
@@ -212,7 +215,7 @@ export class GhostMarketSDK {
                             : items[i].quoteContract,
                     quote_price: items[i].quotePrice,
                     maker_address: items[i].makerAddress,
-                    is_buy_offer: items[i].type === 2,
+                    is_buy_offer: items[i].type !== 1,
                     start_date: startDate,
                     end_date: endDate,
                     signature,
@@ -254,6 +257,9 @@ export class GhostMarketSDK {
 
         const ordersArray = []
         for (let i = 0; i < items.length; i++) {
+            if (items[i].type !== 3 && !items[i].baseTokenId)
+                throw new Error(`baseTokenId is required to cancel an offer or an order.`)
+
             const supportsERC721 = await this._supportsERC721(items[i].baseContract)
 
             if (items[i].makerAddress.toLowerCase() !== txObject.from.toLowerCase())
@@ -271,13 +277,7 @@ export class GhostMarketSDK {
 
             const order = Order(
                 items[i].makerAddress,
-                items[i].type === 2 && items[i].baseTokenId
-                    ? Asset(
-                          items[i].quoteContract === '0x' ? ETH : ERC20,
-                          enc(items[i].quoteContract),
-                          items[i].quotePrice,
-                      )
-                    : items[i].type === 2
+                items[i].type === 2 || items[i].type === 3
                     ? Asset(
                           items[i].quoteContract === '0x' ? ETH : ERC20,
                           enc(items[i].quoteContract),
@@ -289,14 +289,14 @@ export class GhostMarketSDK {
                           baseTokenAmount!.toString(),
                       ),
                 NULL_ADDRESS_EVM,
-                items[i].type === 2 && items[i].baseTokenId
+                items[i].type === 2
                     ? Asset(
                           encType,
                           enc(items[i].baseContract, items[i].baseTokenId),
                           baseTokenAmount!.toString(),
                       )
-                    : items[i].type === 2
-                    ? Asset(COLLECTION, enc(items[i].quoteContract), items[i].quotePrice)
+                    : items[i].type === 3
+                    ? Asset(COLLECTION, enc(items[i].baseContract), baseTokenAmount!.toString())
                     : Asset(
                           items[i].quoteContract === '0x' ? ETH : ERC20,
                           enc(items[i].quoteContract),
@@ -331,7 +331,7 @@ export class GhostMarketSDK {
             `matchOrders: matching ${
                 orderMaker.type === 1
                     ? 'listing'
-                    : orderMaker.baseTokenId
+                    : orderMaker.type === 2
                     ? 'offer'
                     : 'collection offer'
             } on ${this._chainFullName}`,
@@ -339,6 +339,9 @@ export class GhostMarketSDK {
 
         if (this._isReadonlyProvider)
             throw new Error(`Can not sign transaction with a read only provider.`)
+
+        if (!orderMaker.baseTokenId)
+            throw new Error(`baseTokenId is required to match an offer or an order.`)
 
         try {
             const supportsERC721 = await this._supportsERC721(orderMaker.baseContract)
@@ -357,45 +360,31 @@ export class GhostMarketSDK {
             const encType = supportsERC721 ? ERC721 : ERC1155
 
             const _orderMaker = Order(
-                orderMaker.type === 2 && orderMaker.baseTokenId
+                orderMaker.type === 2 || orderMaker.type === 1
                     ? orderMaker.makerAddress
-                    : orderMaker.type === 2
-                    ? txObject.from
-                    : orderMaker.makerAddress,
-                orderMaker.type === 2 && orderMaker.baseTokenId
-                    ? Asset(
-                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
-                          enc(orderMaker.quoteContract),
-                          orderMaker.quotePrice,
-                      )
-                    : orderMaker.type === 2
+                    : txObject.from,
+                orderMaker.type === 3 || orderMaker.type === 1
                     ? Asset(
                           encType,
                           enc(orderMaker.baseContract, orderMaker.baseTokenId),
                           baseTokenAmount!.toString(),
                       )
                     : Asset(
-                          encType,
-                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
-                          baseTokenAmount!.toString(),
+                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
+                          enc(orderMaker.quoteContract),
+                          orderMaker.quotePrice,
                       ),
                 NULL_ADDRESS_EVM,
-                orderMaker.type === 2 && orderMaker.baseTokenId
-                    ? Asset(
-                          encType,
-                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
-                          baseTokenAmount!.toString(),
-                      )
-                    : orderMaker.type === 2
+                orderMaker.type === 3 || orderMaker.type === 1
                     ? Asset(
                           orderMaker.quoteContract === '0x' ? ETH : ERC20,
                           enc(orderMaker.quoteContract),
                           orderMaker.quotePrice,
                       )
                     : Asset(
-                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
-                          enc(orderMaker.quoteContract),
-                          orderMaker.quotePrice,
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount!.toString(),
                       ),
                 orderMaker.salt!,
                 orderMaker.startDate!,
@@ -405,36 +394,28 @@ export class GhostMarketSDK {
             )
 
             const _orderTaker = Order(
-                orderMaker.type === 2 && orderMaker.baseTokenId
+                orderMaker.type === 2 || orderMaker.type === 1
                     ? txObject.from
-                    : orderMaker.type === 2
-                    ? orderMaker.makerAddress
-                    : txObject.from,
-                orderMaker.type === 2 && orderMaker.baseTokenId
-                    ? Asset(
-                          encType,
-                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
-                          baseTokenAmount.toString(),
-                      )
-                    : orderMaker.type === 2
+                    : orderMaker.makerAddress,
+                orderMaker.type === 3 || orderMaker.type === 1
                     ? Asset(
                           orderMaker.quoteContract === '0x' ? ETH : ERC20,
                           enc(orderMaker.quoteContract),
                           orderMaker.quotePrice,
                       )
                     : Asset(
-                          orderMaker.quoteContract === '0x' ? ETH : ERC20,
-                          enc(orderMaker.quoteContract),
-                          orderMaker.quotePrice,
+                          encType,
+                          enc(orderMaker.baseContract, orderMaker.baseTokenId),
+                          baseTokenAmount.toString(),
                       ),
                 NULL_ADDRESS_EVM,
-                orderMaker.type === 2 && orderMaker.baseTokenId
+                orderMaker.type === 2
                     ? Asset(
                           orderMaker.quoteContract === '0x' ? ETH : ERC20,
                           enc(orderMaker.quoteContract),
                           orderMaker.quotePrice,
                       )
-                    : orderMaker.type === 2
+                    : orderMaker.type === 3
                     ? Asset(COLLECTION, enc(orderMaker.baseContract), baseTokenAmount.toString())
                     : Asset(
                           encType,
@@ -465,9 +446,9 @@ export class GhostMarketSDK {
 
             return this._matchOrders(
                 _orderMaker,
-                orderMaker.signature!,
+                orderMaker.type === 3 ? _signatureTaker : orderMaker.signature!,
                 _orderTaker,
-                _signatureTaker,
+                orderMaker.type === 3 ? orderMaker.signature! : _signatureTaker,
                 txObject,
             )
         } catch (e) {
