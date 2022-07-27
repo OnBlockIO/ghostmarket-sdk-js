@@ -91,7 +91,7 @@ export class GhostMarketSDK {
     public async createOrder(items: IOrderItem[]): Promise<IResult> {
         for (let i = 0; i < items.length; i++) {
             console.log(
-                `createOrder: creating ${
+                `createOrder: create ${
                     items[i].type === 1
                         ? 'listing'
                         : items[i].baseTokenId
@@ -112,12 +112,23 @@ export class GhostMarketSDK {
                         `contract: ${items[i].baseContract} does not support ERC721 or ERC1155`,
                     )
 
-                if (items[i].type === 1) {
+                if (items[i].type === 1 && supportsERC721) {
                     const owner = await this._ownerOf(items[i].baseContract, items[i].baseTokenId!)
 
                     if (owner.toLowerCase() !== items[i].makerAddress.toLowerCase())
                         throw new Error(
                             `owner: ${owner} does not match maker: ${items[i].makerAddress}`,
+                        )
+                } else if (items[i].type === 1 && supportsERC155) {
+                    const balance = await this._balanceOf(
+                        items[i].makerAddress,
+                        items[i].baseContract,
+                        items[i].baseTokenId!,
+                    )
+
+                    if (balance === 0)
+                        throw new Error(
+                            `sender: ${items[i].makerAddress} does not own enough token ${items[i].baseTokenId}`,
                         )
                 }
 
@@ -1275,7 +1286,7 @@ export class GhostMarketSDK {
      */
     private async _ownerOf(contractAddress: string, tokenId: string): Promise<any> {
         console.log(
-            `_balanceOf: checking ERC721 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
+            `_ownerOf: checking ERC721 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
         )
 
         const supportsERC721 = await this._supportsERC721(contractAddress)
