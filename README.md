@@ -314,7 +314,7 @@ console.info(buying)
 
 ### Listing NFT fixed price
 ```js
-const startDate = parseInt(new Date().getTime() / 1000)
+const startDate = parseInt((new Date().getTime() / 1000).toString())
 const orderDetails = [{ 
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
@@ -369,7 +369,7 @@ console.info(edit)
 
 ### Place offer
 ```js
-const startDate = parseInt(new Date().getTime() / 1000)
+const startDate = parseInt((new Date().getTime() / 1000).toString())
 const orderDetails = [{ 
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
