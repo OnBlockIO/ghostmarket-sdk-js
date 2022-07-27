@@ -349,7 +349,7 @@ console.info(cancel)
 ```
 
 ### Edit listing price
-Note: edit listing price does not cancel current order, it just hides it on API and exposes the new one only, but the old one can still be matched later. Only a true cancellation will make it un matcheable.
+Note: edit listing price does not cancel current order, it just hides it on API and exposes the new one only, but the old one can still be matched later. Only a true cancellation will make it un matcheable - only supported for ERC721.
 ```js
 const orderDetails = [{ 
     baseContract: '0x....', // order base contract address - nft contract for listing.
