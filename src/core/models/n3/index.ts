@@ -90,3 +90,31 @@ export interface TxObject {
     networkFee?: string // network fee.
     systemFee?: string // system fee.
 }
+
+export enum Method {
+    BID_TOKEN = 'bidToken',
+    CANCEL_SALE = 'cancelSale',
+    LIST_TOKEN = 'listToken',
+    EDIT_SALE = 'editSale',
+    TRANSFER = 'transfer',
+    BURN = 'burn',
+    MINT = 'mint',
+    MULTI_MINT = 'multiMint',
+    SET_ROYALTIES_FOR_CONTRACT = 'setRoyaltiesForContract',
+    CLAIM = 'claim',
+    GET_INCENTIVE = 'getIncentive',
+    BALANCE_OF = 'balanceOf',
+    APPROVE = 'approve',
+    ALLOWANCE = 'allowance',
+    PLACE_OFFER = 'placeOffer',
+    ACCEPT_OFFER = 'acceptOffer',
+    CANCEL_OFFER = 'cancelOffer',
+    GET_CONTRACT = 'getContract',
+    OWNER_OF = 'ownerOf',
+}
+
+export enum Standard {
+    NEP_11 = 'NEP-11',
+    NEP_17 = 'NEP-17',
+    NEP_17_1 = 'NEP-17-1',
+}

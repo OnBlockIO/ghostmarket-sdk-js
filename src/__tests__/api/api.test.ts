@@ -3,9 +3,9 @@ import {
     API_BASE_MAINNET,
     API_BASE_TESTNET,
     API_PATH,
-    NULL_ADDRESS,
     ORDERBOOK_VERSION,
 } from '../../core/constants'
+import { NULL_ADDRESS_EVM } from '../../core/constants/evm'
 import * as matchers from 'jest-extended'
 import {
     GetAssetsRequest,
@@ -54,7 +54,7 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
             try {
                 // contract passed but no chain
                 const assetsQuery = {
-                    contract: NULL_ADDRESS,
+                    contract: NULL_ADDRESS_EVM,
                 }
                 ORDERBOOK_VERSION > 1
                     ? ghostmarketAPI.getAssetsV2(new AssetsRequest(assetsQuery))

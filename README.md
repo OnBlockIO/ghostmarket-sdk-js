@@ -86,11 +86,11 @@ Install [web3](https://github.com/ethereum/web3.js) if you don't have it already
 
 ### EVM quickstart
 
-To get started on EVM, you can use either a read only provider, a web3 provider (ex metamask), a private key or a mnemonic (last two are to be stored in `.env` file, see `.env.example` for a reference).
+To get started on EVM, you can use either a read only provider, a web3 provider (ex metamask) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
 import Web3 from 'web3'
-import { GhostMarketSDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
+import { GhostMarketSDK, Chain, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
 // if using EVM private key or mnemonic hdwallet-provider is required
 // import HDWalletProvider from '@truffle/hdwallet-provider'
 
@@ -98,16 +98,15 @@ import { GhostMarketSDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'gho
 // Variables
 const apiKey = process.env.GM_API_KEY // GhostMarket API KEY if you have one
 const privateKey = process.env.PRIVATE_KEY // private key to use - only for private key provider
-const mnemonic = process.env.MNEMONIC // mnemonic to use - only for mnemonic provider
 const rpcUrl = process.env.RPC_URL // RPC to use, ex 'https://mainnet.infura.io'
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
-const chainName = ChainName.ETHEREUM // see below for chain values
+const chainName = Chain.ETHEREUM // see below for chain values
 
 /* chainName values : 
-    ChainName.ETHEREUM / ChainName.ETHEREUM_TESTNET
-    ChainName.POLYGON / ChainName.POLYGON_TESTNET
-    ChainName.BSC / ChainName.BSC_TESTNET
-    ChainName.AVALANCHE / ChainName.AVALANCHE_TESTNET
+    Chain.ETHEREUM / Chain.ETHEREUM_TESTNET
+    Chain.POLYGON / Chain.POLYGON_TESTNET
+    Chain.BSC / Chain.BSC_TESTNET
+    Chain.AVALANCHE / Chain.AVALANCHE_TESTNET
     */
 
 // SDK config options.
@@ -129,9 +128,6 @@ const address = await ethereum.request({
 // Option 3 - private key
 const customProvider = new HDWalletProvider(KEY, rpcUrl)
 const address = customProvider.addresses[0]
-// Option 4 - mnemonic
-const customProvider = new HDWalletProvider(MNEMONIC, rpcUrl)
-const address = customProvider.addresses[0]
 // Create instance of GhostMarketSDK - EVM
 const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 // Start and stop provider engine - when using HDWalletProvider
@@ -147,17 +143,17 @@ const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
 To get started on Neo N3, you can use either a NEP-12 provider (ex neoline or o3) or a private key (to be stored in `.env` file, see `.env.example` for a reference).
 
 ```js
-import { GhostMarketN3SDK, ChainName, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
+import { GhostMarketN3SDK, Chain, TESTNET_API_URL, MAINNET_API_URL } from 'ghostmarket-sdk-js';
 
 // Variables
 const apiKey = process.env.GM_API_KEY // GhostMarket API KEY if you have one
 const privateKey = process.env.PRIVATE_KEY // private key to use - only for Neo N3 private provider
 const rpcUrl = process.env.RPC_URL // RPC to use instead of default ones
 const environment = MAINNET_API_URL // GhostMarket Infrastructure - MAIN_ENVIRONMENT or TEST_ENVIRONMENT
-const chainName = ChainName.NEO3 // see below for chain values
+const chainName = Chain.NEO3 // see below for chain values
 
 /* chainName values : 
-    ChainName.NEO3 / ChainName.NEO3_TESTNET
+    Chain.NEO3 / Chain.NEO3_TESTNET
     */
 
 // SDK config options.
@@ -299,11 +295,11 @@ All interfaces are documented here: [EVM interfaces](https://github.com/OnBlockI
 
 ### Buying NFT
 ```js
-const orderDetails = [{ 
+const orderDetails = { 
     baseContract: '0x....', // order maker base contract address.
     baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer.
-    baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order maker quote contract address.
+    baseTokenAmount: 1, // order maker amount - optional - only needed for ERC1155 otherwise default to 1.
+    quoteContract: '0x....', // order maker quote contract address - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order maker price - in wei.
     makerAddress: '0x....', // order maker.
     type: 1, // order maker type 1 - listing, 2 - offer.
@@ -311,7 +307,7 @@ const orderDetails = [{
     endDate: 0, // order maker end date.
     salt: '0x....', // order maker salt.
     signature: '0x....', // order maker signature.
-}]
+}
 const buying = await gmSDK.matchOrders(orderDetails, {from: address})
 console.info(buying)
 ```
@@ -323,7 +319,7 @@ const orderDetails = [{
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
     baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order price - in wei.
     makerAddress: '0x....', // order maker.
     type: 1, // 1 - listing, 2 - offer.
@@ -340,7 +336,7 @@ const orderDetails = [{
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
     baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order price - in wei.
     makerAddress: '0x....', // order maker.
     type: 1, // 1 - listing, 2 - offer.
@@ -359,7 +355,7 @@ const orderDetails = [{
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
     baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order new price - in wei - has to be lower than current price.
     makerAddress: '0x....', // order maker.
     type: 1, // 1 - listing, 2 - offer.
@@ -378,7 +374,7 @@ const orderDetails = [{
     baseContract: '0x....', // order base contract address - nft contract for listing.
     baseTokenId: '1', // order NFT tokenId - token id for listing - set to empty for collection offer.
     baseTokenAmount: 1, // order amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order quote contract address - currency accepted for listing.
+    quoteContract: '0x....', // order quote contract address - currency accepted for listing - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order price - in wei.
     makerAddress: '0x....', // order maker.
     type: 2, // 1 - listing, 2 - offer.
@@ -395,7 +391,7 @@ const orderDetails = [{
     baseContract: '0x....', // order maker base contract address.
     baseTokenId: '1', // order maker NFT tokenId - set to the one to offer for a collection offer.
     baseTokenAmount: 1, // order maker amount - only needed for ERC1155 otherwise default to 1.
-    quoteContract: '0x....', // order maker quote contract address.
+    quoteContract: '0x....', // order maker quote contract address - use 0x for native currency (ex. ETH).
     quotePrice: '1', // order maker price - in wei.
     makerAddress: '0x....', // order maker.
     type: 2, // order maker type 1 - listing, 2 - offer.

@@ -4,14 +4,8 @@ import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '
 import { u, wallet } from '@cityofzion/neon-js'
 import { BigNumber } from '@ethersproject/bignumber'
 import { N3PrivateProvider } from '../utils/n3/N3PrivateProvider'
-import {
-    MAX_INT_255,
-    MAINNET_API_URL,
-    ChainName,
-    ChainFullName,
-    AddressesByChain,
-    NULL_ADDRESS_N3,
-} from './constants'
+import { MAINNET_API_URL, Chain, ChainFullName, AddressesByChain } from './constants'
+import { MAX_INT_255, NULL_ADDRESS_N3 } from './constants/n3'
 import {
     IBuyItem,
     ISellItem,
@@ -25,32 +19,10 @@ import {
     IRoyalties,
     IArgs,
     TxObject,
+    Method,
+    Standard,
 } from '../core/models/n3'
 import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/'
-
-const METHOD_BID_TOKEN = 'bidToken'
-const METHOD_CANCEL_SALE = 'cancelSale'
-const METHOD_LIST_TOKEN = 'listToken'
-const METHOD_EDIT_SALE = 'editSale'
-const METHOD_TRANSFER = 'transfer'
-const METHOD_BURN = 'burn'
-const METHOD_MINT = 'mint'
-const METHOD_MULTI_MINT = 'multiMint'
-const METHOD_SET_ROYALTIES_FOR_CONTRACT = 'setRoyaltiesForContract'
-const METHOD_CLAIM = 'claim'
-const METHOD_GET_INCENTIVE = 'getIncentive'
-const METHOD_BALANCE_OF = 'balanceOf'
-const METHOD_APPROVE = 'approve'
-const METHOD_ALLOWANCE = 'allowance'
-const METHOD_PLACE_OFFER = 'placeOffer'
-const METHOD_ACCEPT_OFFER = 'acceptOffer'
-const METHOD_CANCEL_OFFER = 'cancelOffer'
-const METHOD_GET_CONTRACT = 'getContract'
-const METHOD_OWNER_OF = 'ownerOf'
-
-const STANDARD_NEP_11 = 'NEP-11'
-const STANDARD_NEP_17 = 'NEP-17'
-const STANDARD_NEP_17_1 = 'NEP-17-1'
 
 export class GhostMarketN3SDK {
     private provider: string
@@ -59,13 +31,13 @@ export class GhostMarketN3SDK {
     public logger: (arg: string) => void
     private _providerRPCUrl: string
     private _privateKey: string
-    private isMainNet: boolean
-    private _chainName: ChainName
+    private _isMainNet: boolean
+    private _chainName: Chain
     private _chainFullName: ChainFullName
-    private contractExchangeAddress: string
-    private contractIncentivesAddress: string
-    private contractNEP11Address: string
-    private contractManagementAddress: string
+    private _contractExchangeAddress: string
+    private _contractIncentivesAddress: string
+    private _contractNEP11Address: string
+    private _contractManagementAddress: string
 
     /**
      * Your instance of GhostMarket.
@@ -81,23 +53,23 @@ export class GhostMarketN3SDK {
             environment?: string
             privateKey?: string
             rpcUrl?: string
-            chainName?: ChainName
+            chainName?: Chain
         },
         logger?: (arg: string) => void,
     ) {
         options.apiKey = options.apiKey || ''
         options.environment = options.environment || MAINNET_API_URL
-        this.isMainNet = options.chainName === ChainName.NEO3
+        this._isMainNet = options.chainName === Chain.NEO3
         options.privateKey = options.privateKey || ''
         options.rpcUrl = options.rpcUrl || ''
         this._providerRPCUrl = options.rpcUrl
-        options.chainName = options.chainName || ChainName.NEO3
+        options.chainName = options.chainName || Chain.NEO3
         this._chainName = options.chainName
         this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
-        this.contractExchangeAddress = this._getExchangeContractAddress(this._chainName)
-        this.contractIncentivesAddress = this._getIncentivesContractAddress(this._chainName)
-        this.contractNEP11Address = this._getNEP11GhostContractAddress(this._chainName)
-        this.contractManagementAddress = this._getManagementContractAddress(this._chainName)
+        this._contractExchangeAddress = this._getExchangeContractAddress(this._chainName)
+        this._contractIncentivesAddress = this._getIncentivesContractAddress(this._chainName)
+        this._contractNEP11Address = this._getNEP11GhostContractAddress(this._chainName)
+        this._contractManagementAddress = this._getManagementContractAddress(this._chainName)
         this._privateKey = options.privateKey
         this.provider = provider || 'private'
         const apiConfig = {
@@ -108,7 +80,6 @@ export class GhostMarketN3SDK {
         // Logger: Default to nothing.
         this.logger = logger || ((arg: string) => arg)
         if (provider === 'private' && !options.privateKey) {
-            console.error('Please set a private key!')
             throw new Error('Please set a private key!')
         }
     }
@@ -118,7 +89,7 @@ export class GhostMarketN3SDK {
      * @param {TxObject} txObject transaction object to send when calling `buyMultiple`.
      */
     public async buyMultiple(items: IBuyItem[], txObject: TxObject): Promise<any> {
-        const allowedContracts = [this.contractExchangeAddress.substring(2)]
+        const allowedContracts = [this._contractExchangeAddress.substring(2)]
         const argsBuyMultiple = []
 
         for (let i = 0; i < items.length; i++) {
@@ -134,8 +105,8 @@ export class GhostMarketN3SDK {
 
             if (item.isCancellation) {
                 argsBuyMultiple.push({
-                    scriptHash: this.contractExchangeAddress,
-                    operation: METHOD_CANCEL_SALE,
+                    scriptHash: this._contractExchangeAddress,
+                    operation: Method.CANCEL_SALE,
                     args: [
                         {
                             type: 'ByteArray', // ByteString auctionId
@@ -159,8 +130,8 @@ export class GhostMarketN3SDK {
                 }
 
                 argsBuyMultiple.push({
-                    scriptHash: this.contractExchangeAddress,
-                    operation: METHOD_BID_TOKEN,
+                    scriptHash: this._contractExchangeAddress,
+                    operation: Method.BID_TOKEN,
                     args: [
                         {
                             type: 'Hash160', // UInt160 from
@@ -196,11 +167,10 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            return console.error(
+            throw new Error(
                 `buyMultiple: failed to execute ${
-                    items[0].isCancellation ? METHOD_CANCEL_SALE : METHOD_BID_TOKEN
-                } on ${this.contractExchangeAddress} with error:`,
-                e,
+                    items[0].isCancellation ? Method.CANCEL_SALE : Method.BID_TOKEN
+                } on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -218,7 +188,7 @@ export class GhostMarketN3SDK {
             }`,
         )
 
-        const allowedContracts = [this.contractExchangeAddress.substring(2)]
+        const allowedContracts = [this._contractExchangeAddress.substring(2)]
 
         const argsListTokenMultiple = []
 
@@ -228,7 +198,7 @@ export class GhostMarketN3SDK {
             const supportsNEP11 = await this._supportsStandard(
                 item.baseContract,
                 txObject.from,
-                STANDARD_NEP_11,
+                Standard.NEP_11,
             )
 
             if (!supportsNEP11)
@@ -237,7 +207,7 @@ export class GhostMarketN3SDK {
             const supportsNEP17 = await this._supportsStandard(
                 item.quoteContract,
                 txObject.from,
-                STANDARD_NEP_17,
+                Standard.NEP_17,
             )
 
             if (!supportsNEP17)
@@ -261,8 +231,8 @@ export class GhostMarketN3SDK {
             }
 
             argsListTokenMultiple.push({
-                scriptHash: this.contractExchangeAddress,
-                operation: METHOD_LIST_TOKEN,
+                scriptHash: this._contractExchangeAddress,
+                operation: Method.LIST_TOKEN,
                 args: [
                     {
                         type: 'Hash160', // UInt160 baseScriptHash
@@ -325,9 +295,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            return console.error(
-                `sellMultiple: failed to execute ${METHOD_LIST_TOKEN} on ${this.contractExchangeAddress} with error:`,
-                e,
+            throw new Error(
+                `sellMultiple: failed to execute ${Method.LIST_TOKEN} on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -366,7 +335,7 @@ export class GhostMarketN3SDK {
         ] as IArgs[]
 
         const allowedContracts = [
-            this.contractExchangeAddress.substring(2),
+            this._contractExchangeAddress.substring(2),
             item.quoteContract.substring(2),
         ]
 
@@ -378,8 +347,8 @@ export class GhostMarketN3SDK {
             },
         ]
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: METHOD_BID_TOKEN,
+            scriptHash: this._contractExchangeAddress,
+            operation: Method.BID_TOKEN,
             args: argsBidToken,
             signers,
             networkFee: txObject.networkFee,
@@ -389,9 +358,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `bidAuction: failed to execute ${METHOD_BID_TOKEN} on ${this.contractExchangeAddress} with error:`,
-                e,
+            throw new Error(
+                `bidAuction: failed to execute ${Method.BID_TOKEN} on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -406,7 +374,7 @@ export class GhostMarketN3SDK {
         const supportsNEP11 = await this._supportsStandard(
             item.baseContract,
             txObject.from,
-            STANDARD_NEP_11,
+            Standard.NEP_11,
         )
 
         if (!supportsNEP11)
@@ -415,7 +383,7 @@ export class GhostMarketN3SDK {
         const supportsNEP17 = await this._supportsStandard(
             item.quoteContract,
             txObject.from,
-            STANDARD_NEP_17,
+            Standard.NEP_17,
         )
 
         if (!supportsNEP17)
@@ -488,7 +456,7 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        const allowedContracts = [this.contractExchangeAddress.substring(2)]
+        const allowedContracts = [this._contractExchangeAddress.substring(2)]
         const baseContract = item.baseContract.substring(2)
         if (!allowedContracts.includes(baseContract)) {
             allowedContracts.push(baseContract)
@@ -502,8 +470,8 @@ export class GhostMarketN3SDK {
             },
         ]
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: METHOD_LIST_TOKEN,
+            scriptHash: this._contractExchangeAddress,
+            operation: Method.LIST_TOKEN,
             args: argsListToken,
             signers,
             networkFee: txObject.networkFee,
@@ -513,9 +481,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `listAuction: failed to execute ${METHOD_LIST_TOKEN} on ${this.contractExchangeAddress} with error:`,
-                e,
+            throw new Error(
+                `listAuction: failed to execute ${Method.LIST_TOKEN} on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -549,8 +516,8 @@ export class GhostMarketN3SDK {
             },
         ]
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: METHOD_BID_TOKEN,
+            scriptHash: this._contractExchangeAddress,
+            operation: Method.BID_TOKEN,
             args: argsBidToken,
             signers,
             networkFee: txObject.networkFee,
@@ -560,9 +527,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `claimAuction: failed to execute ${METHOD_BID_TOKEN} on ${this.contractExchangeAddress} with error:`,
-                e,
+            throw new Error(
+                `claimAuction: failed to execute ${Method.BID_TOKEN} on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -583,7 +549,7 @@ export class GhostMarketN3SDK {
             const supportsNEP11 = await this._supportsStandard(
                 item.baseContract,
                 txObject.from,
-                STANDARD_NEP_11,
+                Standard.NEP_11,
             )
 
             if (!supportsNEP11)
@@ -592,7 +558,7 @@ export class GhostMarketN3SDK {
             const supportsNEP17 = await this._supportsStandard(
                 item.quoteContract,
                 txObject.from,
-                STANDARD_NEP_17,
+                Standard.NEP_17,
             )
 
             if (!supportsNEP17)
@@ -601,7 +567,7 @@ export class GhostMarketN3SDK {
             const supportsNEP17Extension = await this._supportsStandard(
                 item.quoteContract,
                 txObject.from,
-                STANDARD_NEP_17_1,
+                Standard.NEP_17_1,
             )
 
             if (!supportsNEP17Extension)
@@ -661,8 +627,8 @@ export class GhostMarketN3SDK {
                 },
             ]
             const invokeParams = {
-                scriptHash: this.contractExchangeAddress,
-                operation: METHOD_PLACE_OFFER,
+                scriptHash: this._contractExchangeAddress,
+                operation: Method.PLACE_OFFER,
                 args: argsPlaceOffer,
                 signers,
                 networkFee: txObject.networkFee,
@@ -672,9 +638,8 @@ export class GhostMarketN3SDK {
             try {
                 return this.invoke(invokeParams)
             } catch (e) {
-                return console.error(
-                    `placeOffer: failed to execute ${METHOD_PLACE_OFFER} on ${this.contractExchangeAddress} with error:`,
-                    e,
+                throw new Error(
+                    `placeOffer: failed to execute ${Method.PLACE_OFFER} on ${this._contractExchangeAddress} with error: ${e}`,
                 )
             }
         }
@@ -713,7 +678,7 @@ export class GhostMarketN3SDK {
             },
         ]
 
-        const allowedContracts = [this.contractExchangeAddress, item.quoteContract]
+        const allowedContracts = [this._contractExchangeAddress, item.quoteContract]
 
         const signers = item.isCancellation
             ? [
@@ -730,8 +695,8 @@ export class GhostMarketN3SDK {
                   },
               ]
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: item.isCancellation ? METHOD_CANCEL_OFFER : METHOD_ACCEPT_OFFER,
+            scriptHash: this._contractExchangeAddress,
+            operation: item.isCancellation ? Method.CANCEL_OFFER : Method.ACCEPT_OFFER,
             args: item.isCancellation ? argsCancelOffer : argsAcceptOffer,
             signers,
             networkFee: txObject.networkFee,
@@ -741,11 +706,10 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
+            throw new Error(
                 `processOffer: failed to execute ${
-                    item.isCancellation ? METHOD_CANCEL_OFFER : METHOD_ACCEPT_OFFER
-                } on ${this.contractExchangeAddress} with error:`,
-                e,
+                    item.isCancellation ? Method.CANCEL_OFFER : Method.ACCEPT_OFFER
+                } on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -802,8 +766,8 @@ export class GhostMarketN3SDK {
             },
         ]
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: METHOD_EDIT_SALE,
+            scriptHash: this._contractExchangeAddress,
+            operation: Method.EDIT_SALE,
             args: argsEditSale,
             signers,
             networkFee: txObject.networkFee,
@@ -813,9 +777,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `editPrice: failed to execute ${METHOD_EDIT_SALE} on ${this.contractExchangeAddress} with error:`,
-                e,
+            throw new Error(
+                `editPrice: failed to execute ${Method.EDIT_SALE} on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -837,7 +800,7 @@ export class GhostMarketN3SDK {
         const supportsNEP11 = await this._supportsStandard(
             contractAddress,
             txObject.from,
-            STANDARD_NEP_11,
+            Standard.NEP_11,
         )
 
         if (!supportsNEP11) throw new Error(`contract: ${contractAddress} does not support NEP-11`)
@@ -891,7 +854,7 @@ export class GhostMarketN3SDK {
             ]
         }
 
-        const allowedContracts = [contractAddress.substring(2), this.contractExchangeAddress]
+        const allowedContracts = [contractAddress.substring(2), this._contractExchangeAddress]
 
         const signers = [
             {
@@ -906,8 +869,8 @@ export class GhostMarketN3SDK {
             },
         ]
         const invokeParams = {
-            scriptHash: this.contractExchangeAddress,
-            operation: METHOD_SET_ROYALTIES_FOR_CONTRACT,
+            scriptHash: this._contractExchangeAddress,
+            operation: Method.SET_ROYALTIES_FOR_CONTRACT,
             args: argsSetCollectionRoyalties,
             signers,
             networkFee: txObject.networkFee,
@@ -917,9 +880,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `setRoyaltiesForContract: Failed to execute ${METHOD_SET_ROYALTIES_FOR_CONTRACT} on ${this.contractExchangeAddress} with error:`,
-                e,
+            throw new Error(
+                `setRoyaltiesForContract: Failed to execute ${Method.SET_ROYALTIES_FOR_CONTRACT} on ${this._contractExchangeAddress} with error: ${e}`,
             )
         }
     }
@@ -936,7 +898,7 @@ export class GhostMarketN3SDK {
         const supportsNEP17 = await this._supportsStandard(
             contractAddress,
             txObject.from,
-            STANDARD_NEP_17,
+            Standard.NEP_17,
         )
 
         if (!supportsNEP17) throw new Error(`contract: ${contractAddress} does not support NEP-17`)
@@ -944,7 +906,7 @@ export class GhostMarketN3SDK {
         const supportsNEP17Extension = await this._supportsStandard(
             contractAddress,
             txObject.from,
-            STANDARD_NEP_17_1,
+            Standard.NEP_17_1,
         )
 
         if (!supportsNEP17Extension)
@@ -957,7 +919,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Hash160', // UInt160 spender
-                value: this.contractExchangeAddress,
+                value: this._contractExchangeAddress,
             },
             {
                 type: 'Integer', // BigInteger amount
@@ -973,7 +935,7 @@ export class GhostMarketN3SDK {
         ]
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_APPROVE,
+            operation: Method.APPROVE,
             args: argsApproveToken,
             signers,
             networkFee: txObject.networkFee,
@@ -983,9 +945,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `approveToken: failed to execute ${METHOD_APPROVE} on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `approveToken: failed to execute ${Method.APPROVE} on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -1006,7 +967,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'Hash160',
-                value: this.contractExchangeAddress,
+                value: this._contractExchangeAddress,
             },
         ] as IArgs[]
 
@@ -1019,7 +980,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_ALLOWANCE,
+            operation: Method.ALLOWANCE,
             args: argsCheckAllowance,
             signers,
         }
@@ -1029,9 +990,8 @@ export class GhostMarketN3SDK {
             if (response.exception) return `checkTokenApproval exception: ${response.exception}`
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
-            return console.error(
-                `checkTokenApproval: failed to execute ${METHOD_ALLOWANCE} on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `checkTokenApproval: failed to execute ${Method.ALLOWANCE} on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -1053,7 +1013,7 @@ export class GhostMarketN3SDK {
         const supportsNEP17 = await this._supportsStandard(
             quoteContract,
             txObject.from,
-            STANDARD_NEP_17,
+            Standard.NEP_17,
         )
 
         if (!supportsNEP17) throw new Error(`contract: ${quoteContract} does not support NEP-17`)
@@ -1095,7 +1055,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: quoteContract,
-            operation: METHOD_TRANSFER,
+            operation: Method.TRANSFER,
             args: argsTransfer,
             signers,
             networkFee: txObject.networkFee,
@@ -1105,9 +1065,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `transferNEP17: failed to execute ${METHOD_TRANSFER} on ${quoteContract} with error:`,
-                e,
+            throw new Error(
+                `transferNEP17: failed to execute ${Method.TRANSFER} on ${quoteContract} with error: ${e}`,
             )
         }
     }
@@ -1137,7 +1096,7 @@ export class GhostMarketN3SDK {
 
             argsTransferMultiple.push({
                 scriptHash: item.baseContract,
-                operation: METHOD_TRANSFER,
+                operation: Method.TRANSFER,
                 args: [
                     {
                         type: 'Hash160', // UInt160 address
@@ -1172,9 +1131,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            return console.error(
-                `transferNEP11: failed to execute ${METHOD_TRANSFER} on ${items[0].baseContract} with error:`,
-                e,
+            throw new Error(
+                `transferNEP11: failed to execute ${Method.TRANSFER} on ${items[0].baseContract} with error: ${e}`,
             )
         }
     }
@@ -1202,7 +1160,7 @@ export class GhostMarketN3SDK {
 
             argsBurnMultiple.push({
                 scriptHash: item.contractAddress,
-                operation: METHOD_BURN,
+                operation: Method.BURN,
                 args: [
                     {
                         type: 'ByteArray', // ByteArray tokenId
@@ -1228,9 +1186,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
-            return console.error(
-                `burnNEP11: failed to execute ${METHOD_BURN} on ${items[0].contractAddress} with error:`,
-                e,
+            throw new Error(
+                `burnNEP11: failed to execute ${Method.BURN} on ${items[0].contractAddress} with error: ${e}`,
             )
         }
     }
@@ -1366,8 +1323,8 @@ export class GhostMarketN3SDK {
         ]
 
         const invokeParams = {
-            scriptHash: this.contractNEP11Address,
-            operation: isMintBatch ? METHOD_MULTI_MINT : METHOD_MINT,
+            scriptHash: this._contractNEP11Address,
+            operation: isMintBatch ? Method.MULTI_MINT : Method.MINT,
             args: argsMint,
             signers,
             networkFee: txObject.networkFee,
@@ -1377,11 +1334,10 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `mintNEP11: failed to execute ${isMintBatch ? METHOD_MULTI_MINT : METHOD_MINT} on ${
-                    this.contractNEP11Address
-                } with error:`,
-                e,
+            throw new Error(
+                `mintNEP11: failed to execute ${isMintBatch ? Method.MULTI_MINT : Method.MINT} on ${
+                    this._contractNEP11Address
+                } with error: ${e}`,
             )
         }
     }
@@ -1411,7 +1367,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_BALANCE_OF,
+            operation: Method.BALANCE_OF,
             args: argsCheckTokenBalance,
             signers,
         }
@@ -1421,9 +1377,8 @@ export class GhostMarketN3SDK {
             if (response.exception) return `checkTokenBalance exception: ${response.exception}`
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
-            return console.error(
-                `checkTokenBalance: failed to execute ${METHOD_BALANCE_OF} on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `checkTokenBalance: failed to execute ${Method.BALANCE_OF} on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -1449,8 +1404,8 @@ export class GhostMarketN3SDK {
         ]
 
         const invokeParams = {
-            scriptHash: this.contractIncentivesAddress,
-            operation: METHOD_GET_INCENTIVE,
+            scriptHash: this._contractIncentivesAddress,
+            operation: Method.GET_INCENTIVE,
             args: argsCheckIncentives,
             signers,
         }
@@ -1460,9 +1415,8 @@ export class GhostMarketN3SDK {
             if (response.exception) return `checkIncentives exception: ${response.exception}`
             return response.stack && response.stack[0] && response.stack[0].value
         } catch (e) {
-            return console.error(
-                `checkIncentives: failed to execute ${METHOD_GET_INCENTIVE} on ${this.contractIncentivesAddress} with error:`,
-                e,
+            throw new Error(
+                `checkIncentives: failed to execute ${Method.GET_INCENTIVE} on ${this._contractIncentivesAddress} with error: ${e}`,
             )
         }
     }
@@ -1493,8 +1447,8 @@ export class GhostMarketN3SDK {
         ]
 
         const invokeParams = {
-            scriptHash: this.contractIncentivesAddress,
-            operation: METHOD_CLAIM,
+            scriptHash: this._contractIncentivesAddress,
+            operation: Method.CLAIM,
             args: argsClaimIncentives,
             signers,
             networkFee: txObject.networkFee,
@@ -1504,9 +1458,8 @@ export class GhostMarketN3SDK {
         try {
             return this.invoke(invokeParams)
         } catch (e) {
-            return console.error(
-                `claimIncentives: failed to execute ${METHOD_CLAIM} on ${this.contractIncentivesAddress} with error:`,
-                e,
+            throw new Error(
+                `claimIncentives: failed to execute ${Method.CLAIM} on ${this._contractIncentivesAddress} with error: ${e}`,
             )
         }
     }
@@ -1616,7 +1569,7 @@ export class GhostMarketN3SDK {
 
         const invokeParams = {
             scriptHash: contractAddress,
-            operation: METHOD_OWNER_OF,
+            operation: Method.OWNER_OF,
             args: argsCheckOwnerOf,
             signers,
         }
@@ -1626,7 +1579,7 @@ export class GhostMarketN3SDK {
             if (response.exception) return `_ownerOf exception: ${response.exception}`
             const owner = response.stack[0]?.value
             console.log(
-                `NFT ${tokenId} from contract ${contractAddress} owner: ${wallet.getAddressFromScriptHash(
+                `NFT ${tokenId} from contract ${contractAddress} current owner: ${wallet.getAddressFromScriptHash(
                     u.reverseHex(u.HexString.fromBase64(owner).toString()),
                 )}`,
             )
@@ -1634,6 +1587,7 @@ export class GhostMarketN3SDK {
                 u.reverseHex(u.HexString.fromBase64(owner).toString()),
             )
         } catch (e) {
+            console.log(e)
             return NULL_ADDRESS_N3
         }
     }
@@ -1667,8 +1621,8 @@ export class GhostMarketN3SDK {
         ]
 
         const invokeParams = {
-            scriptHash: this.contractManagementAddress,
-            operation: METHOD_GET_CONTRACT,
+            scriptHash: this._contractManagementAddress,
+            operation: Method.GET_CONTRACT,
             args: argsGetContract,
             signers,
         }
@@ -1684,9 +1638,8 @@ export class GhostMarketN3SDK {
             console.log(`${standard} support: ${supportsStandard}`)
             return supportsStandard
         } catch (e) {
-            return console.error(
-                `_supportsStandard: failed to execute ${METHOD_GET_CONTRACT} on ${this.contractManagementAddress} with error:`,
-                e,
+            throw new Error(
+                `_supportsStandard: failed to execute ${Method.GET_CONTRACT} on ${this._contractManagementAddress} with error: ${e}`,
             )
         }
     }
@@ -1696,7 +1649,11 @@ export class GhostMarketN3SDK {
     public getProvider() {
         switch (this.provider) {
             case 'private': {
-                return new N3PrivateProvider(this._providerRPCUrl, this._privateKey, this.isMainNet)
+                return new N3PrivateProvider(
+                    this._providerRPCUrl,
+                    this._privateKey,
+                    this._isMainNet,
+                )
             }
             case 'neoline': {
                 const win = window as any

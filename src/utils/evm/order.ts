@@ -1,8 +1,18 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-var-requires */
-// eslint-disable-next-line no-undef
 import { IEVMOrder, IEVMAsset, IEVMAssetType } from '../../core/models/evm'
 import EIP712 from './EIP712'
+
+import web3 from 'web3'
+const Web3 = new web3()
+
+export function enc(token: string, tokenId?: string): string {
+    if (tokenId) {
+        return Web3.eth.abi.encodeParameters(['address', 'uint256'], [token, tokenId])
+    } else if (token === '0x') {
+        return '0x'
+    } else {
+        return Web3.eth.abi.encodeParameter('address', token)
+    }
+}
 
 export function AssetType(assetClass: string, data: string): IEVMAssetType {
     return { assetClass, data }

@@ -11,24 +11,31 @@ import {
     ExchangeV2Contract,
     RoyaltiesRegistryContract,
     IncentivesContract,
-} from '../abi'
+} from './abi'
 import {
-    MAX_UINT_256,
-    NULL_ADDRESS,
     GHOSTMARKET_TRADE_FEE_BPS,
     MAINNET_API_URL,
-    ERC1155_INTERFACE_ID,
-    ERC721_INTERFACE_ID,
-    ChainName,
+    Chain,
     ChainFullName,
     ChainId,
     AddressesByChain,
 } from './constants'
-import { enc, ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
+import {
+    MAX_UINT_256,
+    NULL_ADDRESS_EVM,
+    ERC1155_INTERFACE_ID,
+    ERC721_INTERFACE_ID,
+} from './constants/evm'
+import { ETH, ERC20, ERC721, ERC1155, COLLECTION } from '../utils/evm/assets'
 import { hashKey } from '../utils/evm/hash'
-import { sign, Order, Asset } from '../utils/evm/order'
+import { sign, enc, Order, Asset } from '../utils/evm/order'
 import { IEVMOrder, IOrderItem, IMintItem, IRoyalties, TxObject } from '../core/models/evm'
-import { GhostMarketApi, IGhostMarketApiOptions, PostCreateOrderRequest } from '../lib/api/'
+import {
+    GhostMarketApi,
+    IGhostMarketApiOptions,
+    PostCreateOrderRequest,
+    IResult,
+} from '../lib/api/'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
@@ -36,7 +43,7 @@ export class GhostMarketSDK {
     public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
-    private _chainName: ChainName
+    private _chainName: Chain
     private _chainFullName: ChainFullName
     private _chainId: ChainId
     private _isReadonlyProvider: boolean
@@ -55,7 +62,7 @@ export class GhostMarketSDK {
             environment?: string
             useReadOnlyProvider?: boolean
             rpcUrl?: string
-            chainName?: ChainName
+            chainName?: Chain
         },
         logger?: (arg: string) => void,
     ) {
@@ -64,7 +71,7 @@ export class GhostMarketSDK {
         options.rpcUrl = options.rpcUrl || ''
         const useReadOnlyProvider = options.useReadOnlyProvider ?? false
         this._isReadonlyProvider = useReadOnlyProvider
-        options.chainName = options.chainName || ChainName.ETHEREUM
+        options.chainName = options.chainName || Chain.ETHEREUM
         this._chainName = options.chainName
         this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
         this._chainId = ChainId[this._chainName as keyof typeof ChainId]
@@ -81,7 +88,7 @@ export class GhostMarketSDK {
     /** Create one or more sell order or nft offer or collection offer
      * @param {IOrderItem[]} items items for the order or offer.
      */
-    public async createOrder(items: IOrderItem[]): Promise<any> {
+    public async createOrder(items: IOrderItem[]): Promise<IResult> {
         for (let i = 0; i < items.length; i++) {
             console.log(
                 `createOrder: creating ${
@@ -93,7 +100,8 @@ export class GhostMarketSDK {
                 } on ${this._chainFullName}`,
             )
 
-            if (this._isReadonlyProvider) return
+            if (this._isReadonlyProvider)
+                throw new Error(`Can not sign transaction with a read only provider.`)
 
             try {
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
@@ -146,7 +154,7 @@ export class GhostMarketSDK {
                               enc(items[i].baseContract, items[i].baseTokenId),
                               baseTokenAmount!.toString(),
                           ),
-                    NULL_ADDRESS,
+                    NULL_ADDRESS_EVM,
                     items[i].type === 2 && items[i].baseTokenId
                         ? Asset(
                               encType,
@@ -201,10 +209,10 @@ export class GhostMarketSDK {
                 )
                 return listing
             } catch (e) {
-                return console.error(`Failed to execute postCreateOrder ${i + 1} with error:`, e)
+                throw new Error(`Failed to execute postCreateOrder ${i + 1} with error:, ${e}`)
             }
         }
-        return
+        return {}
     }
 
     /** Cancel one or more sell order or nft offer or collection offer
@@ -218,7 +226,8 @@ export class GhostMarketSDK {
             }`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
@@ -262,7 +271,7 @@ export class GhostMarketSDK {
                           enc(items[i].baseContract, items[i].baseTokenId),
                           baseTokenAmount!.toString(),
                       ),
-                NULL_ADDRESS,
+                NULL_ADDRESS_EVM,
                 items[i].type === 2 && items[i].baseTokenId
                     ? Asset(
                           encType,
@@ -290,9 +299,8 @@ export class GhostMarketSDK {
             const data = await ExchangeV2CoreContractInstance.methods.bulkCancelOrders(ordersArray)
             return this.sendMethod(data, txObject.from, exchangeV2ProxyAddress, undefined)
         } catch (e) {
-            return console.error(
-                `bulkCancelOrders: failed to execute bulkCancelOrders on ${exchangeV2ProxyAddress} with error:`,
-                e,
+            throw new Error(
+                `bulkCancelOrders: failed to execute bulkCancelOrders on ${exchangeV2ProxyAddress} with error: ${e}`,
             )
         }
     }
@@ -312,7 +320,8 @@ export class GhostMarketSDK {
             } on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         try {
             const supportsERC721 = await this._supportsERC721(orderMaker.baseContract)
@@ -353,7 +362,7 @@ export class GhostMarketSDK {
                           enc(orderMaker.baseContract, orderMaker.baseTokenId),
                           baseTokenAmount!.toString(),
                       ),
-                NULL_ADDRESS,
+                NULL_ADDRESS_EVM,
                 orderMaker.type === 2 && orderMaker.baseTokenId
                     ? Asset(
                           encType,
@@ -401,7 +410,7 @@ export class GhostMarketSDK {
                           enc(orderMaker.quoteContract),
                           orderMaker.quotePrice,
                       ),
-                NULL_ADDRESS,
+                NULL_ADDRESS_EVM,
                 orderMaker.type === 2 && orderMaker.baseTokenId
                     ? Asset(
                           orderMaker.quoteContract === '0x' ? ETH : ERC20,
@@ -435,7 +444,7 @@ export class GhostMarketSDK {
                 value: priceToSend,
             }
 
-            this._matchOrders(
+            return this._matchOrders(
                 _orderMaker,
                 orderMaker.signature!,
                 _orderTaker,
@@ -443,7 +452,7 @@ export class GhostMarketSDK {
                 txObject,
             )
         } catch (e) {
-            return console.error(`matchOrders: failed to execute with error:`, e)
+            throw new Error(`matchOrders: failed to execute with error: ${e}`)
         }
     }
 
@@ -461,7 +470,8 @@ export class GhostMarketSDK {
         signatureRight: string,
         txObject: TxObject,
     ): Promise<any> {
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const exchangeV2ProxyAddress = this._getExchangeV2ProxyContractAddress(this._chainName)
         const ExchangeV2CoreContractInstance = new this.web3.eth.Contract(
@@ -478,9 +488,9 @@ export class GhostMarketSDK {
             )
             return this.sendMethod(data, txObject.from, exchangeV2ProxyAddress, txObject.value)
         } catch (e) {
-            return console.error(
-                `_matchOrders: failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:`,
-                e,
+            throw new Error(
+                `_matchOrders: failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:
+                ${e}`,
             )
         }
     }
@@ -499,7 +509,8 @@ export class GhostMarketSDK {
             `setRoyaltiesForContract: set royalties for contract ${contractAddress} on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const supportsERC721 = await this._supportsERC721(contractAddress)
         const supportsERC155 = await this._supportsERC1155(contractAddress)
@@ -534,9 +545,9 @@ export class GhostMarketSDK {
             )
             return this.sendMethod(data, txObject.from, royaltiesRegistryProxyAddress, undefined)
         } catch (e) {
-            return console.error(
-                `setRoyaltiesForContract: failed to execute setRoyaltiesByToken on ${royaltiesRegistryProxyAddress} with error:`,
-                e,
+            throw new Error(
+                `setRoyaltiesForContract: failed to execute setRoyaltiesByToken on ${royaltiesRegistryProxyAddress} with error: 
+                ${e}`,
             )
         }
     }
@@ -557,7 +568,8 @@ export class GhostMarketSDK {
             }`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
         const WrappedTokenContractInstance = new this.web3.eth.Contract(
@@ -602,9 +614,9 @@ export class GhostMarketSDK {
                 const data = await WrappedTokenContractInstance.methods.deposit()
                 return this.sendMethod(data, txObject.from, wrappedTokenAddress, amount)
             } catch (e) {
-                return console.error(
-                    `wrapToken: Failed to execute deposit on ${wrappedTokenAddress} with error:`,
-                    e,
+                throw new Error(
+                    `wrapToken: Failed to execute deposit on ${wrappedTokenAddress} with error:
+                    ${e}`,
                 )
             }
         } else {
@@ -612,9 +624,9 @@ export class GhostMarketSDK {
                 const data = await WrappedTokenContractInstance.methods.withdraw(amount)
                 return this.sendMethod(data, txObject.from, wrappedTokenAddress, undefined)
             } catch (e) {
-                return console.error(
-                    `wrapToken: failed to execute withdraw on ${wrappedTokenAddress} with error:`,
-                    e,
+                throw new Error(
+                    `wrapToken: failed to execute withdraw on ${wrappedTokenAddress} with error:
+                    ${e}`,
                 )
             }
         }
@@ -629,7 +641,8 @@ export class GhostMarketSDK {
             `approveContract: approve nft contract ${contractAddress} on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const supportsERC721 = await this._supportsERC721(contractAddress)
         const supportsERC155 = await this._supportsERC1155(contractAddress)
@@ -647,9 +660,8 @@ export class GhostMarketSDK {
             )
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(
-                `approveContract: failed to execute setApprovalForAll on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `approveContract: failed to execute setApprovalForAll on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -663,7 +675,8 @@ export class GhostMarketSDK {
             `approveToken: approve token contract ${contractAddress} on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
@@ -672,7 +685,7 @@ export class GhostMarketSDK {
             const data = await ContractInstance.methods.approve(proxyContractAddress, MAX_UINT_256)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(`Failed to execute approve on ${contractAddress} with error:`, e)
+            throw new Error(`Failed to execute approve on ${contractAddress} with error: ${e}`)
         }
     }
 
@@ -690,24 +703,25 @@ export class GhostMarketSDK {
 
         const supportsERC721 = await this._supportsERC721(contractAddress)
         const supportsERC1155 = await this._supportsERC1155(contractAddress)
-        if (supportsERC721 || supportsERC1155) {
-            const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
-            const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
-            try {
-                const data = await ContractInstance.methods.isApprovedForAll(
-                    accountAddress,
-                    proxyContractAddress,
-                )
-                return await this.callMethod(data, accountAddress)
-            } catch (e) {
-                return console.error(
-                    `checkContractApproval: failed to execute isApprovedForAll on ${contractAddress} with error:`,
-                    e,
-                )
-            }
+        if (!supportsERC721 && !supportsERC1155)
+            throw new Error(`contract: ${contractAddress} does not support ERC721 or ERC1155`)
+
+        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
+        const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
+
+        try {
+            const data = await ContractInstance.methods.isApprovedForAll(
+                accountAddress,
+                proxyContractAddress,
+            )
+            return await this.callMethod(data, accountAddress)
+        } catch (e) {
+            throw new Error(
+                `checkContractApproval: failed to execute isApprovedForAll on ${contractAddress} with error: 
+                    ${e}`,
+            )
         }
-        return false
     }
 
     /** Check ERC20 Token Contract Approval
@@ -732,9 +746,8 @@ export class GhostMarketSDK {
             )
             return await this.callMethod(data, accountAddress)
         } catch (e) {
-            return console.error(
-                `checkTokenApproval: failed to execute allowance on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `checkTokenApproval: failed to execute allowance on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -755,7 +768,8 @@ export class GhostMarketSDK {
             `transferERC20: transfer ${amount} from ERC20 contract ${contractAddress} to ${destinationAddress} on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const balance = await this.checkTokenBalance(contractAddress, txObject.from)
 
@@ -774,9 +788,8 @@ export class GhostMarketSDK {
             const data = await ContractInstance.methods.transfer(destinationAddress, amount)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(
-                `transferERC20: failed to execute transfer on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `transferERC20: failed to execute transfer on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -797,7 +810,8 @@ export class GhostMarketSDK {
             `transferERC721: transfer NFT with token id ${tokenId} from ERC721 contract ${contractAddress} to ${destinationAddress} on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const owner = await this._ownerOf(contractAddress, tokenId)
 
@@ -814,9 +828,8 @@ export class GhostMarketSDK {
             )
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(
-                `transferERC721: failed to execute safeTransferFrom on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `transferERC721: failed to execute safeTransferFrom on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -843,7 +856,8 @@ export class GhostMarketSDK {
             }`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         for (let i = 0; i < tokenIds.length; i++) {
             const balance = await this._balanceOf(txObject.from, contractAddress, tokenIds[i])
@@ -865,9 +879,8 @@ export class GhostMarketSDK {
             )
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(
-                `transferERC1155: failed to execute safeBatchTransferFrom on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `transferERC1155: failed to execute safeBatchTransferFrom on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -885,7 +898,8 @@ export class GhostMarketSDK {
         console.log(
             `burnERC721: burn 1 NFT from ERC721 contract ${contractAddress} with token id ${tokenId} on ${this._chainFullName}`,
         )
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const owner = await this._ownerOf(contractAddress, tokenId)
 
@@ -898,9 +912,8 @@ export class GhostMarketSDK {
             const data = await ContractInstance.methods.burn(tokenId)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(
-                `burnERC721: failed to execute burn on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `burnERC721: failed to execute burn on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -925,7 +938,8 @@ export class GhostMarketSDK {
             }`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const balance = await this._balanceOf(txObject.from, contractAddress, tokenId)
 
@@ -938,9 +952,8 @@ export class GhostMarketSDK {
             const data = await ContractInstance.methods.burn(txObject.from, tokenId, amount)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            return console.error(
-                `burnERC1155: failed to execute burn on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `burnERC1155: failed to execute burn on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -952,7 +965,8 @@ export class GhostMarketSDK {
     public async mintERC721(item: IMintItem, txObject: TxObject): Promise<any> {
         console.log(`mintERC721: mint 1 ERC721 NFT on ${this._chainFullName}`)
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const ERC721GhostAddress = this._getERC721GhostContractAddress(this._chainName)
         const ERC721GhostAddressInstance = new this.web3.eth.Contract(
@@ -980,9 +994,8 @@ export class GhostMarketSDK {
             ) // lock content & onchain metadata not available at the moment on SDK
             return this.sendMethod(data, txObject.from, ERC721GhostAddress, undefined)
         } catch (e) {
-            return console.error(
-                `mintERC721: failed to execute mintGhost on ${ERC721GhostAddress} with error:`,
-                e,
+            throw new Error(
+                `mintERC721: failed to execute mintGhost on ${ERC721GhostAddress} with error: ${e}`,
             )
         }
     }
@@ -995,7 +1008,8 @@ export class GhostMarketSDK {
     public async mintERC1155(item: IMintItem, amount: number, txObject: TxObject): Promise<any> {
         console.log(`mintERC1155: mint ${amount} ERC1155 NFT on ${this._chainFullName}`)
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const ERC1155GhostAddress = this._getERC1155GhostContractAddress(this._chainName)
         const ERC1155GhostAddressInstance = new this.web3.eth.Contract(
@@ -1025,9 +1039,8 @@ export class GhostMarketSDK {
             ) // data && lock content & onchain metadata not available at the moment on SDK
             return this.sendMethod(data, txObject.from, ERC1155GhostAddress, undefined)
         } catch (e) {
-            return console.error(
-                `mintERC1155: failed to execute mintGhost on ${ERC1155GhostAddress} with error:`,
-                e,
+            throw new Error(
+                `mintERC1155: failed to execute mintGhost on ${ERC1155GhostAddress} with error: ${e}`,
             )
         }
     }
@@ -1044,7 +1057,7 @@ export class GhostMarketSDK {
             const data = await this.web3.eth.getBalance(accountAddress)
             return data
         } catch (e) {
-            return console.error(`checkBalance: failed to execute getBalance with error:`, e)
+            throw new Error(`checkBalance: failed to execute getBalance with error: ${e}`)
         }
     }
 
@@ -1052,7 +1065,7 @@ export class GhostMarketSDK {
      * @param {string} contractAddress token contract to check approval.
      * @param {string} accountAddress address used to check.
      */
-    public async checkTokenBalance(contractAddress: string, accountAddress: string) {
+    public async checkTokenBalance(contractAddress: string, accountAddress: string): Promise<any> {
         console.log(
             `checkTokenBalance: checking token balance for contract ${contractAddress} for address ${accountAddress} on ${this._chainFullName}`,
         )
@@ -1066,9 +1079,8 @@ export class GhostMarketSDK {
             const data = await ERC20ContractInstance.methods.balanceOf(accountAddress)
             return await this.callMethod(data, accountAddress)
         } catch (e) {
-            return console.error(
-                `checkTokenBalance: failed to execute balanceOf on ${contractAddress} with error:`,
-                e,
+            throw new Error(
+                `checkTokenBalance: failed to execute balanceOf on ${contractAddress} with error: ${e}`,
             )
         }
     }
@@ -1091,9 +1103,8 @@ export class GhostMarketSDK {
             const data = await IncentivesContractInstance.methods.incentives(accountAddress)
             return this.callMethod(data, accountAddress)
         } catch (e) {
-            return console.error(
-                `checkIncentives: failed to execute incentives on ${IncentivesContractAddressAddress} with error:`,
-                e,
+            throw new Error(
+                `checkIncentives: failed to execute incentives on ${IncentivesContractAddressAddress} with error: ${e}`,
             )
         }
     }
@@ -1106,7 +1117,8 @@ export class GhostMarketSDK {
             `claimIncentives: claiming incentives for address ${txObject.from} on ${this._chainFullName}`,
         )
 
-        if (this._isReadonlyProvider) return
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
 
         const balance = await this.checkIncentives(txObject.from)
         if (parseInt(balance.availableIncentives) === 0) {
@@ -1123,9 +1135,8 @@ export class GhostMarketSDK {
             const data = await IncentivesContractInstance.methods.claim()
             return this.sendMethod(data, txObject.from, IncentivesContractAddressAddress, undefined)
         } catch (e) {
-            return console.error(
-                `claimIncentives: failed to execute claim on ${IncentivesContractAddressAddress} with error:`,
-                e,
+            throw new Error(
+                `claimIncentives: failed to execute claim on ${IncentivesContractAddressAddress} with error: ${e}`,
             )
         }
     }
@@ -1144,7 +1155,7 @@ export class GhostMarketSDK {
             const data = this.web3.eth.sign(hash, accountAddress)
             return data
         } catch (e) {
-            return console.error(`signData: Failed to execute sign with error:`, e)
+            throw new Error(`signData: Failed to execute sign with error: ${e}`)
         }
     }
 
@@ -1209,21 +1220,21 @@ export class GhostMarketSDK {
      */
     private _supportsEIP1559(chainName: string): boolean {
         switch (chainName) {
-            case ChainName.AVALANCHE:
+            case Chain.AVALANCHE:
                 return true
-            case ChainName.AVALANCHE_TESTNET:
+            case Chain.AVALANCHE_TESTNET:
                 return true
-            case ChainName.ETHEREUM:
+            case Chain.ETHEREUM:
                 return true
-            case ChainName.ETHEREUM_TESTNET:
+            case Chain.ETHEREUM_TESTNET:
                 return true
-            case ChainName.BSC:
+            case Chain.BSC:
                 return false
-            case ChainName.BSC_TESTNET:
+            case Chain.BSC_TESTNET:
                 return false
-            case ChainName.POLYGON:
+            case Chain.POLYGON:
                 return true
-            case ChainName.POLYGON_TESTNET:
+            case Chain.POLYGON_TESTNET:
                 return true
             default:
                 return false
@@ -1234,7 +1245,7 @@ export class GhostMarketSDK {
      * @param {string} contractAddress contract address.
      * @param {boolean} isERC721 true for ERC721, false for ERC1155.
      */
-    private _getOwner(contractAddress: string, isERC721: boolean): Promise<string> {
+    private _getOwner(contractAddress: string, isERC721: boolean): Promise<any> {
         console.log(
             `_getOwner: checking ${
                 isERC721 ? 'ERC721' : 'ERC1155'
@@ -1254,7 +1265,7 @@ export class GhostMarketSDK {
             })
             .catch((e: any) => {
                 console.log(e)
-                return NULL_ADDRESS
+                return NULL_ADDRESS_EVM
             })
     }
 
@@ -1262,7 +1273,7 @@ export class GhostMarketSDK {
      * @param {string} contractAddress contract address of NFT.
      * @param {string} tokenId tokenId of NFT.
      */
-    private async _ownerOf(contractAddress: string, tokenId: string): Promise<string> {
+    private async _ownerOf(contractAddress: string, tokenId: string): Promise<any> {
         console.log(
             `_balanceOf: checking ERC721 owner for contract ${contractAddress} for token id ${tokenId} on ${this._chainFullName}`,
         )
@@ -1279,10 +1290,10 @@ export class GhostMarketSDK {
                 })
                 .catch((e: any) => {
                     console.log(e)
-                    return NULL_ADDRESS
+                    return NULL_ADDRESS_EVM
                 })
         }
-        return NULL_ADDRESS
+        return NULL_ADDRESS_EVM
     }
 
     /** Get balance of one address for an ERC1155 NFT

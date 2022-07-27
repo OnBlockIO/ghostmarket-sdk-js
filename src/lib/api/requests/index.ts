@@ -51,3 +51,5 @@ export * from './collections/IGetCollectionAttributeKeys'
 
 export * from './incentives/GetRewardsChain'
 export * from './incentives/GetAddressReward'
+
+export * from './IResult'

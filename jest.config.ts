@@ -13,7 +13,7 @@ const config: Config.InitialOptions = {
     roots: ['src/__tests__'],
     coveragePathIgnorePatterns: [
         'node_modules/',
-        'src/abi/',
+        'src/core/abi/',
         'src/core/constants',
         'src/external',
         'src/types',
@@ -22,7 +22,7 @@ const config: Config.InitialOptions = {
     ],
     testPathIgnorePatterns: [
         'node_modules/',
-        'src/abi/',
+        'src/core/abi/',
         'src/core/constants',
         'src/external',
         'src/types',

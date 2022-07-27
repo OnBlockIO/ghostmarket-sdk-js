@@ -1,19 +1,9 @@
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-var-requires */
-import { IEVMOrder, IEVMAsset, IEVMAssetType } from '../../core/models/evm'
+import { IEVMOrder, IEVMAssetType } from '../../core/models/evm'
 
 import web3 from 'web3'
 const Web3 = new web3()
 
 const ASSET_TYPE_TYPEHASH = Web3.utils.sha3('AssetType(bytes4 assetClass,bytes data)')
-
-const ASSET_TYPEHASH = Web3.utils.sha3(
-    'Asset(AssetType assetType,uint256 value)AssetType(bytes4 assetClass,bytes data)',
-)
-
-const ORDER_TYPEHASH = Web3.utils.sha3(
-    'Order(address maker,Asset makeAsset,address taker,Asset takeAsset,uint256 salt,uint256 start,uint256 end,bytes4 dataType,bytes data)Asset(AssetType assetType,uint256 value)AssetType(bytes4 assetClass,bytes data)',
-)
 
 export function hashKey(order: IEVMOrder) {
     return Web3.utils.soliditySha3(
@@ -45,52 +35,4 @@ function hashAssetType(assetType: IEVMAssetType) {
             ],
         ),
     )
-}
-
-function hashAsset(asset: IEVMAsset) {
-    return Web3.utils.soliditySha3(
-        Web3.eth.abi.encodeParameters(
-            ['bytes32', 'bytes32', 'uint'],
-            [ASSET_TYPEHASH, hashAssetType(asset.assetType), asset.value],
-        ),
-    )
-}
-
-export function hashOrder(order: IEVMOrder) {
-    return Web3.utils.soliditySha3(
-        Web3.eth.abi.encodeParameters(
-            [
-                'bytes32',
-                'address',
-                'bytes32',
-                'address',
-                'bytes32',
-                'uint',
-                'uint',
-                'uint',
-                'bytes4',
-                'bytes32',
-            ],
-            [
-                ORDER_TYPEHASH,
-                order.maker,
-                hashAsset(order.makeAsset),
-                order.taker,
-                hashAsset(order.takeAsset),
-                order.salt,
-                order.start,
-                order.end,
-                order.dataType,
-                Web3.utils.soliditySha3(order.data),
-            ],
-        ),
-    )
-}
-
-export function encode(data: string) {
-    const result = Web3.eth.abi.encodeParameter('tuple(address,uint256)[][]', data)
-    // compared to solidity abi.encode function, web3.eth.abi.encodeParameter adds an additional
-    // 0000000000000000000000000000000000000000000000000000000000000002
-    // its removed before the result is returned
-    return result.replace('0000000000000000000000000000000000000000000000000000000000000002', '')
 }
