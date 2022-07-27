@@ -189,6 +189,21 @@ export enum ChainFullName {
     phat = 'Phantasma Testnet',
 }
 
+export enum ChainCurrency {
+    avalanche = 'AVAX',
+    avalanchet = 'AVAX',
+    bsc = 'BNB',
+    bsct = 'BNB',
+    eth = 'ETH',
+    etht = 'ETH',
+    polygon = 'MATIC',
+    polygont = 'MATIC',
+    n3 = 'GAS',
+    n3t = 'GAS',
+    pha = 'KCAL',
+    phat = 'KCAL',
+}
+
 export enum Chain {
     AVALANCHE = 'avalanche',
     AVALANCHE_TESTNET = 'avalanchet',

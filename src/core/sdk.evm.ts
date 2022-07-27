@@ -17,6 +17,7 @@ import {
     MAINNET_API_URL,
     Chain,
     ChainFullName,
+    ChainCurrency,
     ChainId,
     AddressesByChain,
 } from './constants'
@@ -45,6 +46,7 @@ export class GhostMarketSDK {
     public logger: (arg: string) => void
     private _chainName: Chain
     private _chainFullName: ChainFullName
+    private _chainCurrency: ChainCurrency
     private _chainId: ChainId
     private _isReadonlyProvider: boolean
 
@@ -74,6 +76,7 @@ export class GhostMarketSDK {
         options.chainName = options.chainName || Chain.ETHEREUM
         this._chainName = options.chainName
         this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
+        this._chainCurrency = ChainCurrency[this._chainName as keyof typeof ChainCurrency]
         this._chainId = ChainId[this._chainName as keyof typeof ChainId]
         this.web3 = new Web3(provider)
         const apiConfig = {
@@ -203,7 +206,10 @@ export class GhostMarketSDK {
                     token_contract: items[i].baseContract,
                     token_id: items[i].baseTokenId ?? '',
                     token_amount: baseTokenAmount,
-                    quote_contract: items[i].quoteContract,
+                    quote_contract:
+                        items[i].quoteContract === '0x'
+                            ? this._chainCurrency
+                            : items[i].quoteContract,
                     quote_price: items[i].quotePrice,
                     maker_address: items[i].makerAddress,
                     is_buy_offer: items[i].type === 2,
@@ -447,7 +453,9 @@ export class GhostMarketSDK {
             const priceTotal = BigNumber.from(orderMaker.quotePrice)
             const priceToSend =
                 orderMaker.quoteContract === '0x' && orderMaker.type === 1
-                    ? priceTotal.mul(GHOSTMARKET_TRADE_FEE_BPS).div(10000).toString()
+                    ? priceTotal
+                          .add(priceTotal.mul(GHOSTMARKET_TRADE_FEE_BPS).div(10000))
+                          .toString()
                     : undefined
 
             txObject = {
