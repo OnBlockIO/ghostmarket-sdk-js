@@ -10,9 +10,9 @@ GhostMarket is constantly innovating. This means the underlying API that this SD
 
 * Assets - V2 API
 * Users
-* Collections
+* Collections - V2 API
 * Series
-* Events
+* Events - V2 API
 * Statistics
 * Token URI
 * Metadata
@@ -55,3 +55,5 @@ GhostMarket is constantly innovating. This means the underlying API that this SD
 ## Deprecated
 
 * Assets - V1
+* Events - V1
+* Collections - V1
