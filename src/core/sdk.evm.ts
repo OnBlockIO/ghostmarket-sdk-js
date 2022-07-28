@@ -207,7 +207,7 @@ export class GhostMarketSDK {
                 const nftToList = {
                     chain: this._chainName,
                     token_contract: items[i].baseContract,
-                    token_id: items[i].baseTokenId ?? '',
+                    token_id: items[i].type === 3 ? '' : items[i].baseTokenId,
                     token_amount: baseTokenAmount,
                     quote_contract:
                         items[i].quoteContract === '0x'
