@@ -11,6 +11,7 @@ import {
     ExchangeV2Contract,
     RoyaltiesRegistryContract,
     IncentivesContract,
+    LPStakingContract,
 } from './abi'
 import {
     GHOSTMARKET_TRADE_FEE_BPS,
@@ -1114,10 +1115,10 @@ export class GhostMarketSDK {
             `checkIncentives: checking incentives for address ${accountAddress} on ${this._chainFullName}`,
         )
 
-        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
+        const IncentivesContractAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
-            IncentivesContractAddressAddress,
+            IncentivesContractAddress,
         )
 
         try {
@@ -1125,7 +1126,7 @@ export class GhostMarketSDK {
             return this.callMethod(data, accountAddress)
         } catch (e) {
             throw new Error(
-                `checkIncentives: failed to execute incentives on ${IncentivesContractAddressAddress} with error: ${e}`,
+                `checkIncentives: failed to execute incentives on ${IncentivesContractAddress} with error: ${e}`,
             )
         }
     }
@@ -1146,19 +1147,163 @@ export class GhostMarketSDK {
             throw new Error(`nothing to claim on incentives contract`)
         }
 
-        const IncentivesContractAddressAddress = this._getIncentivesContractAddress(this._chainName)
+        const IncentivesContractAddress = this._getIncentivesContractAddress(this._chainName)
         const IncentivesContractInstance = new this.web3.eth.Contract(
             IncentivesContract,
-            IncentivesContractAddressAddress,
+            IncentivesContractAddress,
         )
 
         try {
             const data = await IncentivesContractInstance.methods.claim()
-            return this.sendMethod(data, txObject.from, IncentivesContractAddressAddress, undefined)
+            return this.sendMethod(data, txObject.from, IncentivesContractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `claimIncentives: failed to execute claim on ${IncentivesContractAddressAddress} with error: ${e}`,
+                `claimIncentives: failed to execute claim on ${IncentivesContractAddress} with error: ${e}`,
             )
+        }
+    }
+
+    /** Check stakes on LP staking contract for address
+     * @param {string} accountAddress address used to check.
+     */
+    public async checkLPStakes(accountAddress: string): Promise<any> {
+        console.log(
+            `checkLPStakes: checking LP stakes for address ${accountAddress} on ${this._chainFullName}`,
+        )
+
+        const LPStakingContractAddress = this._getLPStakingContractAddress(this._chainName)
+        const LPStakingContractInstance = new this.web3.eth.Contract(
+            LPStakingContract,
+            LPStakingContractAddress,
+        )
+
+        try {
+            const data = await LPStakingContractInstance.methods.userInfo(accountAddress)
+            return this.callMethod(data, accountAddress)
+        } catch (e) {
+            throw new Error(
+                `checkLPStakes: failed to execute userInfo on ${LPStakingContractAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Check rewards on LP staking contract for address
+     * @param {string} accountAddress address used to check.
+     */
+    public async checkLPRewards(accountAddress: string): Promise<any> {
+        console.log(
+            `checkLPRewards: checking LP rewards for address ${accountAddress} on ${this._chainFullName}`,
+        )
+
+        const LPStakingContractAddress = this._getLPStakingContractAddress(this._chainName)
+        const LPStakingContractInstance = new this.web3.eth.Contract(
+            LPStakingContract,
+            LPStakingContractAddress,
+        )
+
+        try {
+            const data = await LPStakingContractInstance.methods.calculatePendingRewards(
+                accountAddress,
+            )
+            return this.callMethod(data, accountAddress)
+        } catch (e) {
+            throw new Error(
+                `checkLPRewards: failed to execute calculatePendingRewards on ${LPStakingContractAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Claim LP rewards on LP staking contract for address
+     * @param {TxObject} txObject transaction object to send when calling `claimLPRewards`.
+     */
+    public async claimLPRewards(txObject: TxObject): Promise<any> {
+        console.log(
+            `claimLPRewards: claiming LP rewards for address ${txObject.from} on ${this._chainFullName}`,
+        )
+
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
+
+        const balance = await this.checkLPRewards(txObject.from)
+        if (parseInt(balance) === 0) {
+            throw new Error(`nothing to claim on LP staking contract`)
+        }
+
+        const LPStakingContractAddress = this._getLPStakingContractAddress(this._chainName)
+        const LPStakingContractInstance = new this.web3.eth.Contract(
+            LPStakingContract,
+            LPStakingContractAddress,
+        )
+
+        try {
+            const data = await LPStakingContractInstance.methods.harvest()
+            return this.sendMethod(data, txObject.from, LPStakingContractAddress, undefined)
+        } catch (e) {
+            throw new Error(
+                `claimLPRewards: failed to execute harvest on ${LPStakingContractAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Stake/Unstake LP tokens on LP staking contract for address
+     * @param {string} amount value to stake or unstake.
+     * @param {boolean} isStaking true if staking, or false if unstaking.
+     * @param {TxObject} txObject transaction object to send when calling `stakeLPTokens`.
+     */
+    public async stakeLPTokens(
+        amount: string,
+        isStaking: boolean,
+        txObject: TxObject,
+    ): Promise<any> {
+        console.log(
+            `stakeLPTokens: ${isStaking ? '' : 'un'}staking LP token amount of ${amount} on ${
+                this._chainFullName
+            }`,
+        )
+
+        if (this._isReadonlyProvider)
+            throw new Error(`Can not sign transaction with a read only provider.`)
+
+        const LPTokenContractAddress = this._getLPTokenContractAddress(this._chainName)
+        const LPStakingContractAddress = this._getLPStakingContractAddress(this._chainName)
+        const LPStakingContractInstance = new this.web3.eth.Contract(
+            LPStakingContract,
+            LPStakingContractAddress,
+        )
+
+        if (isStaking) {
+            const balance = await this.checkTokenBalance(LPTokenContractAddress, txObject.from)
+
+            const amountDiff = BigNumber.from(amount)
+            const balanceDiff = BigNumber.from(balance.toString())
+            const diff = amountDiff.sub(balanceDiff)
+            if (diff.gt(BigNumber.from(0))) {
+                throw new Error(
+                    `Not enough balance to stake LP tokens, missing: ${BigNumber.from(diff)}`,
+                )
+            }
+        }
+
+        if (isStaking) {
+            try {
+                const data = await LPStakingContractInstance.methods.deposit()
+                return this.sendMethod(data, txObject.from, LPStakingContractAddress, amount)
+            } catch (e) {
+                throw new Error(
+                    `stakeLPTokens: Failed to execute deposit on ${LPStakingContractAddress} with error:
+                    ${e}`,
+                )
+            }
+        } else {
+            try {
+                const data = await LPStakingContractInstance.methods.withdraw(amount)
+                return this.sendMethod(data, txObject.from, LPStakingContractAddress, undefined)
+            } catch (e) {
+                throw new Error(
+                    `stakeLPTokens: failed to execute withdraw on ${LPStakingContractAddress} with error:
+                    ${e}`,
+                )
+            }
         }
     }
 
@@ -1178,6 +1323,20 @@ export class GhostMarketSDK {
         } catch (e) {
             throw new Error(`signData: Failed to execute sign with error: ${e}`)
         }
+    }
+
+    /** Get LP token contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getLPTokenContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_TOKEN!
+    }
+
+    /** Get LP staking contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getLPStakingContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_STAKING!
     }
 
     /** Get Incentives contract address

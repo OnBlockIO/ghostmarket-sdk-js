@@ -39,8 +39,11 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Accept offer](#accept-offer)
     - [Getting contract approval](#getting-contract-approval)
     - [Wrap token](#wrap-token)
+    - [Getting LP stakes](#getting-lp-stakes)
+    - [Getting LP rewards](#getting-lp-rewards)
+    - [Stake LP tokens](#stake-lp-tokens)
     - [Approve contract](#approve-contract)
-    - [Checking native balance](#checking-native-balance)
+    - [Getting native balance](#getting-native-balance)
     - [Transfer ERC20 token](#transfer-erc20-token)
     - [Transfer ERC721 NFT](#transfer-erc721-nft)
     - [Transfer ERC1155 NFT](#transfer-erc1155-nft)
@@ -252,7 +255,7 @@ console.info(approval)
 const incentives = await gmSDK.checkIncentives(address)
 const availableIncentives = incentives ? incentives.availableIncentives : 0 // EVM
 const availableIncentives = incentives[5] ? incentives[5].value : 0 // Neo N3
-console.info(`available incentives: ${availableIncentives}`)
+console.info(availableIncentives)
 ```
 
 ### Set contract royalties
@@ -437,6 +440,33 @@ const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})
 console.info(wrap)
 ```
 
+### Getting LP stakes
+```js
+const stakes = await gmSDK.checkLPStakes(address)
+const stakesDetails = stakes ? stakes[0]
+console.info(stakesDetails)
+```
+
+### Getting LP rewards
+```js
+const rewards = await gmSDK.checkLPRewards(address)
+console.info(rewards)
+```
+
+### Claim LP rewards
+```js
+const claim = await gmSDK.claimLPRewards({from: address})
+console.info(claim)
+```
+
+### Stake LP tokens
+```js
+const amount = '1' // in wei.
+const isStaking = true // set to false to unstake.
+const stake = await gmSDK.stakeLPTokens(amount, isStaking, {from: address})
+console.info(stake)
+```
+
 ### Approve contract
 ```js
 const contract = '0x....'
@@ -444,7 +474,7 @@ const approval = await gmSDK.approveContract(contract, {from: address})
 console.info(approval)
 ```
 
-### Checking native balance
+### Getting native balance
 ```js
 const balance = await gmSDK.checkBalance(contract)
 console.info(balance)
