@@ -635,8 +635,13 @@ export class GhostMarketSDK {
     /** Approve NFT Contract
      * @param {string} contractAddress nft contract to approve.
      * @param {TxObject} txObject transaction object to send when calling `approveContract`.
+     * @param {string} proxyAddress contract to give approval to.
      */
-    public async approveContract(contractAddress: string, txObject: TxObject): Promise<any> {
+    public async approveContract(
+        contractAddress: string,
+        txObject: TxObject,
+        proxyAddress?: string,
+    ): Promise<any> {
         console.log(
             `approveContract: approve nft contract ${contractAddress} on ${this._chainFullName}`,
         )
@@ -650,7 +655,8 @@ export class GhostMarketSDK {
         if (!supportsERC721 && !supportsERC155)
             throw new Error(`contract: ${contractAddress} does not support ERC721 or ERC1155`)
 
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
+        const proxyContractAddress =
+            proxyAddress ?? this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -669,8 +675,13 @@ export class GhostMarketSDK {
     /** Approve Token Contract
      * @param {string} contractAddress token contract to approve.
      * @param {TxObject} txObject transaction object to send when calling `approveToken`.
+     * @param {string} proxyAddress contract to give approval to - optional default to ghostmarket proxy.
      */
-    public async approveToken(contractAddress: string, txObject: TxObject): Promise<any> {
+    public async approveToken(
+        contractAddress: string,
+        txObject: TxObject,
+        proxyAddress?: string,
+    ): Promise<any> {
         console.log(
             `approveToken: approve token contract ${contractAddress} on ${this._chainFullName}`,
         )
@@ -678,7 +689,8 @@ export class GhostMarketSDK {
         if (this._isReadonlyProvider)
             throw new Error(`Can not sign transaction with a read only provider.`)
 
-        const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
+        const proxyContractAddress =
+            proxyAddress ?? this._getERC20ProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -692,10 +704,12 @@ export class GhostMarketSDK {
     /** Check NFT Contract Approval
      * @param {string} contractAddress nft contract to check approval.
      * @param {string} accountAddress address used to check.
+     * @param {string} proxyAddress contract which was given approval - optional default to ghostmarket proxy.
      */
     public async checkContractApproval(
         contractAddress: string,
         accountAddress: string,
+        proxyAddress?: string,
     ): Promise<any> {
         console.log(
             `checkContractApproval: check nft contract ${contractAddress} approval on ${this._chainFullName}`,
@@ -707,7 +721,8 @@ export class GhostMarketSDK {
         if (!supportsERC721 && !supportsERC1155)
             throw new Error(`contract: ${contractAddress} does not support ERC721 or ERC1155`)
 
-        const proxyContractAddress = this._getNFTProxyContractAddress(this._chainName)
+        const proxyContractAddress =
+            proxyAddress ?? this._getNFTProxyContractAddress(this._chainName)
         const ContractInstance = new this.web3.eth.Contract(ERC721Contract, contractAddress)
 
         try {
@@ -727,13 +742,19 @@ export class GhostMarketSDK {
     /** Check ERC20 Token Contract Approval
      * @param {string} contractAddress token contract to check approval.
      * @param {string} accountAddress address used to check.
+     * @param {string} proxyAddress contract which was given approval - optional default to ghostmarket proxy.
      */
-    public async checkTokenApproval(contractAddress: string, accountAddress: string): Promise<any> {
+    public async checkTokenApproval(
+        contractAddress: string,
+        accountAddress: string,
+        proxyAddress?: string,
+    ): Promise<any> {
         console.log(
             `checkTokenApproval: check token contract ${contractAddress} approval for ${accountAddress} on ${this._chainFullName}`,
         )
 
-        const proxyContractAddress = this._getERC20ProxyContractAddress(this._chainName)
+        const proxyContractAddress =
+            proxyAddress ?? this._getERC20ProxyContractAddress(this._chainName)
         const ERC20ContractInstance = new this.web3.eth.Contract(
             ERC20WrappedContract,
             contractAddress,
