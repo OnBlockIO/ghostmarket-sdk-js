@@ -14,6 +14,7 @@ export interface IAddressIncentive {
     userVerified: boolean
     isCurrentUser?: boolean
     lastUpdate: number
+    wtFlagged: boolean
 }
 
 export interface IAddressIncentiveResults {
