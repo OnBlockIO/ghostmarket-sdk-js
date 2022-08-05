@@ -225,11 +225,11 @@ export class GhostMarketN3SDK {
             const endDateFormatted =
                 item.endDate === null || !item.endDate ? 0 : new Date(item.endDate).getTime()
 
-            const maxAllowedDate = new Date().getTime() + 2592000000 // MSECONDS_PER_30_DAYS
+            const maxAllowedDate = new Date().getTime() + 2592000000 * 6 // MSECONDS_PER_180_DAYS
 
             if (endDateFormatted > maxAllowedDate) {
                 throw new Error(
-                    `Listings must have an end date, with a maximum of 30 days from now`,
+                    `Listings must have an end date, with a maximum of 180 days from now`,
                 )
             }
 
@@ -421,10 +421,10 @@ export class GhostMarketN3SDK {
         const endDateFormatted =
             item.endDate === null || !item.endDate ? 0 : new Date(item.endDate).getTime()
 
-        const maxAllowedDate = new Date().getTime() + 2592000000 // MSECONDS_PER_30_DAYS
+        const maxAllowedDate = new Date().getTime() + 2592000000 * 6 // MSECONDS_PER_180_DAYS
 
         if (item.auctionType !== 2 && endDateFormatted > maxAllowedDate) {
-            throw new Error(`Auctions must have an end date, with a maximum of 30 days from now`)
+            throw new Error(`Auctions must have an end date, with a maximum of 180 days from now`)
         }
 
         const argsListToken = [
@@ -603,10 +603,10 @@ export class GhostMarketN3SDK {
             const endDateFormatted =
                 item.endDate === null || !item.endDate ? 0 : new Date(item.endDate).getTime()
 
-            const maxAllowedDate = new Date().getTime() + 2592000000 // MSECONDS_PER_30_DAYS
+            const maxAllowedDate = new Date().getTime() + 2592000000 * 6 // MSECONDS_PER_180_DAYS
 
             if (endDateFormatted > maxAllowedDate) {
-                throw new Error(`Offers must have an end date, with a maximum of 30 days from now`)
+                throw new Error(`Offers must have an end date, with a maximum of 180 days from now`)
             }
 
             const argsPlaceOffer = [
