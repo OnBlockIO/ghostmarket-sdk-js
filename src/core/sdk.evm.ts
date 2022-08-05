@@ -159,6 +159,20 @@ export class GhostMarketSDK {
                     : now
                 const endDate = items[i].endDate ?? 0
 
+                const maxAllowedDate = new Date().getTime() + 15552000 // SECONDS_PER_180_DAYS
+
+                if (endDate > maxAllowedDate) {
+                    throw new Error(
+                        `${
+                            items[i].type === 1
+                                ? 'listing'
+                                : items[i].type === 2
+                                ? 'offer'
+                                : 'collection offer'
+                        } must have an end date, with a maximum of 180 days from now`,
+                    )
+                }
+
                 const order = Order(
                     items[i].makerAddress,
                     items[i].type === 2 || items[i].type === 3
