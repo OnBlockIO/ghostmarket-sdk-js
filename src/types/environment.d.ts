@@ -4,6 +4,7 @@ declare global {
             GM_API_KEY: string
             INFURA_API_KEY: string
             PRIVATE_KEY: string
+            MNEMONIC: string
         }
     }
 }
