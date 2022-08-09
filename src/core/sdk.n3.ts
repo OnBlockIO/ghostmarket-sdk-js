@@ -256,7 +256,7 @@ export class GhostMarketN3SDK {
                     },
                     {
                         type: 'ByteArray', // ByteString tokenId
-                        value: numberToByteString(item.tokenId),
+                        value: item.tokenId,
                     },
                     {
                         type: 'Integer', // BigInteger price
@@ -442,7 +442,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'ByteArray', // ByteString tokenId
-                value: numberToByteString(item.tokenId),
+                value: item.tokenId,
             },
             {
                 type: 'Integer', // BigInteger price
@@ -624,7 +624,7 @@ export class GhostMarketN3SDK {
                 },
                 {
                     type: 'ByteArray', // ByteString tokenId
-                    value: item.tokenId ? numberToByteString(item.tokenId) : '', // set to null for collection offer
+                    value: item.tokenId ? item.tokenId : '', // set to null for collection offer
                 },
                 {
                     type: 'Integer', // BigInteger price
@@ -687,7 +687,7 @@ export class GhostMarketN3SDK {
             },
             {
                 type: 'ByteArray', // ByteString tokenId
-                value: item.tokenId ? numberToByteString(item.tokenId) : '',
+                value: item.tokenId ? item.tokenId : '',
             },
         ]
 
@@ -1124,7 +1124,7 @@ export class GhostMarketN3SDK {
                     },
                     {
                         type: 'ByteArray', // ByteArray tokenId
-                        value: numberToByteString(item.tokenId),
+                        value: item.tokenId,
                     },
                     {
                         type: 'String', // data
@@ -1184,7 +1184,7 @@ export class GhostMarketN3SDK {
                 args: [
                     {
                         type: 'ByteArray', // ByteArray tokenId
-                        value: numberToByteString(item.tokenId),
+                        value: item.tokenId,
                     },
                 ] as IArgs[],
             })
@@ -1576,7 +1576,7 @@ export class GhostMarketN3SDK {
         const argsCheckOwnerOf = [
             {
                 type: 'ByteArray', // ByteArray tokenId
-                value: numberToByteString(tokenId),
+                value: tokenId,
             },
         ] as IArgs[]
 
