@@ -238,7 +238,7 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
     describe('Token Metadata', () => {
         it('should get Metadata for a token', async () => {
             const tokenQueryData = {
-                token_id: '825243442',
+                token_id: 'MjcwMQ==',
                 contract: '0x76a8f8a7a901b29a33013b469949f4b08db15756',
                 chain: 'n3',
             }
@@ -265,15 +265,13 @@ describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
             try {
                 // non existent token id passed
                 const tokenQueryData = {
-                    token_id: '3618701890081213769',
+                    token_id: 'SU1TQjI2ODI=',
                     contract: '0xaa4fb927b3fe004e689a278d188689c9f050a8b2',
                     chain: 'n3',
                 }
                 await ghostmarketAPI.getTokenURI(tokenQueryData)
             } catch (error: any) {
-                expect(error.toString()).toInclude(
-                    'NFT with token id 3618701890081213769 has no URI.',
-                )
+                expect(error.toString()).toInclude('NFT with token id SU1TQjI2ODI= has no URI.')
             }
         })
     })
