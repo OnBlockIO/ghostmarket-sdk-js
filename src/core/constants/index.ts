@@ -146,6 +146,8 @@ export const N3_MAINNET_ADDRESSES: ContractAddresses = {
     GHOST_NEP11: '0x577a51f7d39162c9de1db12a6b319c848e4c54e5',
     GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
+    LP_TOKEN: '0xf23221a92c29beffbea6e46c681c8380d9794579',
+    LP_STAKING: '0xd1a9f78e1940f6322fef4df2340a963a9ec46f63',
 }
 
 export const N3_TESTNET_ADDRESSES: ContractAddresses = {
@@ -155,6 +157,8 @@ export const N3_TESTNET_ADDRESSES: ContractAddresses = {
     GHOST_NEP11: '0xbab2e190b261296644e8c75a58fe5d8a988c0808',
     GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
+    LP_TOKEN: '',
+    LP_STAKING: '',
 }
 
 export const PHA_MAINNET_CONTRACTS = {

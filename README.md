@@ -29,6 +29,10 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Set contract royalties](#set-contract-royalties)
     - [Approve token](#approve-token)
     - [Claiming incentives](#claiming-incentives)
+    - [Getting LP stakes](#getting-lp-stakes)
+    - [Getting LP rewards](#getting-lp-rewards)
+    - [Claiming LP rewards](#claiming-lp-rewards)
+    - [Stake LP tokens](#stake-lp-tokens)
     - [Signing Data](#signing-data)
 - [Usage EVM](#usage-evm)
     - [Buying NFT](#buying-nft)
@@ -39,9 +43,6 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
     - [Accept offer](#accept-offer)
     - [Getting contract approval](#getting-contract-approval)
     - [Wrap token](#wrap-token)
-    - [Getting LP stakes](#getting-lp-stakes)
-    - [Getting LP rewards](#getting-lp-rewards)
-    - [Stake LP tokens](#stake-lp-tokens)
     - [Approve contract](#approve-contract)
     - [Getting native balance](#getting-native-balance)
     - [Transfer ERC20 token](#transfer-erc20-token)
@@ -279,6 +280,32 @@ const claim = await gmSDK.claimIncentives({from: address})
 console.info(claim)
 ```
 
+### Getting LP stakes
+```js
+const stakes = await gmSDK.checkLPStakes(address)
+console.info(stakesDetails)
+```
+
+### Getting LP rewards
+```js
+const rewards = await gmSDK.checkLPRewards(address)
+console.info(rewards)
+```
+
+### Claiming LP rewards
+```js
+const claim = await gmSDK.claimLPRewards({from: address})
+console.info(claim)
+```
+
+### Stake LP tokens
+```js
+const amount = '1' // in wei (evm) or biginteger format (n3).
+const isStaking = true // set to false to unstake.
+const stake = await gmSDK.stakeLPTokens(amount, isStaking, {from: address})
+console.info(stake)
+```
+
 ### Signing data
 ```js
 const message = 'signing stuff'
@@ -438,33 +465,6 @@ const amount = '1' // in wei.
 const isWrap = true // set to false to unwrap.
 const wrap = await gmSDK.wrapToken(amount, isWrap, {from: address})
 console.info(wrap)
-```
-
-### Getting LP stakes
-```js
-const stakes = await gmSDK.checkLPStakes(address)
-const stakesDetails = stakes ? stakes[0]
-console.info(stakesDetails)
-```
-
-### Getting LP rewards
-```js
-const rewards = await gmSDK.checkLPRewards(address)
-console.info(rewards)
-```
-
-### Claim LP rewards
-```js
-const claim = await gmSDK.claimLPRewards({from: address})
-console.info(claim)
-```
-
-### Stake LP tokens
-```js
-const amount = '1' // in wei.
-const isStaking = true // set to false to unstake.
-const stake = await gmSDK.stakeLPTokens(amount, isStaking, {from: address})
-console.info(stake)
 ```
 
 ### Approve contract

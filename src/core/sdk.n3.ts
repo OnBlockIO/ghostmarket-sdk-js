@@ -36,6 +36,8 @@ export class GhostMarketN3SDK {
     private _chainFullName: ChainFullName
     private _contractExchangeAddress: string
     private _contractIncentivesAddress: string
+    private _contractLPStakingAddress: string
+    private _contractLPTokenAddress: string
     private _contractNEP11Address: string
     private _contractManagementAddress: string
 
@@ -68,6 +70,8 @@ export class GhostMarketN3SDK {
         this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
         this._contractExchangeAddress = this._getExchangeContractAddress(this._chainName)
         this._contractIncentivesAddress = this._getIncentivesContractAddress(this._chainName)
+        this._contractLPStakingAddress = this._getLPStakingContractAddress(this._chainName)
+        this._contractLPTokenAddress = this._getLPTokenContractAddress(this._chainName)
         this._contractNEP11Address = this._getNEP11GhostContractAddress(this._chainName)
         this._contractManagementAddress = this._getManagementContractAddress(this._chainName)
         this._privateKey = options.privateKey
@@ -1484,6 +1488,231 @@ export class GhostMarketN3SDK {
         }
     }
 
+    /** Check stakes on LP staking contract for address
+     * @param {string} accountAddress address used to check.
+     */
+    public async checkLPStakes(address: string): Promise<any> {
+        console.log(
+            `checkLPStakes: checking LP stakes for address ${address} on ${this._chainFullName}`,
+        )
+
+        const argsCheckLPStakes = [
+            {
+                type: 'Hash160',
+                value: getScriptHashFromAddress(address),
+            },
+            {
+                type: 'Hash160',
+                value: this._contractLPTokenAddress,
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(address),
+                scopes: 1,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this._contractLPStakingAddress,
+            operation: Method.READ_LP_STAKES,
+            args: argsCheckLPStakes,
+            signers,
+        }
+
+        try {
+            const response = await this.invokeRead(invokeParams)
+            if (response.exception) return `checkLPStakes exception: ${response.exception}`
+            return (
+                response.stack &&
+                response.stack[0] &&
+                response.stack[0].value &&
+                response.stack[0].value / Math.pow(10, 8)
+            )
+        } catch (e) {
+            throw new Error(
+                `checkLPStakes: failed to execute ${Method.READ_LP_STAKES} on ${this._contractLPStakingAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Check rewards on LP staking contract for address
+     * @param {string} accountAddress address used to check.
+     */
+    public async checkLPRewards(accountAddress: string): Promise<any> {
+        console.log(
+            `checkLPRewards: checking LP rewards for address ${accountAddress} on ${this._chainFullName}`,
+        )
+
+        const argsCheckLPRewards = [
+            {
+                type: 'Hash160',
+                value: getScriptHashFromAddress(accountAddress),
+            },
+            {
+                type: 'Hash160',
+                value: this._contractLPTokenAddress,
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(accountAddress),
+                scopes: 1,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this._contractLPStakingAddress,
+            operation: Method.READ_LP_REWARDS,
+            args: argsCheckLPRewards,
+            signers,
+        }
+
+        try {
+            const response = await this.invokeRead(invokeParams)
+            if (response.exception) return `checkLPRewards exception: ${response.exception}`
+            return response.stack && response.stack[0] && response.stack[0].value
+        } catch (e) {
+            throw new Error(
+                `checkLPRewards: failed to execute ${Method.READ_LP_REWARDS} on ${this._contractLPStakingAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Claim LP rewards on LP staking contract for address
+     * @param {TxObject} txObject transaction object to send when calling `claimLPRewards`.
+     */
+    public async claimLPRewards(txObject: TxObject): Promise<any> {
+        console.log(`claimLPRewards: claiming LP Rewards on ${this._chainFullName}`)
+
+        const balance = await this.checkLPRewards(txObject.from)
+        if (parseInt(balance) === 0) {
+            throw new Error(`nothing to claim on LP staking contract`)
+        }
+
+        const argsClaimLPRewards = [
+            {
+                type: 'Hash160', // UInt160 sender
+                value: txObject.from,
+            },
+            {
+                type: 'Hash160', // UInt160 token
+                value: this._contractLPTokenAddress,
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(txObject.from),
+                scopes: 1,
+            },
+        ]
+
+        const invokeParams = {
+            scriptHash: this._contractLPStakingAddress,
+            operation: Method.CLAIM_LP_INCENTIVES,
+            args: argsClaimLPRewards,
+            signers,
+            networkFee: txObject.networkFee,
+            systemFee: txObject.systemFee,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            throw new Error(
+                `claimLPRewards: failed to execute ${Method.CLAIM_LP_INCENTIVES} on ${this._contractLPStakingAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Stake/Unstake LP tokens on LP staking contract for address
+     * @param {string} amount value to stake or unstake.
+     * @param {boolean} isStaking true if staking, or false if unstaking.
+     * @param {TxObject} txObject transaction object to send when calling `stakeLPTokens`.
+     */
+    public async stakeLPTokens(
+        amount: string,
+        isStaking: boolean,
+        txObject: TxObject,
+    ): Promise<any> {
+        console.log(
+            `stakeLPTokens: ${isStaking ? '' : 'un'}staking LP tokens on ${this._chainFullName}`,
+        )
+
+        const argsStakeLP = [
+            {
+                type: 'Hash160', // UInt160 sender
+                value: getScriptHashFromAddress(txObject.from),
+            },
+            {
+                type: 'Hash160', // UInt160 token
+                value: this._contractLPStakingAddress,
+            },
+            {
+                type: 'Integer', // Integer amount
+                value: (parseInt(amount) / Math.pow(10, 10)).toString(),
+            },
+            {
+                type: 'Any', // Any
+                value: '',
+            },
+        ] as IArgs[]
+
+        const argsUnstakeLP = [
+            {
+                type: 'Hash160', // UInt160 sender
+                value: getScriptHashFromAddress(txObject.from),
+            },
+            {
+                type: 'Integer', // Integer amount
+                value: (parseInt(amount) / Math.pow(10, 10)).toString(),
+            },
+            {
+                type: 'Hash160', // UInt160 token
+                value: this._contractLPTokenAddress,
+            },
+        ] as IArgs[]
+
+        const allowedContracts = [this._contractLPStakingAddress, this._contractLPTokenAddress]
+
+        const signers = isStaking
+            ? [
+                  {
+                      account: getScriptHashFromAddress(txObject.from),
+                      scopes: 16,
+                      allowedContracts,
+                  },
+              ]
+            : [
+                  {
+                      account: getScriptHashFromAddress(txObject.from),
+                      scopes: 1,
+                  },
+              ]
+
+        const invokeParams = {
+            scriptHash: isStaking ? this._contractLPTokenAddress : this._contractLPStakingAddress,
+            operation: isStaking ? Method.STAKE_LP : Method.UNSTAKE_LP,
+            args: isStaking ? argsStakeLP : argsUnstakeLP,
+            signers,
+            networkFee: txObject.networkFee,
+            systemFee: txObject.systemFee,
+        }
+
+        try {
+            return this.invoke(invokeParams)
+        } catch (e) {
+            throw new Error(
+                `stakeLPTokens: failed to execute ${
+                    isStaking ? Method.STAKE_LP : Method.UNSTAKE_LP
+                } on ${
+                    isStaking ? this._contractLPTokenAddress : this._contractLPStakingAddress
+                } with error: ${e}`,
+            )
+        }
+    }
+
     /** Sign Data
      * @param {string} dataToSign data to sign.
      */
@@ -1525,6 +1754,20 @@ export class GhostMarketN3SDK {
      */
     private _getIncentivesContractAddress(chainName: string): string {
         return AddressesByChain[chainName as keyof typeof AddressesByChain].INCENTIVES
+    }
+
+    /** Get LP Staking contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getLPStakingContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_STAKING!
+    }
+
+    /** Get LP Token contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getLPTokenContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_TOKEN!
     }
 
     /** Get NEP-11 Ghost contract address

@@ -111,6 +111,11 @@ export enum Method {
     CANCEL_OFFER = 'cancelOffer',
     GET_CONTRACT = 'getContract',
     OWNER_OF = 'ownerOf',
+    READ_LP_STAKES = 'getStakingAmount',
+    READ_LP_REWARDS = 'checkFLM',
+    CLAIM_LP_INCENTIVES = 'claimFLM',
+    STAKE_LP = 'transfer',
+    UNSTAKE_LP = 'refund',
 }
 
 export enum Standard {
