@@ -17,6 +17,7 @@ export interface ContractAddresses {
     GM_TOKEN: string
     LP_TOKEN?: string
     LP_STAKING?: string
+    DEX?: string
     ROYALTIES?: string
     PROXY_NFT?: string
     PROXY_ERC20?: string
@@ -148,17 +149,19 @@ export const N3_MAINNET_ADDRESSES: ContractAddresses = {
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
     LP_TOKEN: '0xf23221a92c29beffbea6e46c681c8380d9794579',
     LP_STAKING: '0xd1a9f78e1940f6322fef4df2340a963a9ec46f63',
+    DEX: '0xf970f4ccecd765b63732b821775dc38c25d74f23',
 }
 
 export const N3_TESTNET_ADDRESSES: ContractAddresses = {
-    EXCHANGE: '0xa4276772f429fc31032c4cd8bf3c98c806318f3e',
-    INCENTIVES: '0x74055da4ae1d7a1ee0d39175a1b9a6cb00e15763',
-    GM_TOKEN: '0x0e07f8d653133c023b4168699f38182956c58968',
-    GHOST_NEP11: '0xbab2e190b261296644e8c75a58fe5d8a988c0808',
+    EXCHANGE: '0xb531a2ec582c2806023c63cba7c3e752a459afaa',
+    INCENTIVES: '0x282b30f05be6c01b3bc65c0a91686ea8903db4e4',
+    GM_TOKEN: '0xc13b05fc0e6fe3cc681e29a574557784b4f79aff',
+    GHOST_NEP11: '0xc414275b3eca3969c4ca49f6a1fb67013fbe0544',
     GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
     LP_TOKEN: '',
     LP_STAKING: '',
+    DEX: '0x3784466a919381754c7adb2538d9e76779a2e283',
 }
 
 export const PHA_MAINNET_CONTRACTS = {
