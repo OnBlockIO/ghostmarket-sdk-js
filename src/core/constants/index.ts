@@ -15,6 +15,7 @@ export interface ContractAddresses {
     EXCHANGE: string
     INCENTIVES: string
     GM_TOKEN: string
+    FLM_TOKEN?: string
     LP_TOKEN?: string
     LP_STAKING?: string
     DEX?: string
@@ -144,6 +145,7 @@ export const N3_MAINNET_ADDRESSES: ContractAddresses = {
     EXCHANGE: '0xcc638d55d99fc81295daccbaf722b84f179fb9c4',
     INCENTIVES: '0x77ea91034026654ba85ab0042dcc43b91ac6e442',
     GM_TOKEN: '0x9b049f1283515eef1d3f6ac610e1595ed25ca3e9',
+    FLM_TOKEN: '0xf0151f528127558851b39c2cd8aa47da7418ab28',
     GHOST_NEP11: '0x577a51f7d39162c9de1db12a6b319c848e4c54e5',
     GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
@@ -156,6 +158,7 @@ export const N3_TESTNET_ADDRESSES: ContractAddresses = {
     EXCHANGE: '0xb531a2ec582c2806023c63cba7c3e752a459afaa',
     INCENTIVES: '0x282b30f05be6c01b3bc65c0a91686ea8903db4e4',
     GM_TOKEN: '0xc13b05fc0e6fe3cc681e29a574557784b4f79aff',
+    FLM_TOKEN: '0x1415ab3b409a95555b77bc4ab6a7d9d7be0eddbd',
     GHOST_NEP11: '0xc414275b3eca3969c4ca49f6a1fb67013fbe0544',
     GAS_TOKEN: '0xd2a4cff31913016155e38e474a2c06d08be276cf',
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',

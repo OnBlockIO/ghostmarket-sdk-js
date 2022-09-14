@@ -116,6 +116,7 @@ export enum Method {
     CLAIM_LP_INCENTIVES = 'claimFLM',
     STAKE_LP = 'transfer',
     UNSTAKE_LP = 'refund',
+    SWAP_TOKEN_OUT_FOR_TOKEN_IN = 'swapTokenOutForTokenIn',
 }
 
 export enum Standard {

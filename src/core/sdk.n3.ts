@@ -4,7 +4,13 @@ import { numberToByteString, getScriptHashFromAddress, b64EncodeUnicode } from '
 import { u, wallet } from '@cityofzion/neon-js'
 import { BigNumber } from '@ethersproject/bignumber'
 import { N3PrivateProvider } from '../utils/n3/N3PrivateProvider'
-import { MAINNET_API_URL, Chain, ChainFullName, AddressesByChain } from './constants'
+import {
+    MAINNET_API_URL,
+    Chain,
+    ChainFullName,
+    AddressesByChain,
+    GHOSTMARKET_TRADE_FEE_BPS,
+} from './constants'
 import { MAX_INT_255, NULL_ADDRESS_N3 } from './constants/n3'
 import {
     IBuyItem,
@@ -40,6 +46,8 @@ export class GhostMarketN3SDK {
     private _contractLPTokenAddress: string
     private _contractNEP11Address: string
     private _contractManagementAddress: string
+    private _contractDexAddress: string
+    private _contractFlmAddress: string
 
     /**
      * Your instance of GhostMarket.
@@ -74,6 +82,8 @@ export class GhostMarketN3SDK {
         this._contractLPTokenAddress = this._getLPTokenContractAddress(this._chainName)
         this._contractNEP11Address = this._getNEP11GhostContractAddress(this._chainName)
         this._contractManagementAddress = this._getManagementContractAddress(this._chainName)
+        this._contractDexAddress = this._getDexContractAddress(this._chainName)
+        this._contractFlmAddress = this._getFlmContractAddress(this._chainName)
         this._privateKey = options.privateKey
         this.provider = provider || 'private'
         const apiConfig = {
@@ -90,11 +100,41 @@ export class GhostMarketN3SDK {
 
     /** Buy or cancel one or more NFT(s)
      * @param {IBuyItem[]} items details.
+     * @param {string} fromDesiredQuoteHash quote currency hash to use if different from the sale.
      * @param {TxObject} txObject transaction object to send when calling `buyMultiple`.
      */
-    public async buyMultiple(items: IBuyItem[], txObject: TxObject): Promise<any> {
-        const allowedContracts = [this._contractExchangeAddress.substring(2)]
+    public async buyMultiple(
+        items: IBuyItem[],
+        fromDesiredQuoteHash: string,
+        txObject: TxObject,
+    ): Promise<any> {
+        const allowedContracts = [this._contractExchangeAddress]
         const argsBuyMultiple = []
+
+        // auto convert if fromDesiredQuoteHash is passed
+        if (fromDesiredQuoteHash) {
+            const priceNFTFormatted = items[0].price
+            const feeMultiplier = GHOSTMARKET_TRADE_FEE_BPS
+            const feeAmount = BigNumber.from(priceNFTFormatted)
+                .mul(BigNumber.from(feeMultiplier))
+                .div(10000)
+                .toNumber()
+            const toPrice = feeAmount
+                ? BigNumber.from(priceNFTFormatted).add(feeAmount)
+                : priceNFTFormatted
+            const dexCallResults = this.addCallSwapDexAmountOut(
+                txObject.from,
+                items[0].quoteContract,
+                fromDesiredQuoteHash,
+                toPrice.toString(),
+            )
+            for (let i = 0; i < dexCallResults.scopes.length; i++) {
+                if (!allowedContracts.includes(dexCallResults.scopes[i])) {
+                    allowedContracts.push(dexCallResults.scopes[i])
+                }
+                argsBuyMultiple.push(dexCallResults.invokes)
+            }
+        }
 
         for (let i = 0; i < items.length; i++) {
             const item = items[i]
@@ -119,7 +159,7 @@ export class GhostMarketN3SDK {
                     ] as IArgs[],
                 })
             } else {
-                const quoteContract = item.quoteContract.substring(2)
+                const quoteContract = item.quoteContract
                 if (!allowedContracts.includes(quoteContract)) {
                     allowedContracts.push(quoteContract)
                 }
@@ -192,7 +232,7 @@ export class GhostMarketN3SDK {
             }`,
         )
 
-        const allowedContracts = [this._contractExchangeAddress.substring(2)]
+        const allowedContracts = [this._contractExchangeAddress]
 
         const argsListTokenMultiple = []
 
@@ -237,7 +277,7 @@ export class GhostMarketN3SDK {
                 )
             }
 
-            const baseContract = item.baseContract.substring(2)
+            const baseContract = item.baseContract
             if (!allowedContracts.includes(baseContract)) {
                 allowedContracts.push(baseContract)
             }
@@ -315,41 +355,75 @@ export class GhostMarketN3SDK {
 
     /** Place Bid on NFT Auction
      * @param {IBidItem} item details.
-     * @param {TxObject} txObject transaction object to send when calling `buyAuction`.
+     * @param {string} fromDesiredQuoteHash quote currency hash to use if different from the sale.
+     * @param {TxObject} txObject transaction object to send when calling `bidAuction`.
      */
-    public async bidAuction(item: IBidItem, txObject: TxObject): Promise<any> {
+    public async bidAuction(
+        item: IBidItem,
+        fromDesiredQuoteHash: string,
+        txObject: TxObject,
+    ): Promise<any> {
         console.log(`bidAuction: bidding on nft on ${this._chainFullName}`)
 
         const currentBidFormatted = item.bidPrice || 0
+
+        const argsBidToken = []
+
+        const allowedContracts = [this._contractExchangeAddress, item.quoteContract]
+
+        // auto convert if fromDesiredQuoteHash is passed
+        if (fromDesiredQuoteHash) {
+            const priceNFTFormatted = item.bidPrice!
+            const feeMultiplier = GHOSTMARKET_TRADE_FEE_BPS
+            const feeAmount = BigNumber.from(priceNFTFormatted)
+                .mul(BigNumber.from(feeMultiplier))
+                .div(10000)
+                .toNumber()
+            const toPrice = feeAmount
+                ? BigNumber.from(priceNFTFormatted).add(feeAmount)
+                : priceNFTFormatted
+            const dexCallResults = this.addCallSwapDexAmountOut(
+                txObject.from,
+                item.quoteContract,
+                fromDesiredQuoteHash,
+                toPrice.toString(),
+            )
+            for (let i = 0; i < dexCallResults.scopes.length; i++) {
+                if (!allowedContracts.includes(dexCallResults.scopes[i])) {
+                    allowedContracts.push(dexCallResults.scopes[i])
+                }
+                argsBidToken.push(dexCallResults.invokes)
+            }
+        }
 
         const balance = await this.checkTokenBalance(item.quoteContract, txObject.from)
 
         const amountDiff = BigNumber.from(currentBidFormatted.toString())
         const balanceDiff = BigNumber.from(balance.toString())
         const diff = amountDiff.sub(balanceDiff)
-        if (diff.gt(BigNumber.from(0))) {
+        if (diff.gt(BigNumber.from(0)) && !fromDesiredQuoteHash) {
+            // only checked if fromDesiredQuoteHash not passed
             throw new Error(`Not enough balance to bid on NFT, missing: ${diff}`)
         }
 
-        const argsBidToken = [
-            {
-                type: 'Hash160', // UInt160 from
-                value: getScriptHashFromAddress(txObject.from),
-            },
-            {
-                type: 'ByteArray', // ByteString auctionId
-                value: numberToByteString(item.contractAuctionId.toString()),
-            },
-            {
-                type: 'Integer', // BigInteger price
-                value: currentBidFormatted,
-            },
-        ] as IArgs[]
-
-        const allowedContracts = [
-            this._contractExchangeAddress.substring(2),
-            item.quoteContract.substring(2),
-        ]
+        argsBidToken.push({
+            scriptHash: this._contractExchangeAddress,
+            operation: Method.BID_TOKEN,
+            args: [
+                {
+                    type: 'Hash160', // UInt160 from
+                    value: getScriptHashFromAddress(txObject.from),
+                },
+                {
+                    type: 'ByteArray', // ByteString auctionId
+                    value: numberToByteString(item.contractAuctionId.toString()),
+                },
+                {
+                    type: 'Integer', // BigInteger price
+                    value: currentBidFormatted,
+                },
+            ] as IArgs[],
+        })
 
         const signers = [
             {
@@ -358,17 +432,16 @@ export class GhostMarketN3SDK {
                 allowedContracts,
             },
         ]
-        const invokeParams = {
-            scriptHash: this._contractExchangeAddress,
-            operation: Method.BID_TOKEN,
-            args: argsBidToken,
+
+        const invokeParamsMultiple = {
+            invokeArgs: argsBidToken,
             signers,
             networkFee: txObject.networkFee,
             systemFee: txObject.systemFee,
         }
 
         try {
-            return this.invoke(invokeParams)
+            return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
             throw new Error(
                 `bidAuction: failed to execute ${Method.BID_TOKEN} on ${this._contractExchangeAddress} with error: ${e}`,
@@ -474,8 +547,8 @@ export class GhostMarketN3SDK {
             },
         ] as IArgs[]
 
-        const allowedContracts = [this._contractExchangeAddress.substring(2)]
-        const baseContract = item.baseContract.substring(2)
+        const allowedContracts = [this._contractExchangeAddress]
+        const baseContract = item.baseContract
         if (!allowedContracts.includes(baseContract)) {
             allowedContracts.push(baseContract)
         }
@@ -878,7 +951,7 @@ export class GhostMarketN3SDK {
             ]
         }
 
-        const allowedContracts = [contractAddress.substring(2), this._contractExchangeAddress]
+        const allowedContracts = [contractAddress, this._contractExchangeAddress]
 
         const signers = [
             {
@@ -1713,6 +1786,141 @@ export class GhostMarketN3SDK {
         }
     }
 
+    /** Swap method to convert from fromDesiredQuoteHash to fromAuctionQuoteHash tokens
+     * @param {boolean} fromAuctionQuoteHash quote contract hash of listing.
+     * @param {string} fromDesiredQuoteHash quote contract hash desired for payment.
+     * @param {boolean} toPrice quote contract price required for payment.
+     * @param {TxObject} txObject transaction object to send when calling `swapDexAmountOut`.
+     */
+    public swapDexAmountOut(
+        fromAuctionQuoteHash: string,
+        fromDesiredQuoteHash: string,
+        toPrice: string,
+        txObject: TxObject,
+    ): Promise<any> {
+        const allowedContracts = [this._contractDexAddress]
+        const argsSwapFlamingo = []
+
+        const dexCallResults = this.addCallSwapDexAmountOut(
+            txObject.from,
+            fromAuctionQuoteHash,
+            fromDesiredQuoteHash,
+            toPrice,
+        )
+        for (let i = 0; i < dexCallResults.scopes.length; i++) {
+            if (!allowedContracts.includes(dexCallResults.scopes[i])) {
+                allowedContracts.push(dexCallResults.scopes[i])
+            }
+        }
+        argsSwapFlamingo.push(dexCallResults.invokes)
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(txObject.from),
+                scopes: this.provider === 'private' ? 128 : 16,
+                allowedContracts,
+            },
+        ]
+        const invokeParamsMultiple = {
+            invokeArgs: argsSwapFlamingo,
+            signers,
+            networkFee: txObject.networkFee,
+            systemFee: txObject.systemFee,
+        }
+
+        try {
+            return this.invokeMultiple(invokeParamsMultiple)
+        } catch (e) {
+            throw new Error(
+                `swapDexAmountOut: failed to execute ${Method.SWAP_TOKEN_OUT_FOR_TOKEN_IN} on ${this._getDexContractAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Helper method returning scopes and invokes to convert from fromDesiredQuoteHash to fromAuctionQuoteHash tokens
+     * @param {string} accountAddress address used to check.
+     * @param {boolean} fromAuctionQuoteHash true if staking, or false if unstaking.
+     * @param {string} fromDesiredQuoteHash value to stake or unstake.
+     * @param {boolean} toPrice true if staking, or false if unstaking.
+     * @param {TxObject} txObject transaction object to send when calling `stakeLPTokens`.
+     */
+    private addCallSwapDexAmountOut(
+        accountAddress: string,
+        fromAuctionQuoteHash: string,
+        fromDesiredQuoteHash: string,
+        toPrice: string,
+    ): {
+        scopes: string[]
+        invokes: { scriptHash: string; operation: string; args: any }
+    } {
+        const scopes = [
+            fromDesiredQuoteHash,
+            this._contractDexAddress,
+            this._contractFlmAddress,
+            fromAuctionQuoteHash,
+        ]
+
+        let paths = [
+            {
+                type: 'Hash160', // Path 1
+                value: fromDesiredQuoteHash, // token to be used as payment - script hash
+            },
+            {
+                type: 'Hash160', // Path 2
+                value: this._contractFlmAddress, // FLM script hash
+            },
+            {
+                type: 'Hash160', // Path 3
+                value: fromAuctionQuoteHash, // quote contract script hash
+            },
+        ]
+
+        if (
+            fromAuctionQuoteHash === this._contractFlmAddress ||
+            fromDesiredQuoteHash === this._contractFlmAddress
+        ) {
+            paths = [
+                {
+                    type: 'Hash160', // Path 1
+                    value: fromDesiredQuoteHash, // token to be used as payment - script hash
+                },
+                {
+                    type: 'Hash160', // Path 2
+                    value: fromAuctionQuoteHash, // quote contract script hash
+                },
+            ]
+        }
+
+        const invokes = {
+            scriptHash: this._contractDexAddress,
+            operation: Method.SWAP_TOKEN_OUT_FOR_TOKEN_IN,
+            args: [
+                {
+                    type: 'Hash160', // UInt160 sender
+                    value: getScriptHashFromAddress(accountAddress),
+                },
+                {
+                    type: 'Integer', // Integer amountOut
+                    value: toPrice,
+                },
+                {
+                    type: 'Integer', // Integer amountInMax
+                    value: '999999999999999999', // TODO amountInMax what to use ?
+                },
+                {
+                    type: 'Array', // Array paths
+                    value: paths,
+                },
+                {
+                    type: 'Integer', // Integer deadLine
+                    value: (new Date().getTime() + 300000).toString(), // 5 minutes after current time
+                },
+            ],
+        }
+
+        return { invokes, scopes }
+    }
+
     /** Sign Data
      * @param {string} dataToSign data to sign.
      */
@@ -1747,6 +1955,20 @@ export class GhostMarketN3SDK {
                     throw new Error(description as string)
             }
         }
+    }
+
+    /** Get FLM contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getFlmContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].FLM_TOKEN!
+    }
+
+    /** Get Dex contract address
+     * @param {string} chainName chain name to check.
+     */
+    private _getDexContractAddress(chainName: string): string {
+        return AddressesByChain[chainName as keyof typeof AddressesByChain].DEX!
     }
 
     /** Get Incentives contract address
