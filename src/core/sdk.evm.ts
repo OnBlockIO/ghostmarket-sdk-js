@@ -163,6 +163,15 @@ export class GhostMarketSDK {
                         )
                 }
 
+                if (items[i].type === 2 && supportsERC721) {
+                    const owner = await this._ownerOf(items[i].baseContract, items[i].baseTokenId!)
+
+                    if (owner === NULL_ADDRESS_EVM)
+                        throw new Error(
+                            `token: ${items[i].baseTokenId} does not exist on contract: ${items[i].baseContract}`,
+                        )
+                }
+
                 const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
 
                 if (
