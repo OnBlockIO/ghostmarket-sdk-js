@@ -122,17 +122,26 @@ export class GhostMarketSDK {
 
                     if (!hasApprovedEnough)
                         throw new Error(
-                            `contract: ${items[i].quoteContract} spender allowance exceeded for: ${items[i].makerAddress}`,
+                            `quote contract: ${items[i].quoteContract} spender allowance exceeded for: ${items[i].makerAddress}`,
                         )
                 }
 
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
                 const supportsERC155 = await this._supportsERC1155(items[i].baseContract)
 
+                const quoteSupportsERC721 = await this._supportsERC721(items[i].quoteContract)
+                const quoteSupportsERC1155 = await this._supportsERC1155(items[i].quoteContract)
+
                 if (!supportsERC721 && !supportsERC155)
                     throw new Error(
-                        `contract: ${items[i].baseContract} does not support ERC721 or ERC1155`,
+                        `base contract: ${items[i].baseContract} does not support ERC721 or ERC1155`,
                     )
+
+                if (quoteSupportsERC721 || quoteSupportsERC1155) {
+                    throw new Error(
+                        `quote contract: ${items[i].quoteContract} should not support ERC721 or ERC1155`,
+                    )
+                }
 
                 if (items[i].type === 1 && supportsERC721) {
                     const owner = await this._ownerOf(items[i].baseContract, items[i].baseTokenId!)
