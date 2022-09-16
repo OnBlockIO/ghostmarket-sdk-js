@@ -111,6 +111,21 @@ export class GhostMarketSDK {
                 throw new Error(`baseTokenId is required to place an offer or an order.`)
 
             try {
+                if (items[i].quoteContract !== '0x') {
+                    const amountApproved = await this.checkTokenApproval(
+                        items[i].quoteContract,
+                        items[i].makerAddress,
+                    )
+
+                    const hasApprovedEnough =
+                        BigNumber.from(amountApproved) > BigNumber.from(items[i].quotePrice)
+
+                    if (!hasApprovedEnough)
+                        throw new Error(
+                            `contract: ${items[i].quoteContract} spender allowance exceeded for: ${items[i].makerAddress}`,
+                        )
+                }
+
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
                 const supportsERC155 = await this._supportsERC1155(items[i].baseContract)
 
@@ -135,7 +150,7 @@ export class GhostMarketSDK {
 
                     if (balance === 0)
                         throw new Error(
-                            `sender: ${items[i].makerAddress} does not own enough token ${items[i].baseTokenId}`,
+                            `owner: ${items[i].makerAddress} does not own enough token ${items[i].baseTokenId}`,
                         )
                 }
 

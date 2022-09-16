@@ -673,6 +673,19 @@ export class GhostMarketN3SDK {
                 throw new Error(`Not enough balance to place offer on NFT, missing: ${diff}`)
             }
 
+            const amountApproved = await this.checkTokenApproval(
+                items[i].quoteContract,
+                txObject.from,
+            )
+
+            const hasApprovedEnough =
+                BigNumber.from(amountApproved) > BigNumber.from(items[i].price)
+
+            if (!hasApprovedEnough)
+                throw new Error(
+                    `contract: ${items[i].quoteContract} spender allowance exceeded for: ${txObject.from}`,
+                )
+
             const currentDateFormatted =
                 item.startDate === null || !item.startDate
                     ? new Date().getTime()
