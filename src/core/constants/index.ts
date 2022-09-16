@@ -164,7 +164,7 @@ export const N3_TESTNET_ADDRESSES: ContractAddresses = {
     CONTRACT_MANAGEMENT: '0xfffdc93764dbaddd97c48f252a53ea4643faa3fd',
     LP_TOKEN: '',
     LP_STAKING: '',
-    DEX: '0x3784466a919381754c7adb2538d9e76779a2e283',
+    DEX: '0x6f0910fa26290f4a423930c8f833395790c71705',
 }
 
 export const PHA_MAINNET_CONTRACTS = {
