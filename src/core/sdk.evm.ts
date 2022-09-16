@@ -163,6 +163,22 @@ export class GhostMarketSDK {
                         )
                 }
 
+                const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
+
+                if (
+                    items[i].quoteContract === '0x' ||
+                    items[i].quoteContract.toLowerCase() === wrappedTokenAddress.toLowerCase()
+                ) {
+                    if (
+                        BigNumber.from(items[i].quotePrice).gt(
+                            BigNumber.from(10000000000000000000000),
+                        ) ||
+                        BigNumber.from(items[i].quotePrice).lt(BigNumber.from(100000000000000))
+                    ) {
+                        throw new Error(`quote price: ${items[i].quotePrice} out of range`)
+                    }
+                }
+
                 const salt =
                     '0x' +
                     [...Array(16)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')
