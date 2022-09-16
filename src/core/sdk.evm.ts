@@ -111,7 +111,8 @@ export class GhostMarketSDK {
                 throw new Error(`baseTokenId is required to place an offer or an order.`)
 
             try {
-                if (items[i].quoteContract !== '0x') {
+                // check quote contract is approved if it's an offer/collection offer
+                if (items[i].type !== 1 && items[i].quoteContract !== '0x') {
                     const amountApproved = await this.checkTokenApproval(
                         items[i].quoteContract,
                         items[i].makerAddress,
@@ -124,11 +125,30 @@ export class GhostMarketSDK {
                         throw new Error(
                             `quote contract: ${items[i].quoteContract} spender allowance exceeded for: ${items[i].makerAddress}`,
                         )
+
+                    // check quote balance enough if it's an offer/collection offer
+                    const balance = await this.checkTokenBalance(
+                        items[i].quoteContract,
+                        items[i].makerAddress,
+                    )
+
+                    const amountDiff = BigNumber.from(items[i].quoteContract)
+                    const balanceDiff = BigNumber.from(balance.toString())
+                    const diff = amountDiff.sub(balanceDiff)
+                    if (diff.gt(BigNumber.from(0))) {
+                        throw new Error(
+                            `Not enough balance of contract ${
+                                items[i].quoteContract
+                            } to place offer, missing: ${BigNumber.from(diff)}`,
+                        )
+                    }
                 }
 
+                // check base token is nft
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
                 const supportsERC155 = await this._supportsERC1155(items[i].baseContract)
 
+                // check quote token is not nft
                 const quoteSupportsERC721 = await this._supportsERC721(items[i].quoteContract)
                 const quoteSupportsERC1155 = await this._supportsERC1155(items[i].quoteContract)
 
@@ -143,6 +163,20 @@ export class GhostMarketSDK {
                     )
                 }
 
+                // check contract approved on listing
+                if (items[i].type === 1) {
+                    const approved = await this.checkContractApproval(
+                        items[i].baseContract,
+                        items[i].makerAddress!,
+                    )
+
+                    if (!approved)
+                        throw new Error(
+                            `base contract: ${items[i].baseContract} not approved by: ${items[i].makerAddress}`,
+                        )
+                }
+
+                // check owner match on listing erc721
                 if (items[i].type === 1 && supportsERC721) {
                     const owner = await this._ownerOf(items[i].baseContract, items[i].baseTokenId!)
 
@@ -150,6 +184,7 @@ export class GhostMarketSDK {
                         throw new Error(
                             `owner: ${owner} does not match maker: ${items[i].makerAddress}`,
                         )
+                    // check owner match on listing erc1155
                 } else if (items[i].type === 1 && supportsERC155) {
                     const balance = await this._balanceOf(
                         items[i].makerAddress,
@@ -163,6 +198,7 @@ export class GhostMarketSDK {
                         )
                 }
 
+                // check token id exist on offer
                 if (items[i].type === 2 && supportsERC721) {
                     const owner = await this._ownerOf(items[i].baseContract, items[i].baseTokenId!)
 
@@ -174,6 +210,7 @@ export class GhostMarketSDK {
 
                 const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
 
+                // check very low or very high price values
                 if (
                     items[i].quoteContract === '0x' ||
                     items[i].quoteContract.toLowerCase() === wrappedTokenAddress.toLowerCase()
