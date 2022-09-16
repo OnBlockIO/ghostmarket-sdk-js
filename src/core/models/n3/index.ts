@@ -117,6 +117,7 @@ export enum Method {
     STAKE_LP = 'transfer',
     UNSTAKE_LP = 'refund',
     SWAP_TOKEN_OUT_FOR_TOKEN_IN = 'swapTokenOutForTokenIn',
+    GET_AMOUNTS_IN = 'getAmoutsIn',
 }
 
 export enum Standard {

@@ -122,7 +122,7 @@ export class GhostMarketN3SDK {
             const toPrice = feeAmount
                 ? BigNumber.from(priceNFTFormatted).add(feeAmount)
                 : priceNFTFormatted
-            const dexCallResults = this.addCallSwapDexAmountOut(
+            const dexCallResults = await this.addCallSwapDexAmountOut(
                 txObject.from,
                 items[0].quoteContract,
                 fromDesiredQuoteHash,
@@ -382,7 +382,7 @@ export class GhostMarketN3SDK {
             const toPrice = feeAmount
                 ? BigNumber.from(priceNFTFormatted).add(feeAmount)
                 : priceNFTFormatted
-            const dexCallResults = this.addCallSwapDexAmountOut(
+            const dexCallResults = await this.addCallSwapDexAmountOut(
                 txObject.from,
                 item.quoteContract,
                 fromDesiredQuoteHash,
@@ -1792,7 +1792,7 @@ export class GhostMarketN3SDK {
      * @param {boolean} toPrice quote contract price required for payment.
      * @param {TxObject} txObject transaction object to send when calling `swapDexAmountOut`.
      */
-    public swapDexAmountOut(
+    public async swapDexAmountOut(
         fromAuctionQuoteHash: string,
         fromDesiredQuoteHash: string,
         toPrice: string,
@@ -1801,7 +1801,7 @@ export class GhostMarketN3SDK {
         const allowedContracts = [this._contractDexAddress]
         const argsSwapFlamingo = []
 
-        const dexCallResults = this.addCallSwapDexAmountOut(
+        const dexCallResults = await this.addCallSwapDexAmountOut(
             txObject.from,
             fromAuctionQuoteHash,
             fromDesiredQuoteHash,
@@ -1832,7 +1832,54 @@ export class GhostMarketN3SDK {
             return this.invokeMultiple(invokeParamsMultiple)
         } catch (e) {
             throw new Error(
-                `swapDexAmountOut: failed to execute ${Method.SWAP_TOKEN_OUT_FOR_TOKEN_IN} on ${this._getDexContractAddress} with error: ${e}`,
+                `swapDexAmountOut: failed to execute ${Method.SWAP_TOKEN_OUT_FOR_TOKEN_IN} on ${this._contractDexAddress} with error: ${e}`,
+            )
+        }
+    }
+
+    /** Helper method returning amountIn for a swap of amountOut using paths
+     * @param {string} accountAddress address used to check.
+     * @param {string} amountOut amount out expected.
+     * @param {IArgs[]} paths paths to use for calculation.
+     */
+    private async getSwapDexAmountsIn(accountAddress: string, amountOut: string, paths: IArgs[]) {
+        const argsGetAmountsIn = [
+            {
+                type: 'Integer',
+                value: amountOut,
+            },
+            {
+                type: 'Array',
+                value: paths,
+            },
+        ] as IArgs[]
+
+        const signers = [
+            {
+                account: getScriptHashFromAddress(accountAddress),
+                scopes: 1,
+            },
+        ]
+        const invokeParams = {
+            scriptHash: this._contractDexAddress,
+            operation: Method.GET_AMOUNTS_IN,
+            args: argsGetAmountsIn,
+            signers,
+        }
+
+        try {
+            const response = await this.invokeRead(invokeParams)
+            if (response.exception) return `getSwapDexAmountsIn exception: ${response.exception}`
+            return (
+                response.stack &&
+                response.stack[0] &&
+                response.stack[0].value &&
+                response.stack[0].value[0] &&
+                response.stack[0].value[0].value
+            )
+        } catch (e) {
+            throw new Error(
+                `getSwapDexAmountsIn: failed to execute ${Method.ALLOWANCE} on ${this._contractDexAddress} with error: ${e}`,
             )
         }
     }
@@ -1844,15 +1891,15 @@ export class GhostMarketN3SDK {
      * @param {boolean} toPrice true if staking, or false if unstaking.
      * @param {TxObject} txObject transaction object to send when calling `stakeLPTokens`.
      */
-    private addCallSwapDexAmountOut(
+    private async addCallSwapDexAmountOut(
         accountAddress: string,
         fromAuctionQuoteHash: string,
         fromDesiredQuoteHash: string,
         toPrice: string,
-    ): {
+    ): Promise<{
         scopes: string[]
         invokes: { scriptHash: string; operation: string; args: any }
-    } {
+    }> {
         const scopes = [
             fromDesiredQuoteHash,
             this._contractDexAddress,
@@ -1873,7 +1920,7 @@ export class GhostMarketN3SDK {
                 type: 'Hash160', // Path 3
                 value: fromAuctionQuoteHash, // quote contract script hash
             },
-        ]
+        ] as IArgs[]
 
         if (
             fromAuctionQuoteHash === this._contractFlmAddress ||
@@ -1891,6 +1938,10 @@ export class GhostMarketN3SDK {
             ]
         }
 
+        const amountIn = await this.getSwapDexAmountsIn(accountAddress, toPrice, paths)
+        const slippageBps = 1005
+        const amountInMax = BigNumber.from(amountIn).mul(slippageBps).div(1000)
+
         const invokes = {
             scriptHash: this._contractDexAddress,
             operation: Method.SWAP_TOKEN_OUT_FOR_TOKEN_IN,
@@ -1905,7 +1956,7 @@ export class GhostMarketN3SDK {
                 },
                 {
                     type: 'Integer', // Integer amountInMax
-                    value: '999999999999999999', // TODO amountInMax what to use ?
+                    value: amountInMax.toString(), // slippage set to 0.5% max
                 },
                 {
                     type: 'Array', // Array paths
