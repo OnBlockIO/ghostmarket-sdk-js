@@ -132,7 +132,7 @@ export class GhostMarketSDK {
                         items[i].makerAddress,
                     )
 
-                    const amountDiff = BigNumber.from(items[i].quoteContract)
+                    const amountDiff = BigNumber.from(items[i].quotePrice)
                     const balanceDiff = BigNumber.from(balance.toString())
                     const diff = amountDiff.sub(balanceDiff)
                     if (diff.gt(BigNumber.from(0))) {
@@ -148,19 +148,28 @@ export class GhostMarketSDK {
                 const supportsERC721 = await this._supportsERC721(items[i].baseContract)
                 const supportsERC155 = await this._supportsERC1155(items[i].baseContract)
 
-                // check quote token is not nft
-                const quoteSupportsERC721 = await this._supportsERC721(items[i].quoteContract)
-                const quoteSupportsERC1155 = await this._supportsERC1155(items[i].quoteContract)
-
                 if (!supportsERC721 && !supportsERC155)
                     throw new Error(
                         `base contract: ${items[i].baseContract} does not support ERC721 or ERC1155`,
                     )
 
-                if (quoteSupportsERC721 || quoteSupportsERC1155) {
-                    throw new Error(
-                        `quote contract: ${items[i].quoteContract} should not support ERC721 or ERC1155`,
-                    )
+                // check quote token is not nft
+                if (items[i].quoteContract !== '0x') {
+                    try {
+                        const quoteSupportsERC721 = await this._supportsERC721(
+                            items[i].quoteContract,
+                        )
+                        const quoteSupportsERC1155 = await this._supportsERC1155(
+                            items[i].quoteContract,
+                        )
+
+                        if (quoteSupportsERC721 || quoteSupportsERC1155) {
+                            throw new Error(
+                                `quote contract: ${items[i].quoteContract} should not support ERC721 or ERC1155`,
+                            )
+                        }
+                        // eslint-disable-next-line no-empty
+                    } catch (err) {}
                 }
 
                 // check contract approved on listing
@@ -217,11 +226,13 @@ export class GhostMarketSDK {
                 ) {
                     if (
                         BigNumber.from(items[i].quotePrice).gt(
-                            BigNumber.from(10000000000000000000000),
+                            BigNumber.from('10000000000000000000000'),
                         ) ||
-                        BigNumber.from(items[i].quotePrice).lt(BigNumber.from(100000000000000))
+                        BigNumber.from(items[i].quotePrice).lt(BigNumber.from('100000000000000'))
                     ) {
-                        throw new Error(`quote price: ${items[i].quotePrice} out of range`)
+                        throw new Error(
+                            `quote price: ${items[i].quotePrice} out of range (0.01-10000000)`,
+                        )
                     }
                 }
 
@@ -330,7 +341,9 @@ export class GhostMarketSDK {
                 )
                 return listing
             } catch (e) {
-                throw new Error(`Failed to execute postCreateOrder ${i + 1} with error:, ${e}`)
+                throw new Error(
+                    `Failed to execute postCreateOrder ${i + 1} with error:, ${JSON.stringify(e)}`,
+                )
             }
         }
         return {}
@@ -418,7 +431,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, exchangeV2ProxyAddress, undefined)
         } catch (e) {
             throw new Error(
-                `bulkCancelOrders: failed to execute bulkCancelOrders on ${exchangeV2ProxyAddress} with error: ${e}`,
+                `bulkCancelOrders: failed to execute bulkCancelOrders on ${exchangeV2ProxyAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -553,7 +568,7 @@ export class GhostMarketSDK {
                 txObject,
             )
         } catch (e) {
-            throw new Error(`matchOrders: failed to execute with error: ${e}`)
+            throw new Error(`matchOrders: failed to execute with error: ${JSON.stringify(e)}`)
         }
     }
 
@@ -591,7 +606,7 @@ export class GhostMarketSDK {
         } catch (e) {
             throw new Error(
                 `_matchOrders: failed to execute matchOrders on ${exchangeV2ProxyAddress} with error:
-                ${e}`,
+                ${JSON.stringify(e)}`,
             )
         }
     }
@@ -648,7 +663,7 @@ export class GhostMarketSDK {
         } catch (e) {
             throw new Error(
                 `setRoyaltiesForContract: failed to execute setRoyaltiesByToken on ${royaltiesRegistryProxyAddress} with error: 
-                ${e}`,
+                ${JSON.stringify(e)}`,
             )
         }
     }
@@ -717,7 +732,7 @@ export class GhostMarketSDK {
             } catch (e) {
                 throw new Error(
                     `wrapToken: Failed to execute deposit on ${wrappedTokenAddress} with error:
-                    ${e}`,
+                    ${JSON.stringify(e)}`,
                 )
             }
         } else {
@@ -727,7 +742,7 @@ export class GhostMarketSDK {
             } catch (e) {
                 throw new Error(
                     `wrapToken: failed to execute withdraw on ${wrappedTokenAddress} with error:
-                    ${e}`,
+                    ${JSON.stringify(e)}`,
                 )
             }
         }
@@ -768,7 +783,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `approveContract: failed to execute setApprovalForAll on ${contractAddress} with error: ${e}`,
+                `approveContract: failed to execute setApprovalForAll on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -798,7 +815,9 @@ export class GhostMarketSDK {
             const data = await ContractInstance.methods.approve(proxyContractAddress, MAX_UINT_256)
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
-            throw new Error(`Failed to execute approve on ${contractAddress} with error: ${e}`)
+            throw new Error(
+                `Failed to execute approve on ${contractAddress} with error: ${JSON.stringify(e)}`,
+            )
         }
     }
 
@@ -835,7 +854,7 @@ export class GhostMarketSDK {
         } catch (e) {
             throw new Error(
                 `checkContractApproval: failed to execute isApprovedForAll on ${contractAddress} with error: 
-                    ${e}`,
+                ${JSON.stringify(e)}`,
             )
         }
     }
@@ -869,7 +888,9 @@ export class GhostMarketSDK {
             return await this.callMethod(data, accountAddress)
         } catch (e) {
             throw new Error(
-                `checkTokenApproval: failed to execute allowance on ${contractAddress} with error: ${e}`,
+                `checkTokenApproval: failed to execute allowance on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -911,7 +932,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `transferERC20: failed to execute transfer on ${contractAddress} with error: ${e}`,
+                `transferERC20: failed to execute transfer on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -951,7 +974,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `transferERC721: failed to execute safeTransferFrom on ${contractAddress} with error: ${e}`,
+                `transferERC721: failed to execute safeTransferFrom on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1002,7 +1027,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `transferERC1155: failed to execute safeBatchTransferFrom on ${contractAddress} with error: ${e}`,
+                `transferERC1155: failed to execute safeBatchTransferFrom on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1035,7 +1062,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `burnERC721: failed to execute burn on ${contractAddress} with error: ${e}`,
+                `burnERC721: failed to execute burn on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1075,7 +1104,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `burnERC1155: failed to execute burn on ${contractAddress} with error: ${e}`,
+                `burnERC1155: failed to execute burn on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1117,7 +1148,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, ERC721GhostAddress, undefined)
         } catch (e) {
             throw new Error(
-                `mintERC721: failed to execute mintGhost on ${ERC721GhostAddress} with error: ${e}`,
+                `mintERC721: failed to execute mintGhost on ${ERC721GhostAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1162,7 +1195,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, ERC1155GhostAddress, undefined)
         } catch (e) {
             throw new Error(
-                `mintERC1155: failed to execute mintGhost on ${ERC1155GhostAddress} with error: ${e}`,
+                `mintERC1155: failed to execute mintGhost on ${ERC1155GhostAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1179,7 +1214,9 @@ export class GhostMarketSDK {
             const data = await this.web3.eth.getBalance(accountAddress)
             return data
         } catch (e) {
-            throw new Error(`checkBalance: failed to execute getBalance with error: ${e}`)
+            throw new Error(
+                `checkBalance: failed to execute getBalance with error: ${JSON.stringify(e)}`,
+            )
         }
     }
 
@@ -1202,7 +1239,9 @@ export class GhostMarketSDK {
             return await this.callMethod(data, accountAddress)
         } catch (e) {
             throw new Error(
-                `checkTokenBalance: failed to execute balanceOf on ${contractAddress} with error: ${e}`,
+                `checkTokenBalance: failed to execute balanceOf on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1226,7 +1265,9 @@ export class GhostMarketSDK {
             return this.callMethod(data, accountAddress)
         } catch (e) {
             throw new Error(
-                `checkIncentives: failed to execute incentives on ${IncentivesContractAddress} with error: ${e}`,
+                `checkIncentives: failed to execute incentives on ${IncentivesContractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1258,7 +1299,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, IncentivesContractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `claimIncentives: failed to execute claim on ${IncentivesContractAddress} with error: ${e}`,
+                `claimIncentives: failed to execute claim on ${IncentivesContractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1282,7 +1325,9 @@ export class GhostMarketSDK {
             return this.callMethod(data, accountAddress)
         } catch (e) {
             throw new Error(
-                `checkLPStakes: failed to execute userInfo on ${LPStakingContractAddress} with error: ${e}`,
+                `checkLPStakes: failed to execute userInfo on ${LPStakingContractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1308,7 +1353,9 @@ export class GhostMarketSDK {
             return this.callMethod(data, accountAddress)
         } catch (e) {
             throw new Error(
-                `checkLPRewards: failed to execute calculatePendingRewards on ${LPStakingContractAddress} with error: ${e}`,
+                `checkLPRewards: failed to execute calculatePendingRewards on ${LPStakingContractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1340,7 +1387,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, LPStakingContractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `claimLPRewards: failed to execute harvest on ${LPStakingContractAddress} with error: ${e}`,
+                `claimLPRewards: failed to execute harvest on ${LPStakingContractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1421,7 +1470,7 @@ export class GhostMarketSDK {
             const data = this.web3.eth.sign(hash, accountAddress)
             return data
         } catch (e) {
-            throw new Error(`signData: Failed to execute sign with error: ${e}`)
+            throw new Error(`signData: Failed to execute sign with error: ${JSON.stringify(e)}`)
         }
     }
 
@@ -1544,7 +1593,7 @@ export class GhostMarketSDK {
                 return res
             })
             .catch((e: any) => {
-                console.log(e)
+                // console.log(e)
                 return NULL_ADDRESS_EVM
             })
     }
@@ -1569,7 +1618,7 @@ export class GhostMarketSDK {
                     return res
                 })
                 .catch((e: any) => {
-                    console.log(e)
+                    // console.log(e)
                     return NULL_ADDRESS_EVM
                 })
         }
@@ -1601,7 +1650,7 @@ export class GhostMarketSDK {
                     return res
                 })
                 .catch((e: any) => {
-                    console.log(e)
+                    // console.log(e)
                     return 0
                 })
         }
@@ -1611,45 +1660,53 @@ export class GhostMarketSDK {
     /** Get contract support for ERC721
      * @param {string} contractAddress contract address to check.
      */
-    private _supportsERC721(contractAddress: string): Promise<boolean> {
-        console.log(
-            `_supportsERC721: checking support for ERC721 for contract ${contractAddress} on ${this._chainFullName}`,
-        )
+    private async _supportsERC721(contractAddress: string): Promise<boolean> {
+        try {
+            console.log(
+                `_supportsERC721: checking support for ERC721 for contract ${contractAddress} on ${this._chainFullName}`,
+            )
 
-        const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
+            const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
 
-        return NFTContractInstance.methods
-            .supportsInterface(ERC721_INTERFACE_ID)
-            .call()
-            .then((res: any) => {
-                return res
-            })
-            .catch((e: any) => {
-                console.log(e)
-                return false
-            })
+            return NFTContractInstance.methods
+                .supportsInterface(ERC721_INTERFACE_ID)
+                .call()
+                .then((res: any) => {
+                    return res
+                })
+                .catch((e: any) => {
+                    // console.log(e)
+                    return false
+                })
+        } catch (err) {
+            return false
+        }
     }
 
     /** Get contract support for ERC1155
      * @param {string} contractAddress contract address to check.
      */
-    private _supportsERC1155(contractAddress: string): Promise<boolean> {
-        console.log(
-            `_supportsERC1155: checking support for ERC1155 for contract ${contractAddress} on ${this._chainFullName}`,
-        )
+    private async _supportsERC1155(contractAddress: string): Promise<boolean> {
+        try {
+            console.log(
+                `_supportsERC1155: checking support for ERC1155 for contract ${contractAddress} on ${this._chainFullName}`,
+            )
 
-        const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
+            const NFTContractInstance = new this.web3.eth.Contract(ERC165Contract, contractAddress)
 
-        return NFTContractInstance.methods
-            .supportsInterface(ERC1155_INTERFACE_ID)
-            .call()
-            .then((res: any) => {
-                return res
-            })
-            .catch((e: any) => {
-                console.log(e)
-                return false
-            })
+            return NFTContractInstance.methods
+                .supportsInterface(ERC1155_INTERFACE_ID)
+                .call()
+                .then((res: any) => {
+                    return res
+                })
+                .catch((e: any) => {
+                    // console.log(e)
+                    return false
+                })
+        } catch (err) {
+            return false
+        }
     }
 
     sendMethod(
