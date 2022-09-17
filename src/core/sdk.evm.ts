@@ -111,6 +111,24 @@ export class GhostMarketSDK {
                 throw new Error(`baseTokenId is required to place an offer or an order.`)
 
             try {
+                // check very low or very high price values
+                const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
+                if (
+                    items[i].quoteContract === '0x' ||
+                    items[i].quoteContract.toLowerCase() === wrappedTokenAddress.toLowerCase()
+                ) {
+                    if (
+                        BigNumber.from(items[i].quotePrice).gt(
+                            BigNumber.from('10000000000000000000000'),
+                        ) ||
+                        BigNumber.from(items[i].quotePrice).lt(BigNumber.from('10000000000000'))
+                    ) {
+                        throw new Error(
+                            `quote price: ${items[i].quotePrice} out of range (10000000000000-10000000000000000000000)`,
+                        )
+                    }
+                }
+
                 // check quote contract is approved if it's an offer/collection offer
                 if (items[i].type !== 1 && items[i].quoteContract !== '0x') {
                     const amountApproved = await this.checkTokenApproval(
@@ -215,25 +233,6 @@ export class GhostMarketSDK {
                         throw new Error(
                             `token: ${items[i].baseTokenId} does not exist on contract: ${items[i].baseContract}`,
                         )
-                }
-
-                const wrappedTokenAddress = this._getWrappedTokenContractAddress(this._chainName)
-
-                // check very low or very high price values
-                if (
-                    items[i].quoteContract === '0x' ||
-                    items[i].quoteContract.toLowerCase() === wrappedTokenAddress.toLowerCase()
-                ) {
-                    if (
-                        BigNumber.from(items[i].quotePrice).gt(
-                            BigNumber.from('10000000000000000000000'),
-                        ) ||
-                        BigNumber.from(items[i].quotePrice).lt(BigNumber.from('100000000000000'))
-                    ) {
-                        throw new Error(
-                            `quote price: ${items[i].quotePrice} out of range (0.01-10000000)`,
-                        )
-                    }
                 }
 
                 const salt =
@@ -341,9 +340,7 @@ export class GhostMarketSDK {
                 )
                 return listing
             } catch (e) {
-                throw new Error(
-                    `Failed to execute postCreateOrder ${i + 1} with error:, ${JSON.stringify(e)}`,
-                )
+                throw new Error(`Failed to execute postCreateOrder ${i + 1} with error: ${e}`)
             }
         }
         return {}
@@ -816,7 +813,9 @@ export class GhostMarketSDK {
             return this.sendMethod(data, txObject.from, contractAddress, undefined)
         } catch (e) {
             throw new Error(
-                `Failed to execute approve on ${contractAddress} with error: ${JSON.stringify(e)}`,
+                `approveToken: failed to execute approve on ${contractAddress} with error: ${JSON.stringify(
+                    e,
+                )}`,
             )
         }
     }
@@ -1592,7 +1591,7 @@ export class GhostMarketSDK {
             .then((res: any) => {
                 return res
             })
-            .catch((e: any) => {
+            .catch((_e: any) => {
                 // console.log(e)
                 return NULL_ADDRESS_EVM
             })
@@ -1617,7 +1616,7 @@ export class GhostMarketSDK {
                 .then((res: any) => {
                     return res
                 })
-                .catch((e: any) => {
+                .catch((_e: any) => {
                     // console.log(e)
                     return NULL_ADDRESS_EVM
                 })
@@ -1649,7 +1648,7 @@ export class GhostMarketSDK {
                 .then((res: any) => {
                     return res
                 })
-                .catch((e: any) => {
+                .catch((_e: any) => {
                     // console.log(e)
                     return 0
                 })
@@ -1674,7 +1673,7 @@ export class GhostMarketSDK {
                 .then((res: any) => {
                     return res
                 })
-                .catch((e: any) => {
+                .catch((_e: any) => {
                     // console.log(e)
                     return false
                 })
@@ -1700,7 +1699,7 @@ export class GhostMarketSDK {
                 .then((res: any) => {
                     return res
                 })
-                .catch((e: any) => {
+                .catch((_e: any) => {
                     // console.log(e)
                     return false
                 })
