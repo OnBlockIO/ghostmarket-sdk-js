@@ -43,7 +43,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         const dummyToken = '81'
         const dummyChain = 'etht'
         const dummyAmount = 1
-        const dummyPrice = '81'
+        const dummyPrice = '10000000000000000'
 
         it('should not be able to list unaccepted chain', async () => {
             try {
