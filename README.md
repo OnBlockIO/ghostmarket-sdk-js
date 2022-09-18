@@ -130,7 +130,7 @@ const address = await ethereum.request({
     method: 'eth_requestAccounts',
   })[0];
 // Option 3 - private key
-const customProvider = new HDWalletProvider(KEY, rpcUrl)
+const customProvider = new HDWalletProvider(privateKeys: [privateKey], providerOrUrl: rpcUrl)
 const address = customProvider.addresses[0]
 // Create instance of GhostMarketSDK - EVM
 const gmSDK = new GhostMarketSDK(customProvider, sdkConfig);
