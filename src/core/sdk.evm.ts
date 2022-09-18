@@ -831,7 +831,7 @@ export class GhostMarketSDK {
         proxyAddress?: string,
     ): Promise<any> {
         console.log(
-            `checkContractApproval: check nft contract ${contractAddress} approval on ${this._chainFullName}`,
+            `checkContractApproval: checking nft contract ${contractAddress} approval on ${this._chainFullName}`,
         )
 
         const supportsERC721 = await this._supportsERC721(contractAddress)
@@ -869,7 +869,7 @@ export class GhostMarketSDK {
         proxyAddress?: string,
     ): Promise<any> {
         console.log(
-            `checkTokenApproval: check token contract ${contractAddress} approval for ${accountAddress} on ${this._chainFullName}`,
+            `checkTokenApproval: checking token contract ${contractAddress} approval for ${accountAddress} on ${this._chainFullName}`,
         )
 
         const proxyContractAddress =
