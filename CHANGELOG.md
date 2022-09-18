@@ -2,7 +2,7 @@
 
 GhostMarket is constantly innovating. This means the underlying API that this SDK aims to help with will be undergoing changes along the way. The intent of this document is to lay out the roadmap that this SDK will cover across different versions based on knowledge at the current time.
 
-## SDK v1.0
+## SDK v0.6
 
 ### Currently supported
  
