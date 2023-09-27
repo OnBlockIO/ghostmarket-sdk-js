@@ -77,11 +77,11 @@ Published on [GitHub](https://github.com/OnBlockIO/ghostmarket-sdk-js) and [npm]
 We recommend using Node.js version 16.
 
 ```bash
-yarn add ghostmarket-sdk-js
+yarn add @onblockio/ghostmarket-sdk-js
 ```
 or if using npm
 ```bash
-npm install --save ghostmarket-sdk-js
+npm install --save @onblockio/ghostmarket-sdk-js
 ```
 
 Install [web3](https://github.com/ethereum/web3.js) if you don't have it already.
