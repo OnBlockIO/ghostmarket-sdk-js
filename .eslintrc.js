@@ -24,18 +24,6 @@ module.exports = {
             },
         ],
         '@typescript-eslint/no-unused-vars': 'error',
-        'prettier/prettier': [
-            'error',
-            {
-                printWidth: 100,
-                endOfLine: 'crlf',
-                tabWidth: 4,
-                useTabs: false,
-                singleQuote: true,
-                semi: false,
-                arrowParens: 'avoid',
-                trailingComma: 'all',
-            },
-        ],
+        'prettier/prettier': [],
     },
 }
