@@ -1,6 +1,6 @@
 {
   "name": "@onblockio/ghostmarket-sdk-js",
-  "version": "0.6.1",
+  "version": "0.6.1.1",
   "description": "Javascript SDK for GhostMarket. Allow buyers, sellers, or projects to integrate with GhostMarket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
