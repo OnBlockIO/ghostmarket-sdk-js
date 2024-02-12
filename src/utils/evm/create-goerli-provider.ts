@@ -15,10 +15,13 @@ export function createGoerliProvider() {
         baseDerivationPath: BASE_DERIVATION_PATH,
     })
 
+    const goerliPublicRPCUrl = 'https://ethereum-goerli.publicnode.com'	
     const infuraGoerliRPCUrl = `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`
 
+    const goerliRPCUrl = process.env.INFURA_API_KEY ? infuraGoerliRPCUrl : goerliPublicRPCUrl
+
     const infuraRPCProvider = new RPCProvider({
-        rpcUrl: infuraGoerliRPCUrl,
+        rpcUrl: goerliRPCUrl,
     })
 
     const providerEngine = new Web3ProviderEngine()
