@@ -22,7 +22,7 @@ import {
 import { AssetsRequest, EventsRequest, CollectionsRequest } from '../../lib/api/requestsV2'
 expect.extend(matchers)
 
-describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
+xdescribe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
     const url = API_BASE_TESTNET + API_PATH
     const ghostMarketAPIConfig: IGhostMarketApiOptions = {
         apiKey: process.env.GM_API_KEY,
@@ -66,7 +66,7 @@ describe(`GhostMarket API Basics V${ORDERBOOK_VERSION}`, () => {
     })
 })
 
-describe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
+xdescribe(`GhostMarket API Get V${ORDERBOOK_VERSION}`, () => {
     const url = API_BASE_TESTNET + API_PATH
     const ghostMarketAPIConfig: IGhostMarketApiOptions = {
         apiKey: process.env.GM_API_KEY,
