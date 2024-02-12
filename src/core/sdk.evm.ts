@@ -1564,6 +1564,10 @@ export class GhostMarketSDK {
                 return true
             case Chain.POLYGON_TESTNET:
                 return true
+            case Chain.BASE:
+                return true
+            case Chain.BASE_TESTNET:
+                return true
             default:
                 return false
         }
