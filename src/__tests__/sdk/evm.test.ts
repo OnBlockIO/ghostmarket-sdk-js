@@ -4,8 +4,10 @@ import Web3 from 'web3'
 
 import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
 import { GhostMarketSDK } from '../../core/sdk.evm'
-import { GhostMarketApi, IGhostMarketApiOptions } from '../../lib/api/'
-import { API_BASE_TESTNET, API_PATH, ORDERBOOK_VERSION } from '../../core/constants'
+import { GhostMarketApi, IEVMOrderExtendedV2, IGhostMarketApiOptions, PutEvmOrderV2Request } from '@onblockio/gm-api-js'
+import { API_BASE_TESTNET, API_PATH, ChainId, ORDERBOOK_VERSION } from '../../core/constants'
+import { Asset, enc } from '../../utils/evm/order'
+import { ERC1155, ERC20, ERC721 } from '../../utils/evm/assets'
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
     const url = API_BASE_TESTNET + API_PATH
@@ -18,9 +20,16 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
     let provider: Web3ProviderEngine
     let web3: Web3
     let accounts: Array<string>
+    // @ts-ignore
     let account1: string
+    // @ts-ignore
     let account2: string
+    // @ts-ignore
     let GhostMarket: GhostMarketSDK
+
+    const unixNow = () =>  {
+       return parseInt((Date.now() /  1000).toFixed(0)) 
+    }
 
     beforeAll(async () => {
         provider = createGoerliProvider()
@@ -53,27 +62,36 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         const dummyChain = 'etht'
         const dummyAmount = 1
         const dummyPrice = '10000000000000000'
+        const dummySignature = '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+        const dummySalt = '0x0000000000000000'
 
         xit('should not be able to list unaccepted chain', async () => {
             try {
                 const nftToList = {
-                    chain: 'ethtt',
-                    token_contract: dummyErc721Contract,
-                    token_id: dummyToken,
-                    token_amount: dummyAmount,
-                    quote_contract: dummyErc20Contract,
-                    quote_price: dummyPrice,
-                    maker_address: dummyErc721Contract,
-                    is_buy_offer: false,
-                    start_date: 0,
-                    end_date: 0,
-                    signature: dummyAddress,
-                    order_key_hash: dummyAddress,
-                    salt: dummyAddress,
-                    origin_fees: 0,
-                    origin_address: dummyErc721Contract,
-                }
-                await ghostmarketAPI.postCreateOrder(nftToList)
+                    domain: {
+                        chainId: ChainId.etht.toString(),
+                        verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
+                    },
+                    order: {
+                        orderKeyHash: dummyAddress,
+                        maker: dummyErc721Contract,
+                        makeAsset: Asset(ERC20, enc(dummyErc20Contract), dummyPrice),
+                        taker: '0x0000000000000000000000000000000000000000',
+                        takeAsset: Asset(ERC721, enc(dummyErc721Contract), dummyPrice),
+                        salt: dummySalt,
+                        start: unixNow(),
+                        end: unixNow() + 432000,
+                        dataType: '0xffffffff',
+                        data: '0x',
+                        isBuyOffer: false,
+                        originFees: [],
+                        payouts: []
+                    } as IEVMOrderExtendedV2,
+                    signature: dummySignature
+                } as PutEvmOrderV2Request                
+                
+                await ghostmarketAPI.putEvmOrderV2(new PutEvmOrderV2Request(nftToList))
+                
             } catch (err: any) {
                 expect(err.toString()).toInclude(`Error: Unsupported value for 'chain' parameter.`)
             }
@@ -82,23 +100,29 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         xit('should not be able to list unaccepted token_contract', async () => {
             try {
                 const nftToList = {
-                    chain: dummyChain,
-                    token_contract: dummyAddress,
-                    token_id: dummyToken,
-                    token_amount: dummyAmount,
-                    quote_contract: dummyErc20Contract,
-                    quote_price: dummyPrice,
-                    maker_address: dummyErc721Contract,
-                    is_buy_offer: false,
-                    start_date: 0,
-                    end_date: 0,
-                    signature: dummyAddress,
-                    order_key_hash: dummyAddress,
-                    salt: dummyAddress,
-                    origin_fees: 0,
-                    origin_address: dummyErc721Contract,
-                }
-                await ghostmarketAPI.postCreateOrder(nftToList)
+                    domain: {
+                        chainId: ChainId.etht.toString(),
+                        verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
+                    },
+                    order: {
+                        orderKeyHash: dummyAddress,
+                        maker: dummyErc721Contract,
+                        makeAsset: Asset(ERC20, enc(dummyErc20Contract), dummyPrice),
+                        taker: '0x0000000000000000000000000000000000000000',
+                        takeAsset: Asset(ERC721, enc(dummyErc721Contract), dummyPrice),
+                        salt: dummySalt,
+                        start: unixNow(),
+                        end: unixNow() + 432000,
+                        dataType: '0xffffffff',
+                        data: '0x',
+                        isBuyOffer: false,
+                        originFees: [],
+                        payouts: []
+                    } as IEVMOrderExtendedV2,
+                    signature: dummySignature
+                } as PutEvmOrderV2Request                
+                
+                await ghostmarketAPI.putEvmOrderV2(new PutEvmOrderV2Request(nftToList))
             } catch (err: any) {
                 expect(err.toString()).toInclude(
                     `Error: Token contract '${dummyAddress.slice(
@@ -111,23 +135,29 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         xit('should not be able to list unaccepted token_id', async () => {
             try {
                 const nftToList = {
-                    chain: dummyChain,
-                    token_contract: dummyErc721Contract,
-                    token_id: dummyAddress,
-                    token_amount: dummyAmount,
-                    quote_contract: dummyErc20Contract,
-                    quote_price: dummyPrice,
-                    maker_address: dummyErc721Contract,
-                    is_buy_offer: false,
-                    start_date: 0,
-                    end_date: 0,
-                    signature: dummyAddress,
-                    order_key_hash: dummyAddress,
-                    salt: dummyAddress,
-                    origin_fees: 0,
-                    origin_address: dummyErc721Contract,
-                }
-                await ghostmarketAPI.postCreateOrder(nftToList)
+                    domain: {
+                        chainId: ChainId.etht.toString(),
+                        verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
+                    },
+                    order: {
+                        orderKeyHash: dummyAddress,
+                        maker: dummyErc721Contract,
+                        makeAsset: Asset(ERC20, enc(dummyErc20Contract), dummyPrice),
+                        taker: '0x0000000000000000000000000000000000000000',
+                        takeAsset: Asset(ERC721, enc(dummyErc721Contract), dummyPrice),
+                        salt: dummySalt,
+                        start: unixNow(),
+                        end: unixNow() + 432000,
+                        dataType: '0xffffffff',
+                        data: '0x',
+                        isBuyOffer: false,
+                        originFees: [],
+                        payouts: []
+                    } as IEVMOrderExtendedV2,
+                    signature: dummySignature
+                } as PutEvmOrderV2Request                
+                
+                await ghostmarketAPI.putEvmOrderV2(new PutEvmOrderV2Request(nftToList))
             } catch (err: any) {
                 expect(err.toString()).toInclude(
                     `Error: NFT with token ID '${dummyAddress}' was not found in backend's database.`,
@@ -138,23 +168,29 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         xit('should not be able to list unaccepted token_amount', async () => {
             try {
                 const nftToList = {
-                    chain: dummyChain,
-                    token_contract: dummyErc721Contract,
-                    token_id: dummyToken,
-                    token_amount: -1,
-                    quote_contract: dummyErc20Contract,
-                    quote_price: dummyPrice,
-                    maker_address: dummyErc721Contract,
-                    is_buy_offer: false,
-                    start_date: 0,
-                    end_date: 0,
-                    signature: dummyAddress,
-                    order_key_hash: dummyAddress,
-                    salt: dummyAddress,
-                    origin_fees: 0,
-                    origin_address: dummyErc721Contract,
-                }
-                await ghostmarketAPI.postCreateOrder(nftToList)
+                    domain: {
+                        chainId: ChainId.etht.toString(),
+                        verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
+                    },
+                    order: {
+                        orderKeyHash: dummyAddress,
+                        maker: dummyErc721Contract,
+                        makeAsset: Asset(ERC20, enc(dummyErc20Contract), dummyPrice),
+                        taker: '0x0000000000000000000000000000000000000000',
+                        takeAsset: Asset(ERC721, enc(dummyErc721Contract), dummyPrice),
+                        salt: dummySalt,
+                        start: unixNow(),
+                        end: unixNow() + 432000,
+                        dataType: '0xffffffff',
+                        data: '0x',
+                        isBuyOffer: false,
+                        originFees: [],
+                        payouts: []
+                    } as IEVMOrderExtendedV2,
+                    signature: dummySignature
+                } as PutEvmOrderV2Request                
+                
+                await ghostmarketAPI.putEvmOrderV2(new PutEvmOrderV2Request(nftToList))
             } catch (err: any) {
                 expect(err.toString()).toInclude(
                     `Error: Unsupported value for 'token_amount' parameter`,
@@ -165,23 +201,29 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         xit('should not be able to list unaccepted quote_contract', async () => {
             try {
                 const nftToList = {
-                    chain: dummyChain,
-                    token_contract: dummyErc721Contract,
-                    token_id: dummyToken,
-                    token_amount: dummyAmount,
-                    quote_contract: dummyAddress,
-                    quote_price: dummyPrice,
-                    maker_address: dummyErc721Contract,
-                    is_buy_offer: false,
-                    start_date: 0,
-                    end_date: 0,
-                    signature: dummyAddress,
-                    order_key_hash: dummyAddress,
-                    salt: dummyAddress,
-                    origin_fees: 0,
-                    origin_address: dummyErc721Contract,
-                }
-                await ghostmarketAPI.postCreateOrder(nftToList)
+                    domain: {
+                        chainId: ChainId.etht.toString(),
+                        verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
+                    },
+                    order: {
+                        orderKeyHash: dummyAddress,
+                        maker: dummyErc721Contract,
+                        makeAsset: Asset(ERC20, enc(dummyErc20Contract), dummyPrice),
+                        taker: '0x0000000000000000000000000000000000000000',
+                        takeAsset: Asset(ERC721, enc(dummyErc721Contract), dummyPrice),
+                        salt: dummySalt,
+                        start: unixNow(),
+                        end: unixNow() + 432000,
+                        dataType: '0xffffffff',
+                        data: '0x',
+                        isBuyOffer: false,
+                        originFees: [],
+                        payouts: []
+                    } as IEVMOrderExtendedV2,
+                    signature: dummySignature
+                } as PutEvmOrderV2Request                
+                
+                await ghostmarketAPI.putEvmOrderV2(new PutEvmOrderV2Request(nftToList))
             } catch (err: any) {
                 expect(err.toString()).toInclude(
                     `Error: Quote contract '${dummyAddress.slice(
@@ -194,23 +236,29 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
         xit('should not be able to list unaccepted quote_price', async () => {
             try {
                 const nftToList = {
-                    chain: dummyChain,
-                    token_contract: dummyErc721Contract,
-                    token_id: dummyToken,
-                    token_amount: dummyAmount,
-                    quote_contract: dummyErc20Contract,
-                    quote_price: '-2',
-                    maker_address: dummyErc721Contract,
-                    is_buy_offer: false,
-                    start_date: 0,
-                    end_date: 0,
-                    signature: dummyAddress,
-                    order_key_hash: dummyAddress,
-                    salt: dummyAddress,
-                    origin_fees: 0,
-                    origin_address: dummyErc721Contract,
-                }
-                await ghostmarketAPI.postCreateOrder(nftToList)
+                    domain: {
+                        chainId: ChainId.etht.toString(),
+                        verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
+                    },
+                    order: {
+                        orderKeyHash: dummyAddress,
+                        maker: dummyErc721Contract,
+                        makeAsset: Asset(ERC20, enc(dummyErc20Contract), dummyPrice),
+                        taker: '0x0000000000000000000000000000000000000000',
+                        takeAsset: Asset(ERC721, enc(dummyErc721Contract), dummyPrice),
+                        salt: dummySalt,
+                        start: unixNow(),
+                        end: unixNow() + 432000,
+                        dataType: '0xffffffff',
+                        data: '0x',
+                        isBuyOffer: false,
+                        originFees: [],
+                        payouts: []
+                    } as IEVMOrderExtendedV2,
+                    signature: dummySignature
+                } as PutEvmOrderV2Request                
+                
+                await ghostmarketAPI.putEvmOrderV2(new PutEvmOrderV2Request(nftToList))
             } catch (err: any) {
                 expect(err.toString()).toInclude(
                     `Error: Unsupported value for 'quote_price' parameter`,

@@ -1,10 +1,10 @@
-import { IAsset } from '../lib/api/'
+import { IAssetV2 } from '@onblockio/gm-api-js'
 import { SITE_HOST_MAINNET, SITE_HOST_TESTNET } from '../core/constants'
 
-export function getGhostMarketLink(asset: IAsset, isMainNet = true) {
-    const chain = asset.nft.contract.chain
-    const contract = asset.nft.contract.hash
-    const tokenId = asset.nft.token_id
+export function getGhostMarketLink(asset: IAssetV2, isMainNet = true) {
+    const chain = asset.contract.chain
+    const contract = asset.contract.hash
+    const tokenId = asset.nftId
     if (isMainNet) return `${SITE_HOST_MAINNET}/${chain}/${contract}/${tokenId}`
     return `${SITE_HOST_TESTNET}/${chain}/${contract}/${tokenId}`
 }

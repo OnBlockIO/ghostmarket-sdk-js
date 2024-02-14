@@ -28,7 +28,7 @@ import {
     Method,
     Standard,
 } from '../core/models/n3'
-import { GhostMarketApi, IGhostMarketApiOptions } from '../lib/api/'
+import { GhostMarketApi, IGhostMarketApiOptions } from '@onblockio/gm-api-js'
 
 export class GhostMarketN3SDK {
     private provider: string

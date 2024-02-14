@@ -35,9 +35,12 @@ import { IEVMOrder, IOrderItem, IMintItem, IRoyalties, TxObject } from '../core/
 import {
     GhostMarketApi,
     IGhostMarketApiOptions,
-    PostCreateOrderRequest,
+    PutEvmOrderV2Request, // previous PostCreateOrderRequest,
     IResult,
-} from '../lib/api/'
+    // IEVMOrderExtendedV2,
+    // IEVMOrderV2,
+    // IEVMAssetV2,
+} from '@onblockio/gm-api-js'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
@@ -47,6 +50,7 @@ export class GhostMarketSDK {
     public logger: (arg: string) => void
     private _chainName: Chain
     private _chainFullName: ChainFullName
+    // @ts-ignore
     private _chainCurrency: ChainCurrency
     private _chainId: ChainId
     private _isReadonlyProvider: boolean
@@ -315,30 +319,23 @@ export class GhostMarketSDK {
 
                 const orderKeyHash = hashKey(order)
 
-                const nftToList = {
-                    chain: this._chainName,
-                    token_contract: items[i].baseContract,
-                    token_id: items[i].type === 3 ? '' : items[i].baseTokenId,
-                    token_amount: baseTokenAmount,
-                    quote_contract:
-                        items[i].quoteContract === '0x'
-                            ? this._chainCurrency
-                            : items[i].quoteContract,
-                    quote_price: items[i].quotePrice,
-                    maker_address: items[i].makerAddress,
-                    is_buy_offer: items[i].type !== 1,
-                    start_date: startDate,
-                    end_date: endDate,
-                    signature,
-                    order_key_hash: orderKeyHash,
-                    salt,
-                    origin_fees: 0,
-                    origin_address: '',
-                } as PostCreateOrderRequest
-                const listing = await this.api.postCreateOrder(
-                    new PostCreateOrderRequest(nftToList),
-                )
-                return listing
+                const orderParams = {
+                    domain: {
+                        chainId: this._chainId.toString(),
+                        verifyingContract
+                    },
+                    order: {
+                        ...order,
+                        orderKeyHash: orderKeyHash
+                    },
+                    signature
+                } as PutEvmOrderV2Request 
+
+                const nftToList = new PutEvmOrderV2Request(orderParams)
+
+               const result = await this.api.putEvmOrderV2(nftToList)
+
+                return result
             } catch (e) {
                 throw new Error(`Failed to execute postCreateOrder ${i + 1} with error: ${e}`)
             }
