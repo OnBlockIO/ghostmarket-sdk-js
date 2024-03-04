@@ -1567,6 +1567,18 @@ export class GhostMarketSDK {
             case Chain.BASE:
                 return true
             case Chain.BASE_TESTNET:
+                return true;
+            case Chain.SHARDEUM:
+                return false
+            case Chain.SHARDEUM_TESTNET:
+                return false
+            case Chain.NEOX:
+                return false
+            case Chain.NEOXT_TESTNET:
+                return false
+            case Chain.BLAST:
+                return true
+            case Chain.BLAST_TESTNET:
                 return true
             default:
                 return false

@@ -8,7 +8,7 @@
 
 Ghostmarket SDK offers a complete set of functionalities enabling access to GhostMarket as a full-fledged SDK written in TypeScript/Javascript.
 
-Full support in a single SDK of all blockchains integrated with GhostMarket, currently seven: Ethereum, BSC, Avalanche, Polygon, Base, Phantasma, Neo N3.
+Full support in a single SDK of all blockchains integrated with GhostMarket, currently ten: Ethereum, BSC, Avalanche, Polygon, Base, Phantasma, Neo N3, NeoX, Shardeum, Blast.
 
 Checkout the [Changelog](https://github.com/OnBlockIO/ghostmarket-sdk-js/blob/master/CHANGELOG.md)
 
@@ -112,6 +112,9 @@ const chainName = Chain.ETHEREUM // see below for chain values
     Chain.BSC / Chain.BSC_TESTNET
     Chain.AVALANCHE / Chain.AVALANCHE_TESTNET
     Chain.BASE / Chain.BASE_TESTNET
+    Chain.SHARDEUM / Chain.SHARDEUM_TESTNET
+    Chain.NEOX / Chain.NEOX_TESTNET
+    Chain.BLAST / Chain.BLAST_TESTNET
     */
 
 // SDK config options.
