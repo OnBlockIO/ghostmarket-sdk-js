@@ -1,3 +1,4 @@
+import { ChainId } from '@onblockio/gm-api-js'
 import { IEVMOrder, IEVMAsset, IEVMAssetType } from '../../core/models/evm'
 import EIP712 from './EIP712'
 
@@ -63,7 +64,7 @@ export async function sign(
     account: string,
     verifyingContract: string,
     provider: any,
-    chainId: number,
+    chainId: ChainId,
 ) {
     const data = EIP712.createTypeData(
         {

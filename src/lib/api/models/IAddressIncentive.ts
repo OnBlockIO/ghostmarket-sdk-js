@@ -1,6 +1,8 @@
+import { ChainId, ChainNetwork } from "@onblockio/gm-api-js"
+
 export interface IAddressIncentive {
-    chainId: number
-    chainName: string
+    chainId: ChainId
+    chainName: ChainNetwork
     address: string
     intervalAddressVolume: number
     intervalAddressReward: number

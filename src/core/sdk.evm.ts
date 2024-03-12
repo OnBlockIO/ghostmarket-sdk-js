@@ -16,10 +16,8 @@ import {
 import {
     GHOSTMARKET_TRADE_FEE_BPS,
     MAINNET_API_URL,
-    Chain,
     ChainFullName,
     ChainCurrency,
-    ChainId,
     AddressesByChain,
 } from './constants'
 import {
@@ -38,6 +36,7 @@ import {
     PostCreateOrderRequest,
     IResult,
 } from '../lib/api/'
+import { ChainId, ChainNetwork } from '@onblockio/gm-api-js/'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
@@ -45,7 +44,7 @@ export class GhostMarketSDK {
     public readonly api: GhostMarketApi
     // Logger function to use when debugging.
     public logger: (arg: string) => void
-    private _chainName: Chain
+    private _chainName: ChainNetwork
     private _chainFullName: ChainFullName
     private _chainCurrency: ChainCurrency
     private _chainId: ChainId
@@ -65,7 +64,7 @@ export class GhostMarketSDK {
             environment?: string
             useReadOnlyProvider?: boolean
             rpcUrl?: string
-            chainName?: Chain
+            chainName?: ChainNetwork
         },
         logger?: (arg: string) => void,
     ) {
@@ -74,11 +73,11 @@ export class GhostMarketSDK {
         options.rpcUrl = options.rpcUrl || ''
         const useReadOnlyProvider = options.useReadOnlyProvider ?? false
         this._isReadonlyProvider = useReadOnlyProvider
-        options.chainName = options.chainName || Chain.ETHEREUM
+        options.chainName = options.chainName || ChainNetwork.Eth
         this._chainName = options.chainName
         this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
         this._chainCurrency = ChainCurrency[this._chainName as keyof typeof ChainCurrency]
-        this._chainId = ChainId[this._chainName as keyof typeof ChainId]
+        this._chainId = ChainId[this._chainName.toLowerCase() as keyof typeof ChainId] 
         this.web3 = new Web3(provider)
         const apiConfig = {
             apiKey: options.apiKey,
@@ -1477,70 +1476,70 @@ export class GhostMarketSDK {
      * @param {string} chainName chain name to check.
      */
     private _getLPTokenContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_TOKEN!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.LP_TOKEN!
     }
 
     /** Get LP staking contract address
      * @param {string} chainName chain name to check.
      */
     private _getLPStakingContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_STAKING!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.LP_STAKING!
     }
 
     /** Get Incentives contract address
      * @param {string} chainName chain name to check.
      */
     private _getIncentivesContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].INCENTIVES
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.INCENTIVES
     }
 
     /** Get ERC721 Ghost contract address
      * @param {string} chainName chain name to check.
      */
     private _getERC721GhostContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].GHOST_ERC721!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.GHOST_ERC721!
     }
 
     /** Get ERC1155 Ghost contract address
      * @param {string} chainName chain name to check.
      */
     private _getERC1155GhostContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].GHOST_ERC1155!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.GHOST_ERC1155!
     }
 
     /** Get ERC20 Proxy contract address
      * @param {string} chainName chain name to check.
      */
     private _getERC20ProxyContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].PROXY_ERC20!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.PROXY_ERC20!
     }
 
     /** Get NFT Proxy contract address
      * @param {string} chainName chain name to check.
      */
     private _getNFTProxyContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].PROXY_NFT!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.PROXY_NFT!
     }
 
     /** Get ExchangeV2 contract address
      * @param {string} chainName chain name to check.
      */
     private _getExchangeV2ProxyContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].EXCHANGE
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.EXCHANGE
     }
 
     /** Get Royalties contract address
      * @param {string} chainName chain name to check.
      */
     private _getRoyaltiesRegistryContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].ROYALTIES!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.ROYALTIES!
     }
 
     /** Get Wrapped Token contract address
      * @param {string} chainName chain name to check.
      */
     private _getWrappedTokenContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].WRAPPED_TOKEN!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.WRAPPED_TOKEN!
     }
 
     /** Get chain support for EIP1559
@@ -1548,37 +1547,37 @@ export class GhostMarketSDK {
      */
     private _supportsEIP1559(chainName: string): boolean {
         switch (chainName) {
-            case Chain.AVALANCHE:
+            case ChainNetwork.Avalanche:
                 return true
-            case Chain.AVALANCHE_TESTNET:
+            case ChainNetwork.AvalancheT:
                 return true
-            case Chain.ETHEREUM:
+            case ChainNetwork.Eth:
                 return true
-            case Chain.ETHEREUM_TESTNET:
+            case ChainNetwork.EthT:
                 return true
-            case Chain.BSC:
+            case ChainNetwork.Bsc:
                 return false
-            case Chain.BSC_TESTNET:
+            case ChainNetwork.BscT:
                 return false
-            case Chain.POLYGON:
+            case ChainNetwork.Polygon:
                 return true
-            case Chain.POLYGON_TESTNET:
+            case ChainNetwork.PolygonT:
                 return true
-            case Chain.BASE:
+            case ChainNetwork.Base:
                 return true
-            case Chain.BASE_TESTNET:
+            case ChainNetwork.BaseT:
                 return true;
-            case Chain.SHARDEUM:
+            case ChainNetwork.Shardeum:
                 return false
-            case Chain.SHARDEUM_TESTNET:
+            case ChainNetwork.ShardeumT:
                 return false
-            case Chain.NEOX:
+            case ChainNetwork.NeoX:
                 return false
-            case Chain.NEOXT_TESTNET:
+            case ChainNetwork.NeoXT:
                 return false
-            case Chain.BLAST:
+            case ChainNetwork.Blast:
                 return true
-            case Chain.BLAST_TESTNET:
+            case ChainNetwork.BlastT:
                 return true
             default:
                 return false
