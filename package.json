@@ -53,7 +53,6 @@
   "dependencies": {
     "@0x/subproviders": "^6.6.5",
     "@cityofzion/neon-js": "^5.5.1",
-    "@onblockio/gm-api-js": "^0.1.8-dev",
     "axios": "^0.27.2",
     "bs58": "^5.0.0",
     "dotenv": "^16.0.1",
