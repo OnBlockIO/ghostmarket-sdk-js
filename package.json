@@ -1,6 +1,6 @@
 {
   "name": "@onblockio/ghostmarket-sdk-js",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Javascript SDK for GhostMarket. Allow buyers, sellers, or projects to integrate with GhostMarket.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,7 @@
     "@babel/core": "^7.17.10",
     "@babel/preset-env": "^7.17.10",
     "@babel/preset-typescript": "^7.16.7",
-    "@onblockio/gm-api-js": "^0.3.1-dev",
+    "@onblockio/gm-api-js": "^0.3.7-dev",
     "@types/bignumber.js": "^5.0.0",
     "@types/jest": "^27.4.1",
     "@types/node": "^17.0.45",
