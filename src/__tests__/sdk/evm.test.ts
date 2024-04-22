@@ -4,10 +4,10 @@ import Web3 from 'web3'
 
 import { createGoerliProvider } from '../../utils/evm/create-goerli-provider'
 import { GhostMarketSDK } from '../../core/sdk.evm'
-import { GhostMarketApi, IEVMOrderExtendedV2, IGhostMarketApiOptions, PutEvmOrderV2Request } from '@onblockio/gm-api-js'
-import { API_BASE_TESTNET, API_PATH, ChainId, ORDERBOOK_VERSION } from '../../core/constants'
+import { ChainId, GhostMarketApi, IEVMOrderExtendedV2, IGhostMarketApiOptions, PutEvmOrderV2Request } from '@onblockio/gm-api-js'
+import { API_BASE_TESTNET, API_PATH, ORDERBOOK_VERSION } from '../../core/constants'
 import { Asset, enc } from '../../utils/evm/order'
-import { ERC1155, ERC20, ERC721 } from '../../utils/evm/assets'
+import { ERC20, ERC721 } from '../../utils/evm/assets'
 
 describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
     const url = API_BASE_TESTNET + API_PATH
@@ -69,7 +69,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             try {
                 const nftToList = {
                     domain: {
-                        chainId: ChainId.etht.toString(),
+                        chainId: ChainId.EthT.toString(),
                         verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
                     },
                     order: {
@@ -101,7 +101,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             try {
                 const nftToList = {
                     domain: {
-                        chainId: ChainId.etht.toString(),
+                        chainId: ChainId.EthT.toString(),
                         verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
                     },
                     order: {
@@ -136,7 +136,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             try {
                 const nftToList = {
                     domain: {
-                        chainId: ChainId.etht.toString(),
+                        chainId: ChainId.EthT.toString(),
                         verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
                     },
                     order: {
@@ -169,7 +169,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             try {
                 const nftToList = {
                     domain: {
-                        chainId: ChainId.etht.toString(),
+                        chainId: ChainId.EthT.toString(),
                         verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
                     },
                     order: {
@@ -202,7 +202,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             try {
                 const nftToList = {
                     domain: {
-                        chainId: ChainId.etht.toString(),
+                        chainId: ChainId.EthT.toString(),
                         verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
                     },
                     order: {
@@ -237,7 +237,7 @@ describe(`GhostMarket API Post V${ORDERBOOK_VERSION}`, () => {
             try {
                 const nftToList = {
                     domain: {
-                        chainId: ChainId.etht.toString(),
+                        chainId: ChainId.EthT.toString(),
                         verifyingContract: '0x6c3E76022bEAAA29c12aca09823EDB6369F4bC6E' 
                     },
                     order: {
