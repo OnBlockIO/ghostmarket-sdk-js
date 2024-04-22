@@ -6,7 +6,6 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { N3PrivateProvider } from '../utils/n3/N3PrivateProvider'
 import {
     MAINNET_API_URL,
-    Chain,
     ChainFullName,
     AddressesByChain,
     GHOSTMARKET_TRADE_FEE_BPS,
@@ -28,7 +27,7 @@ import {
     Method,
     Standard,
 } from '../core/models/n3'
-import { GhostMarketApi, IGhostMarketApiOptions } from '@onblockio/gm-api-js'
+import { GhostMarketApi, IGhostMarketApiOptions, ChainNetwork } from '@onblockio/gm-api-js'
 
 export class GhostMarketN3SDK {
     private provider: string
@@ -38,7 +37,7 @@ export class GhostMarketN3SDK {
     private _providerRPCUrl: string
     private _privateKey: string
     private _isMainNet: boolean
-    private _chainName: Chain
+    private _chainName: ChainNetwork
     private _chainFullName: ChainFullName
     private _contractExchangeAddress: string
     private _contractIncentivesAddress: string
@@ -63,17 +62,17 @@ export class GhostMarketN3SDK {
             environment?: string
             privateKey?: string
             rpcUrl?: string
-            chainName?: Chain
+            chainName?: ChainNetwork
         },
         logger?: (arg: string) => void,
     ) {
         options.apiKey = options.apiKey || ''
         options.environment = options.environment || MAINNET_API_URL
-        this._isMainNet = options.chainName === Chain.NEO3
+        this._isMainNet = options.chainName === ChainNetwork.N3
         options.privateKey = options.privateKey || ''
         options.rpcUrl = options.rpcUrl || ''
         this._providerRPCUrl = options.rpcUrl
-        options.chainName = options.chainName || Chain.NEO3
+        options.chainName = options.chainName || ChainNetwork.N3
         this._chainName = options.chainName
         this._chainFullName = ChainFullName[this._chainName as keyof typeof ChainFullName]
         this._contractExchangeAddress = this._getExchangeContractAddress(this._chainName)
@@ -2025,56 +2024,56 @@ export class GhostMarketN3SDK {
      * @param {string} chainName chain name to check.
      */
     private _getFlmContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].FLM_TOKEN!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.FLM_TOKEN!
     }
 
     /** Get Dex contract address
      * @param {string} chainName chain name to check.
      */
     private _getDexContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].DEX!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.DEX!
     }
 
     /** Get Incentives contract address
      * @param {string} chainName chain name to check.
      */
     private _getIncentivesContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].INCENTIVES
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.INCENTIVES
     }
 
     /** Get LP Staking contract address
      * @param {string} chainName chain name to check.
      */
     private _getLPStakingContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_STAKING!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.LP_STAKING!
     }
 
     /** Get LP Token contract address
      * @param {string} chainName chain name to check.
      */
     private _getLPTokenContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].LP_TOKEN!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.LP_TOKEN!
     }
 
     /** Get NEP-11 Ghost contract address
      * @param {string} chainName chain name to check.
      */
     private _getNEP11GhostContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].GHOST_NEP11!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.GHOST_NEP11!
     }
 
     /** Get Exchange contract address
      * @param {string} chainName chain name to check.
      */
     private _getExchangeContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].EXCHANGE
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.EXCHANGE
     }
 
     /** Get Management contract address
      * @param {string} chainName chain name to check.
      */
     private _getManagementContractAddress(chainName: string): string {
-        return AddressesByChain[chainName as keyof typeof AddressesByChain].CONTRACT_MANAGEMENT!
+        return AddressesByChain[chainName as keyof typeof AddressesByChain]!.CONTRACT_MANAGEMENT!
     }
 
     /** Get owner of a contract

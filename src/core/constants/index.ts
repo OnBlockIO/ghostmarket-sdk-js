@@ -1,8 +1,10 @@
+import { ChainNetwork } from "@onblockio/gm-api-js"
+
 /* eslint-disable prettier/prettier */
 export const GHOSTMARKET_TRADE_FEE_BPS = 200
 export const MIN_BID_INCREASE_BPS = 500
 
-export const ORDERBOOK_VERSION = 1
+export const ORDERBOOK_VERSION = 2
 export const API_BASE_MAINNET = 'https://api.ghostmarket.io'
 export const API_BASE_TESTNET = 'https://api-testnet.ghostmarket.io'
 export const API_BASE_DEV = 'https://api-dev.ghostmarket.io'
@@ -200,15 +202,15 @@ export const BASE_TESTNET_ADDRESSES: ContractAddresses = {
 }
 
 export const NEOX_TESTNET_ADDRESSES: ContractAddresses = {
-    EXCHANGE: '0x8E579105aCaF82C7cf891e443a74C3043e6dcc2D',
-    INCENTIVES: '',
-    GM_TOKEN: '0x9b7E1a760751De8251e9F1ad09eD9039D4B7A676',
-    ROYALTIES: '0x80762F5ce7d145a1fB61c5527Fa0730E87E0142d',
-    PROXY_NFT: '0xBc3b298948182b9FFc448602C4E52d72F93E141D',
-    PROXY_ERC20: '0xBc3b298948182b9FFc448602C4E52d72F93E141D',
+    EXCHANGE: '0xC881B96b13da75ccBd35Dad5443238ae982e479b',
+    INCENTIVES: '0x3d7e2A3ecb2AE2a516465c611DFf813d7B9297f8',
+    GM_TOKEN: '0xF41db445D7eaF45536985cE185ce131FA4b42E68',
+    ROYALTIES: '0x31E02e8d1Fbb0bdeC82f46336BD3eb1759D44B3d',
+    PROXY_NFT: '0x76d99FEe987a3A6eE52251C272Da61A797d23e65',
+    PROXY_ERC20: '0x0A235CFD523Dd58c80e77Fd33F152781383Fb88E',
     WRAPPED_TOKEN: '0x8e392DB6179B0998d5ED432607a8c7Fe7350DDB2',
-    GHOST_ERC721: '0xf4A769C4E756685fa8B124993709Fa7BbED7Fe3a',
-    GHOST_ERC1155: '0xa72Fc8611F540110490a38550Cc7417F209546dA',
+    GHOST_ERC721: '0x26D583e2CDa958b13CC319FAd124aa729f8A196e',
+    GHOST_ERC1155: '0x44C5CE28c29934B71A2a0447745d551DfC7B5133',
     LP_TOKEN: '',
     LP_STAKING: '',
 }
@@ -284,6 +286,62 @@ export const BLAST_MAINNET_ADDRESSES: ContractAddresses = {
     LP_STAKING: '',
 }
 
+export const SOLANA_MAINNET_ADDRESSES: ContractAddresses = {
+    EXCHANGE: '',
+    INCENTIVES: '',
+    GM_TOKEN: '',
+    ROYALTIES: '',
+    PROXY_NFT: '',
+    PROXY_ERC20: '',
+    WRAPPED_TOKEN: '',
+    GHOST_ERC721: '',
+    GHOST_ERC1155: '',
+    LP_TOKEN: '',
+    LP_STAKING: '',
+}
+
+export const SOLANA_TESTNET_ADDRESSES: ContractAddresses = {
+    EXCHANGE: '',
+    INCENTIVES: '',
+    GM_TOKEN: '',
+    ROYALTIES: '',
+    PROXY_NFT: '',
+    PROXY_ERC20: '',
+    WRAPPED_TOKEN: '',
+    GHOST_ERC721: '',
+    GHOST_ERC1155: '',
+    LP_TOKEN: '',
+    LP_STAKING: '',
+}
+
+export const FLOW_MAINNET_ADDRESSES: ContractAddresses = {
+    EXCHANGE: '',
+    INCENTIVES: '',
+    GM_TOKEN: '',
+    ROYALTIES: '',
+    PROXY_NFT: '',
+    PROXY_ERC20: '',
+    WRAPPED_TOKEN: '',
+    GHOST_ERC721: '',
+    GHOST_ERC1155: '',
+    LP_TOKEN: '',
+    LP_STAKING: '',
+}
+
+export const FLOW_TESTNET_ADDRESSES: ContractAddresses = {
+    EXCHANGE: '',
+    INCENTIVES: '',
+    GM_TOKEN: '',
+    ROYALTIES: '',
+    PROXY_NFT: '',
+    PROXY_ERC20: '',
+    WRAPPED_TOKEN: '',
+    GHOST_ERC721: '',
+    GHOST_ERC1155: '',
+    LP_TOKEN: '',
+    LP_STAKING: '',
+}
+
 export const PHA_MAINNET_CONTRACTS = {
     EXCHANGE: '',
     INCENTIVES: '',
@@ -296,25 +354,6 @@ export const PHA_TESTNET_CONTRACTS = {
     INCENTIVES: '',
     GM_TOKEN: '',
     GHOST_PEPE12: ''
-}
-
-export enum ChainId {
-    avalanche = 43114,
-    avalanchet = 43113,
-    bsc = 56,
-    bsct = 97,
-    eth = 1,
-    etht = 5,
-    polygon = 137,
-    polygont = 80001,
-    base = 8453,
-    baset = 84532,
-    shardeum = 8082,
-    shardeumt = 8082, // TODO update to real value
-    neox = 12227330,
-    neoxt = 12227330, // TODO update to real value
-    blast = 81457,
-    blastt = 168587773,
 }
 
 export enum ChainFullName {
@@ -363,48 +402,31 @@ export enum ChainCurrency {
     blastt = 'ETH',
 }
 
-export enum Chain {
-    AVALANCHE = 'avalanche',
-    AVALANCHE_TESTNET = 'avalanchet',
-    BSC = 'bsc',
-    BSC_TESTNET = 'bsct',
-    ETHEREUM = 'eth',
-    ETHEREUM_TESTNET = 'etht',
-    POLYGON = 'polygon',
-    POLYGON_TESTNET = 'polygont',
-    NEO3 = 'n3',
-    NEO3_TESTNET = 'n3t',
-    PHANTASMA = 'pha',
-    PHANTASMA_TESTNET = 'phat',
-    BASE = 'base',
-    BASE_TESTNET = 'baset',
-    SHARDEUM = 'shardeum',
-    SHARDEUM_TESTNET = 'shardeumt',
-    NEOX = 'neox',
-    NEOXT_TESTNET = 'neoxt',
-    BLAST = 'blast',
-    BLAST_TESTNET = 'blastt',
-}
-
-export const AddressesByChain: { [name in Chain]: ContractAddresses } = {
-    [Chain.AVALANCHE]: AVALANCHE_MAINNET_ADDRESSES,
-    [Chain.AVALANCHE_TESTNET]: AVALANCHE_TESTNET_ADDRESSES,
-    [Chain.BSC]: BSC_MAINNET_ADDRESSES,
-    [Chain.BSC_TESTNET]: BSC_TESTNET_ADDRESSES,
-    [Chain.ETHEREUM]: ETHEREUM_MAINNET_ADDRESSES,
-    [Chain.ETHEREUM_TESTNET]: ETHEREUM_TESTNET_ADDRESSES,
-    [Chain.POLYGON]: POLYGON_MAINNET_ADDRESSES,
-    [Chain.POLYGON_TESTNET]: POLYGON_TESTNET_ADDRESSES,
-    [Chain.NEO3]: N3_MAINNET_ADDRESSES,
-    [Chain.NEO3_TESTNET]: N3_TESTNET_ADDRESSES,
-    [Chain.PHANTASMA]: PHA_MAINNET_CONTRACTS,
-    [Chain.PHANTASMA_TESTNET]: PHA_TESTNET_CONTRACTS,
-    [Chain.BASE]: BASE_MAINNET_ADDRESSES,
-    [Chain.BASE_TESTNET]: BASE_TESTNET_ADDRESSES,
-    [Chain.SHARDEUM]: SHARDEUM_MAINNET_ADDRESSES,
-    [Chain.SHARDEUM_TESTNET]: SHARDEUM_TESTNET_ADDRESSES,
-    [Chain.NEOX]: NEOX_MAINNET_ADDRESSES,
-    [Chain.NEOXT_TESTNET]: NEOX_TESTNET_ADDRESSES,
-    [Chain.BLAST]: BLAST_MAINNET_ADDRESSES,
-    [Chain.BLAST_TESTNET]: BLAST_TESTNET_ADDRESSES,
+export const AddressesByChain: { [name in ChainNetwork]: ContractAddresses | undefined } = {
+    [ChainNetwork.Avalanche]: AVALANCHE_MAINNET_ADDRESSES,
+    [ChainNetwork.AvalancheT]: AVALANCHE_TESTNET_ADDRESSES,
+    [ChainNetwork.Bsc]: BSC_MAINNET_ADDRESSES,
+    [ChainNetwork.BscT]: BSC_TESTNET_ADDRESSES,
+    [ChainNetwork.Eth]: ETHEREUM_MAINNET_ADDRESSES,
+    [ChainNetwork.EthT]: ETHEREUM_TESTNET_ADDRESSES,
+    [ChainNetwork.Polygon]: POLYGON_MAINNET_ADDRESSES,
+    [ChainNetwork.PolygonT]: POLYGON_TESTNET_ADDRESSES,
+    [ChainNetwork.N3]: N3_MAINNET_ADDRESSES,
+    [ChainNetwork.N3T]: N3_TESTNET_ADDRESSES,
+    [ChainNetwork.Pha]: PHA_MAINNET_CONTRACTS,
+    [ChainNetwork.PhaT]: PHA_TESTNET_CONTRACTS,
+    [ChainNetwork.Base]: BASE_MAINNET_ADDRESSES,
+    [ChainNetwork.BaseT]: BASE_TESTNET_ADDRESSES,
+    [ChainNetwork.Shardeum]: SHARDEUM_MAINNET_ADDRESSES,
+    [ChainNetwork.ShardeumT]: SHARDEUM_TESTNET_ADDRESSES,
+    [ChainNetwork.NeoX]: NEOX_MAINNET_ADDRESSES,
+    [ChainNetwork.NeoXT]: NEOX_TESTNET_ADDRESSES,
+    [ChainNetwork.Blast]: BLAST_MAINNET_ADDRESSES,
+    [ChainNetwork.BlastT]: BLAST_TESTNET_ADDRESSES,
+    [ChainNetwork.Solana]: SOLANA_MAINNET_ADDRESSES,
+    [ChainNetwork.SolanaT]: SOLANA_TESTNET_ADDRESSES,
+    [ChainNetwork.Flow]: FLOW_MAINNET_ADDRESSES,
+    [ChainNetwork.FlowT]: FLOW_TESTNET_ADDRESSES,
+    [ChainNetwork.Unknown]: undefined,
+    [ChainNetwork.All]: undefined
 }
