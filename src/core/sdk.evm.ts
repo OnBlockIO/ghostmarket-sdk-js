@@ -35,8 +35,9 @@ import {
     IGhostMarketApiOptions,
     PutEvmOrderV2Request, // previous PostCreateOrderRequest,
     IResult,
-} from '../lib/api/'
-import { ChainId, ChainNetwork } from '@onblockio/gm-api-js/'
+    ChainId, 
+    ChainNetwork 
+} from '@onblockio/gm-api-js/'
 
 export class GhostMarketSDK {
     // Instance of Web3 to use.
